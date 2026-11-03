@@ -19,7 +19,7 @@ nav button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 main{max-width:960px;margin:auto;padding:0 16px 24px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
 .card h2{font-size:16px;margin:0 0 10px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
 .kpi b{display:block;font-size:20px}
 .kpi span{color:var(--sub);font-size:13px}
 table{width:100%;border-collapse:collapse;font-size:14px}
@@ -58,6 +58,23 @@ footer{max-width:960px;margin:auto;padding:8px 16px 40px;color:var(--sub);font-s
 <script src="data/budget.js"></script>
 <script>
 const D = window.BUDGET;
+// 압축된 실데이터를 원래 구조로 풀기 (scripts/build.py 참고)
+if (D.packed) {
+  const { keys, years, dicts, rows } = D.packed;
+  D.projects = rows.map((r, i) => {
+    const p = { id: "B" + String(i + 1).padStart(5, "0"), exec: {}, docs: [], years: {} };
+    keys.forEach((k, j) => p[k] = dicts[k][r[j]]);
+    p.name = r[keys.length];
+    years.forEach((y, j) => {
+      const g = r[keys.length + 1 + j * 2], n = r[keys.length + 2 + j * 2];
+      if (g != null || n != null) p.years[y] = { gov: g, na: n };
+    });
+    const extra = r[keys.length + 1 + years.length * 2];
+    if (extra) Object.assign(p, extra);
+    return p;
+  });
+  delete D.packed;
+}
 const P = D.projects;
 const YEARS = [2024, 2025, 2026, 2027];
 const CUR = 2027, PREV = 2026;
@@ -104,7 +121,7 @@ function search(q, limit = 30) {
   const terms = q.trim().split(/\s+/).filter(Boolean);
   if (!terms.length) return [];
   return P.filter(p => {
-    const hay = `${p.name} ${p.ministry} ${p.program || ""} ${p.activity || ""} ${p.field}`;
+    const hay = `${p.name} ${p.ministry} ${p.program || ""} ${p.activity || ""} ${p.field} ${(p.aka || []).join(" ")} ${(p.prev_ministry || []).join(" ")} ${p.pooled_from || ""}`;
     return terms.every(t => hay.includes(t));
   }).sort((a, b) => (curGov(b) || amt(b, PREV) || 0) - (curGov(a) || amt(a, PREV) || 0)).slice(0, limit);
 }
@@ -195,6 +212,9 @@ function openProject(id) {
   <div class="card"><h2>${esc(p.name)}</h2>
     <div class="sub">${esc(p.ministry)} · ${esc(p.fund || "")} · ${esc(p.field)}${p.sector ? " > " + esc(p.sector) : ""}<br>
       ${esc(p.program || "")}${p.activity ? " > " + esc(p.activity) : ""} · 단위 ${esc(D.unit)}</div>
+    ${p.prev_ministry ? `<div class="tag">소관 변경: ${esc(p.prev_ministry.join(", "))} → ${esc(p.ministry)}</div>` : ""}
+    ${p.pooled_from ? `<div class="tag">${CUR} ${esc(p.ministry)} 일괄계상 (원 부처: ${esc(p.pooled_from)})</div>` : ""}
+    ${p.aka ? `<div class="tag">이전 사업명: ${esc(p.aka.join(", "))}</div>` : ""}
     <svg viewBox="0 0 340 170" width="100%" style="max-width:420px;margin-top:8px">${bars}</svg>
     <table><tr><th>연도</th><th>정부안</th><th>국회 확정</th><th>국회 증감</th></tr>
       ${YEARS.map(y => { const v = Y(p, y); return `<tr><td>${y}</td><td>${won(v.gov)}</td><td>${won(v.na)}</td>
