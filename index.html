@@ -73,8 +73,17 @@ if (D.packed) {
     if (extra) Object.assign(p, extra);
     return p;
   });
+  if (D.packed.units) {
+    const ey = D.exec_years || [];
+    D.units = D.packed.units.map(r => {
+      const u = { ministry: dicts.ministry[r[0]], activity: r[1], program: r[2], funds: r[3] ? r[3].split(",") : [], years: {} };
+      ey.forEach((y, j) => { const v = r[4 + j]; if (v) u.years[y] = { cur: v[0], spent: v[1], carry: v[2], unused: v[3], rate: v[0] > 0 ? v[1] / v[0] * 100 : null }; });
+      return u;
+    });
+  }
   delete D.packed;
 }
+const U = D.units || [];
 const P = D.projects;
 const YEARS = [2024, 2025, 2026, 2027];
 const CUR = 2027, PREV = 2026;
@@ -86,7 +95,11 @@ const jo = n => n == null || isNaN(n) ? "-" : (n / 10000).toLocaleString("ko-KR"
 const pct = n => (n == null || !isFinite(n)) ? "-" : (n > 0 ? "+" : "") + n.toFixed(1) + "%";
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const Y = (p, y) => (p.years && p.years[y]) || { gov: null, na: null };
-const E = (p, y) => (p.exec && p.exec[y]) || null;
+// 결산: 세부사업이 속한 단위사업 전체 실적 (열린재정 결산은 단위사업 단위)
+const unitOf = p => (p.unit != null && U[p.unit]) || null;
+const E = (p, y) => { const u = unitOf(p); const v = u && u.years[y]; return v ? { budget: v.cur, spent: v.spent, carry: v.carry, unused: v.unused, rate: v.rate } : (p.exec && p.exec[y]) || null; };
+const EXEC_LAST = (D.exec_years || []).slice(-1)[0] || CUR - 2;
+const idle = e => e && e.budget > 0 ? (e.carry + e.unused) / e.budget * 100 : null;  // 이월+불용 비율
 // 연도별 대표값: 국회 확정이 있으면 확정, 없으면 정부안
 const amt = (p, y) => { const v = Y(p, y); return v.na != null ? v.na : v.gov; };
 const base = p => Y(p, PREV).na;           // 비교 기준: 전년도 국회 확정
@@ -95,7 +108,7 @@ const diff = p => (curGov(p) || 0) - (base(p) || 0);
 const chg = p => (base(p) > 0 && curGov(p) != null) ? curGov(p) / base(p) - 1 : NaN;
 const isNew = p => !(base(p) > 0) && curGov(p) > 0;
 const isGone = p => base(p) > 0 && !(curGov(p) > 0);
-const HAS_EXEC = P.some(p => p.exec && Object.keys(p.exec).length);
+const HAS_EXEC = U.length > 0 || P.some(p => p.exec && Object.keys(p.exec).length);
 const HAS_DOCS = P.some(p => p.docs && p.docs.length);
 const label = p => `${esc(p.name)} <span class="sub">${esc(p.ministry)}${p.program ? " · " + esc(p.program) : ""}</span>`;
 const link = p => `<a href="#" onclick="openProject('${p.id}');return false">${label(p)}</a>`;
@@ -103,8 +116,8 @@ const total = (y, k) => D.totals ? D.totals[y][k] : P.reduce((a, p) => a + (Y(p,
 
 document.getElementById("notice").innerHTML = SAMPLE
   ? "화면 시험용 <b>샘플 데이터</b>입니다. 실제 예산 수치가 아닙니다."
-  : `출처: 열린재정 Open API (총지출 기준, 세부사업 ${P.length.toLocaleString()}개, 단위 ${D.unit}) · 수집 ${esc((D.fetched_at || "").slice(0, 10))}<br>
-     집행·결산 이력과 국회 검토문서는 아직 연결 전입니다. 공식 시스템과 무관한 개인 프로젝트입니다.`;
+  : `출처: 열린재정 Open API · 예산 ${YEARS[0]}~${CUR} (총지출 기준, 세부사업 ${P.length.toLocaleString()}개)${HAS_EXEC ? ` · 결산 ${(D.exec_years || [])[0]}~${EXEC_LAST} (단위사업 ${U.length.toLocaleString()}개)` : ""} · 단위 ${D.unit} · 수집 ${esc((D.fetched_at || "").slice(0, 10))}<br>
+     국회 검토문서는 아직 연결 전입니다. 공식 시스템과 무관한 개인 프로젝트입니다.`;
 
 const TABS = [["home", "홈"], ["overview", "한눈에 보기"], ["explore", "예산 탐색"], ["review", "심사 참고"],
   ["filter", "조건으로 찾기"], ["ask", "AI에게 묻기"], ["quality", "삶의 질 지표"]];
@@ -183,8 +196,21 @@ VIEWS.overview = () => {
     ${YEARS.map((y, i) => { const gv = total(y, "gov"), nv = total(y, "na"), prev = i ? total(YEARS[i - 1], "na") : null;
       return `<tr><td>${y}</td><td>${jo(gv)}</td><td>${nv ? jo(nv) : "-"}</td><td>${prev ? pct(((nv || gv) / prev - 1) * 100) : "-"}</td></tr>`; }).join("")}
     </table></div>
-  <div class="card"><h2>${CUR - 2} 결산 요약</h2><div class="sub">${HAS_EXEC ? "" : "결산(집행·이월·불용) 데이터는 아직 연결 전입니다."}</div></div>`);
+  ${execSummary()}`);
 };
+function execSummary() {
+  if (!U.length) return `<div class="card"><h2>결산 요약</h2><div class="sub">결산(집행·이월·불용) 데이터는 아직 연결 전입니다.</div></div>`;
+  const ey = D.exec_years;
+  const sum = (y, k) => U.reduce((a, u) => a + ((u.years[y] || {})[k] || 0), 0);
+  const top = U.filter(u => u.years[EXEC_LAST]).sort((a, b) => b.years[EXEC_LAST].unused - a.years[EXEC_LAST].unused).slice(0, 10);
+  return `<div class="card"><h2>결산 요약 <span class="sub">(세출·지출, 여유자금 운용 제외)</span></h2>
+    <table><tr><th>연도</th><th>예산현액</th><th>지출</th><th>이월</th><th>불용</th><th>집행률</th></tr>
+    ${ey.map(y => { const c = sum(y, "cur"), s = sum(y, "spent"); return `<tr><td>${y}</td><td>${jo(c)}</td><td>${jo(s)}</td><td>${jo(sum(y, "carry"))}</td><td class="warn">${jo(sum(y, "unused"))}</td><td>${(s / c * 100).toFixed(1)}%</td></tr>`; }).join("")}
+    </table></div>
+  <div class="card"><h2>${EXEC_LAST} 불용액 큰 단위사업 <span class="sub">(억원)</span></h2>
+    ${top.map(u => { const v = u.years[EXEC_LAST]; return `<div class="item"><b>${esc(u.activity)}</b> <span class="sub">${esc(u.ministry)} · ${esc(u.program)}</span><br>
+      <span class="sub">현액 ${won(v.cur)} · 지출 ${won(v.spent)} · 이월 ${won(v.carry)} · <span class="warn">불용 ${won(v.unused)}</span> · 집행률 ${v.rate.toFixed(1)}%</span></div>`; }).join("")}</div>`;
+}
 
 /* ---------- 3. 예산 탐색 ---------- */
 VIEWS.explore = () => {
@@ -207,7 +233,8 @@ function openProject(id) {
       <text x="25" y="-4" text-anchor="middle">${vals[i] == null ? "-" : won(vals[i])}</text>
       <text x="25" y="${h + 14}" text-anchor="middle">${y}${y === CUR ? "안" : ""}</text></g>`;
   }).join("");
-  const ex = [CUR - 4, CUR - 3, CUR - 2].map(y => [y, E(p, y)]).filter(([, e]) => e);
+  const ex = (D.exec_years || [CUR - 4, CUR - 3, CUR - 2]).map(y => [y, E(p, y)]).filter(([, e]) => e);
+  const u = unitOf(p);
   document.getElementById("detail").innerHTML = `
   <div class="card"><h2>${esc(p.name)}</h2>
     <div class="sub">${esc(p.ministry)} · ${esc(p.fund || "")} · ${esc(p.field)}${p.sector ? " > " + esc(p.sector) : ""}<br>
@@ -221,10 +248,12 @@ function openProject(id) {
         <td class="sub">${v.gov != null && v.na != null ? won(v.na - v.gov) : "-"}</td></tr>`; }).join("")}
     </table>
     <div class="sub" style="margin-top:6px">${CUR} 정부안 vs ${PREV} 확정: ${isNew(p) ? '<b class="warn">신규</b>' : isGone(p) ? '<b class="ok">미편성</b>' : `${won(diff(p))}억 (${pct(chg(p) * 100)})`}</div></div>
-  <div class="card"><h2>집행 이력</h2>
-    ${ex.length ? `<table><tr><th>연도</th><th>예산</th><th>집행</th><th>불용</th><th>집행률</th></tr>
-      ${ex.map(([y, e]) => `<tr><td>${y}</td><td>${won(e.budget)}</td><td>${won(e.spent)}</td><td>${won(e.unused)}</td>
-        <td class="${e.rate < 80 ? "warn" : ""}">${e.rate}%</td></tr>`).join("")}</table>` : '<div class="sub">결산 데이터 연결 전</div>'}</div>
+  <div class="card"><h2>집행 이력 <span class="sub">(결산)</span></h2>
+    ${u ? `<div class="sub" style="margin-bottom:6px">단위사업 <b>${esc(u.activity)}</b> 전체 기준 (${esc(u.ministry)} · ${esc(u.funds.join(", "))})</div>` : ""}
+    ${ex.length ? `<table><tr><th>연도</th><th>예산현액</th><th>지출</th><th>이월</th><th>불용</th><th>집행률</th></tr>
+      ${ex.map(([y, e]) => `<tr><td>${y}</td><td>${won(e.budget)}</td><td>${won(e.spent)}</td><td>${won(e.carry)}</td><td>${won(e.unused)}</td>
+        <td class="${e.rate != null && e.rate < 80 ? "warn" : ""}">${e.rate == null ? "-" : e.rate.toFixed(1) + "%"}</td></tr>`).join("")}</table>`
+      : `<div class="sub">${HAS_EXEC ? "연결된 결산 자료가 없습니다 (신규 사업이거나 단위사업명이 바뀐 경우)." : "결산 데이터 연결 전"}</div>`}</div>
   <div class="card"><h2>국회 검토 문서</h2>
     ${(p.docs || []).length ? p.docs.map(d => `<div class="doc"><b>${esc(d.title)}</b> · ${d.page}쪽<br>${esc(d.text)}</div>`).join("") : '<div class="sub">검토보고서 연결 전</div>'}</div>`;
   document.getElementById("detail").scrollIntoView({ behavior: "smooth" });
@@ -238,7 +267,9 @@ const RULES = [
   { label: "전년 대비 30% 이상 감소 (100억 이상)", test: p => chg(p) <= -0.3 && base(p) >= 100 },
   { label: "전년 대비 1,000억 이상 감소", test: p => diff(p) <= -1000 },
   { label: `${PREV} 국회에서 10% 이상 증액된 사업`, test: p => { const v = Y(p, PREV); return v.gov > 0 && v.na >= v.gov * 1.1 && v.na - v.gov >= 10; } },
-  { label: "집행률 80% 미만 (결산 연결 시)", test: p => { const e = E(p, CUR - 2); return e && e.rate < 80; } },
+  { label: `${EXEC_LAST} 단위사업 집행률 80% 미만 (현액 100억 이상)`, test: p => { const e = E(p, EXEC_LAST); return e && e.rate != null && e.rate < 80 && e.budget >= 100; } },
+  { label: `${EXEC_LAST - 1}·${EXEC_LAST} 2년 연속 이월+불용 20% 이상`, test: p => [EXEC_LAST - 1, EXEC_LAST].every(y => { const e = E(p, y); return e && e.budget >= 100 && idle(e) >= 20; }) },
+  { label: `${EXEC_LAST} 집행률 90% 미만인데 ${CUR} 증액`, test: p => { const e = E(p, EXEC_LAST); return e && e.rate != null && e.rate < 90 && e.budget >= 100 && diff(p) > 0 && chg(p) > 0.05; } },
 ];
 VIEWS.review = () => {
   const hits = P.map(p => ({ p, hit: RULES.filter(r => r.test(p)) })).filter(x => x.hit.length)
@@ -258,8 +289,8 @@ VIEWS.review = () => {
 VIEWS.filter = () => {
   view(`
   <div class="card"><h2>조건을 문장으로 입력</h2>
-    <div class="row"><input id="cond" placeholder="예: 교육부 증가율 30% 이상 100억 이상" onkeydown="if(event.key==='Enter')runFilter()"><button class="go" onclick="runFilter()">찾기</button></div>
-    <div class="sub" style="margin-top:8px">인식하는 조건: 분야명·부처명, "증가율 N% 이상/이하", "감소율 N% 이상", "N억 이상/이하"(${CUR} 정부안), "신규", "미편성", 그 밖의 단어는 사업명 검색</div>
+    <div class="row"><input id="cond" placeholder="예: 교육부 집행률 80% 미만 증가율 10% 이상" onkeydown="if(event.key==='Enter')runFilter()"><button class="go" onclick="runFilter()">찾기</button></div>
+    <div class="sub" style="margin-top:8px">인식하는 조건: 분야명·부처명, "증가율 N% 이상/이하", "집행률 N% 미만/이상"(최근 결산), "감소율 N% 이상", "N억 이상/이하"(${CUR} 정부안), "신규", "미편성", 그 밖의 단어는 사업명 검색</div>
     <div id="fres" style="margin-top:12px"></div></div>`);
 };
 function runFilter() {
@@ -268,6 +299,9 @@ function runFilter() {
   const num = re => { const m = s.match(re); if (m) s = s.replace(m[0], " "); return m ? +m[1].replace(/,/g, "") : null; };
   const up = num(/증가율\s*(\d+)\s*%\s*이상/), upMax = num(/증가율\s*(\d+)\s*%\s*이하/), cut = num(/감소율\s*(\d+)\s*%\s*이상/);
   const amin = num(/([\d,]+)\s*억\s*(?:원)?\s*이상/), amax = num(/([\d,]+)\s*억\s*(?:원)?\s*이하/);
+  const exLow = num(/집행률\s*(\d+)\s*%\s*(?:미만|이하)/), exHigh = num(/집행률\s*(\d+)\s*%\s*이상/);
+  if (exLow != null) { conds.push(p => { const e = E(p, EXEC_LAST); return e && e.rate != null && e.rate < exLow; }); desc.push(`${EXEC_LAST} 집행률 < ${exLow}%`); }
+  if (exHigh != null) { conds.push(p => { const e = E(p, EXEC_LAST); return e && e.rate != null && e.rate >= exHigh; }); desc.push(`${EXEC_LAST} 집행률 ≥ ${exHigh}%`); }
   if (up != null) { conds.push(p => chg(p) * 100 >= up); desc.push(`증가율 ≥ ${up}%`); }
   if (upMax != null) { conds.push(p => chg(p) * 100 <= upMax); desc.push(`증가율 ≤ ${upMax}%`); }
   if (cut != null) { conds.push(p => chg(p) * -100 >= cut); desc.push(`감소율 ≥ ${cut}%`); }
@@ -290,7 +324,7 @@ function runFilter() {
 VIEWS.ask = () => {
   view(`
   <div class="card"><h2>국회 검토 문서 기반 질문</h2>
-    ${HAS_DOCS ? "" : '<div class="doc">국회 검토보고서·사업설명자료가 아직 연결되지 않아, 지금은 <b>예산 수치만</b> 근거로 찾아 드립니다.</div>'}
+    ${HAS_DOCS ? "" : '<div class="doc">국회 검토보고서·사업설명자료가 아직 연결되지 않아, 지금은 <b>예산·결산 수치</b>만 근거로 찾아 드립니다.</div>'}
     <div class="row"><input id="aq" placeholder="예: 늘봄학교 예산은 얼마나 늘었나?" onkeydown="if(event.key==='Enter')ask()"><button class="go" onclick="ask()">질문</button></div>
     <details style="margin-top:10px"><summary class="sub">AI 답변 사용 (선택: Upstage API 키 입력 시 요약 생성)</summary>
       <input id="akey" type="password" placeholder="키는 저장되지 않습니다" style="margin-top:8px">
@@ -305,7 +339,8 @@ function retrieve(q) {
     return { p, score: terms.reduce((a, t) => a + (hay.includes(t) ? (p.name.includes(t) ? 2 : 1) : 0), 0) };
   }).filter(x => x.score > 0).sort((a, b) => b.score - a.score || (curGov(b.p) || 0) - (curGov(a.p) || 0)).slice(0, 5);
 }
-const fact = p => `${p.ministry} ${p.program || ""} > ${p.name}: ` + YEARS.map(y => { const v = Y(p, y); return `${y} 정부안 ${won(v.gov)}억, 확정 ${won(v.na)}억`; }).join("; ");
+const fact = p => `${p.ministry} ${p.program || ""} > ${p.name}: ` + YEARS.map(y => { const v = Y(p, y); return `${y} 정부안 ${won(v.gov)}억, 확정 ${won(v.na)}억`; }).join("; ")
+  + ((D.exec_years || []).some(y => E(p, y)) ? ` / 소속 단위사업 '${unitOf(p) ? unitOf(p).activity : ""}' 결산: ` + D.exec_years.map(y => { const e = E(p, y); return e ? `${y} 집행률 ${e.rate.toFixed(1)}%, 불용 ${won(e.unused)}억` : ""; }).filter(Boolean).join("; ") : "");
 async function ask() {
   const q = document.getElementById("aq").value.trim(); if (!q) return;
   const hits = retrieve(q), box = document.getElementById("ans");

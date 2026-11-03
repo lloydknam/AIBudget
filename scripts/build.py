@@ -30,12 +30,22 @@ if data.get("source"):
         for y in years:
             v = p["years"].get(str(y)) or {}
             r += [v.get("gov"), v.get("na")]
-        extra = {k: p[k] for k in ("prev_ministry", "pooled_from", "aka") if p.get(k)}
+        extra = {k: p[k] for k in ("prev_ministry", "pooled_from", "aka", "unit") if p.get(k) is not None and p.get(k) != []}
         if extra:
             r.append(extra)
         rows.append(r)
-    packed = {k: v for k, v in data.items() if k != "projects"}
+    packed = {k: v for k, v in data.items() if k not in ("projects", "units")}
     packed.update({"packed": {"keys": keys, "years": years, "dicts": dicts, "rows": rows}})
+    if data.get("units"):
+        ey = data.get("exec_years", [])
+        urows = []
+        for u in data["units"]:
+            r = [enc("ministry", u["ministry"]), u["activity"], u["program"], ",".join(u["funds"])]
+            for y in ey:
+                v = u["years"].get(str(y))
+                r.append([v["cur"], v["spent"], v["carry"], v["unused"]] if v else 0)
+            urows.append(r)
+        packed["packed"]["units"] = urows
     data = packed
 
 dst.write_text("window.BUDGET = " + json.dumps(data, ensure_ascii=False, separators=(",", ":")) + ";\n",
