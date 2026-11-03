@@ -51,9 +51,18 @@ def call(code: str, key: str, **params) -> list[dict]:
     while True:
         q = urllib.parse.urlencode({"KEY": key, "Type": "json", "pIndex": index,
                                     "pSize": PAGE_SIZE, **params})
-        with urllib.request.urlopen(f"{BASE}/{code}?{q}", timeout=60) as r:
-            raw = r.read().decode("utf-8")
-        body = json.loads(raw)
+        try:
+            with urllib.request.urlopen(f"{BASE}/{code}?{q}", timeout=60) as r:
+                status = r.status
+                raw = r.read().decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as e:   # 키는 주소에 있으므로 주소는 출력하지 않음
+            sys.exit(f"[{code}] HTTP {e.code} 오류. 응답 앞부분: {e.read()[:300]!r}")
+        except urllib.error.URLError as e:
+            sys.exit(f"[{code}] 연결 실패: {e.reason}")
+        try:
+            body = json.loads(raw)
+        except json.JSONDecodeError:
+            sys.exit(f"[{code}] JSON이 아닌 응답 (HTTP {status}). 응답 앞부분: {raw[:300]!r}")
         if isinstance(body, str):          # 레퍼런스처럼 이중 인코딩된 경우
             body = json.loads(body)
         if code not in body:               # 오류 응답
