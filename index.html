@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>예산 AI 분석 (프로토타입)</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#1d2330;--sub:#6b7385;--line:#e3e6ef;--accent:#2f4fb8;--warn:#c2410c;--ok:#15803d}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#12151c;--card:#1b2030;--ink:#e8ebf3;--sub:#9aa3b8;--line:#2a3144;--accent:#7b96ff;--warn:#fb923c;--ok:#4ade80}}
+:root[data-theme="dark"]{--bg:#12151c;--card:#1b2030;--ink:#e8ebf3;--sub:#9aa3b8;--line:#2a3144;--accent:#7b96ff;--warn:#fb923c;--ok:#4ade80}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Malgun Gothic",sans-serif}
+header{padding:20px 16px 8px;max-width:960px;margin:auto}
+h1{font-size:20px;margin:0}
+.notice{margin:8px 0 0;padding:8px 12px;border-radius:8px;background:#fff7e6;color:#8a5200;font-size:13px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .notice{background:#3a2c12;color:#ffd58a}}
+nav{display:flex;gap:6px;overflow-x:auto;padding:12px 16px;max-width:960px;margin:auto;scrollbar-width:none}
+nav button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 12px;border-radius:999px;cursor:pointer;font-size:14px}
+nav button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+main{max-width:960px;margin:auto;padding:0 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.card h2{font-size:16px;margin:0 0 10px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.kpi b{display:block;font-size:20px}
+.kpi span{color:var(--sub);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+input,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:15px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row>*{flex:1 1 200px}
+button.go{padding:10px 16px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer;font-size:15px}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--sub);margin:2px 4px 2px 0}
+.warn{color:var(--warn)} .ok{color:var(--ok)} .sub{color:var(--sub);font-size:13px}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.doc{border-left:3px solid var(--accent);padding:6px 10px;margin:8px 0;background:var(--bg);border-radius:6px;font-size:14px}
+mark{background:#ffe38a;color:#000;border-radius:3px}
+.hidden{display:none}
+svg text{fill:var(--sub);font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <h1>예산 AI 분석 <span class="sub">(프로토타입)</span></h1>
+  <div class="notice">화면과 기능을 시험하기 위한 <b>샘플 데이터</b>입니다. 실제 예산 수치가 아닙니다. 실데이터는 README의 수집 절차로 채웁니다.</div>
+</header>
+<nav id="tabs"></nav>
+<main id="view"></main>
+
+<script src="data/budget.js"></script>
+<script>
+const D = window.BUDGET;
+const P = D.projects;
+const won = n => n == null ? "-" : Number(n).toLocaleString("ko-KR");
+const pct = n => (n == null || isNaN(n)) ? "-" : (n > 0 ? "+" : "") + n.toFixed(1) + "%";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const chg = p => p.years[2027].gov / p.years[2026].na - 1;   // 2027 정부안 vs 2026 국회 확정
+const sumYear = (y, key) => P.reduce((a, p) => a + (p.years[y] && p.years[y][key] || 0), 0);
+
+const TABS = [
+  ["home", "홈"], ["overview", "한눈에 보기"], ["explore", "예산 탐색"], ["review", "심사 참고"],
+  ["filter", "조건으로 찾기"], ["ask", "AI에게 묻기"], ["quality", "삶의 질 지표"]
+];
+let cur = "home";
+
+function drawTabs() {
+  document.getElementById("tabs").innerHTML = TABS.map(([k, l]) =>
+    `<button class="${k === cur ? "on" : ""}" onclick="go('${k}')">${l}</button>`).join("");
+}
+function go(k) { cur = k; drawTabs(); VIEWS[k](); window.scrollTo(0, 0); }
+
+const VIEWS = {};
+
+/* 1. 홈 */
+VIEWS.home = () => {
+  const gov27 = sumYear(2027, "gov"), na26 = sumYear(2026, "na");
+  const d = (gov27 / na26 - 1) * 100;
+  const top = [...P].sort((a, b) => b.years[2027].gov - a.years[2027].gov).slice(0, 5);
+  document.getElementById("view").innerHTML = `
+  <div class="card"><h2>2027년 예산안 규모·증감 <span class="sub">(샘플 합계, ${D.unit})</span></h2>
+    <div class="kpis">
+      <div class="kpi"><span>2027 정부안(샘플 사업 합)</span><b>${won(gov27)}</b></div>
+      <div class="kpi"><span>2026 국회 확정 대비</span><b class="${d > 0 ? "warn" : "ok"}">${pct(d)}</b></div>
+      <div class="kpi"><span>분석 대상 사업</span><b>${P.length}건</b></div>
+    </div></div>
+  <div class="card"><h2>규모 큰 사업 Top 5 (2027 정부안)</h2>
+    <table><tr><th>사업</th><th>2027</th><th>증감</th></tr>
+    ${top.map(p => `<tr><td><a href="#" onclick="openProject('${p.id}');return false">${esc(p.name)}</a></td>
+      <td>${won(p.years[2027].gov)}</td><td class="${chg(p) > 0 ? "warn" : "ok"}">${pct(chg(p) * 100)}</td></tr>`).join("")}
+    </table></div>
+  <div class="card"><h2>사업 검색</h2>
+    <input id="q" placeholder="사업명 또는 분야 입력 (예: 기초연금, 교육)" oninput="searchHome(this.value)">
+    <div id="qr" style="margin-top:10px"></div></div>`;
+};
+function searchHome(v) {
+  v = v.trim();
+  const hits = v ? P.filter(p => p.name.includes(v) || p.field.includes(v)).slice(0, 15) : [];
+  document.getElementById("qr").innerHTML = hits.map(p =>
+    `<div><a href="#" onclick="openProject('${p.id}');return false">${esc(p.name)}</a> <span class="tag">${p.field}</span></div>`).join("")
+    || (v ? "<div class='sub'>결과 없음</div>" : "");
+}
+
+/* 2. 한눈에 보기 */
+VIEWS.overview = () => {
+  const fields = {};
+  P.forEach(p => {
+    const f = fields[p.field] = fields[p.field] || { g26: 0, g27: 0, ex25: 0, bud25: 0 };
+    f.g26 += p.years[2026].na; f.g27 += p.years[2027].gov;
+    f.ex25 += p.exec[2025].spent; f.bud25 += p.exec[2025].budget;
+  });
+  const rows = Object.entries(fields).sort((a, b) => b[1].g27 - a[1].g27);
+  const max = Math.max(...rows.map(r => r[1].g27));
+  document.getElementById("view").innerHTML = `
+  <div class="card"><h2>분야별 규모·증감 <span class="sub">(샘플, ${D.unit})</span></h2>
+    <table><tr><th>분야</th><th>2027 정부안</th><th>증감</th><th>2025 집행률</th></tr>
+    ${rows.map(([k, f]) => `<tr><td>${k}
+        <div class="bar" style="margin-top:4px"><i style="width:${(f.g27 / max * 100).toFixed(0)}%"></i></div></td>
+      <td>${won(f.g27)}</td>
+      <td class="${f.g27 > f.g26 ? "warn" : "ok"}">${pct((f.g27 / f.g26 - 1) * 100)}</td>
+      <td>${(f.ex25 / f.bud25 * 100).toFixed(1)}%</td></tr>`).join("")}
+    </table></div>
+  <div class="card"><h2>2025 결산 요약 <span class="sub">(샘플)</span></h2>
+    <div class="kpis">
+      <div class="kpi"><span>예산현액</span><b>${won(sumYear(2025, "na"))}</b></div>
+      <div class="kpi"><span>집행액</span><b>${won(P.reduce((a, p) => a + p.exec[2025].spent, 0))}</b></div>
+      <div class="kpi"><span>불용액</span><b class="warn">${won(P.reduce((a, p) => a + p.exec[2025].unused, 0))}</b></div>
+    </div></div>`;
+};
+
+/* 3. 예산 탐색 */
+VIEWS.explore = () => {
+  document.getElementById("view").innerHTML = `
+  <div class="card"><h2>사업 선택</h2>
+    <select id="sel" onchange="openProject(this.value)">
+      <option value="">사업을 고르세요</option>
+      ${P.map(p => `<option value="${p.id}">${esc(p.name)} (${p.field})</option>`).join("")}
+    </select></div>
+  <div id="detail"></div>`;
+};
+function openProject(id) {
+  if (cur !== "explore") { cur = "explore"; drawTabs(); VIEWS.explore(); }
+  document.getElementById("sel").value = id;
+  const p = P.find(x => x.id === id);
+  if (!p) return;
+  const yrs = [2024, 2025, 2026, 2027];
+  const vals = yrs.map(y => p.years[y].gov);
+  const mx = Math.max(...vals);
+  const bars = yrs.map((y, i) => {
+    const h = vals[i] / mx * 120;
+    return `<g transform="translate(${i * 80 + 30},${150 - h})">
+      <rect width="50" height="${h}" fill="var(--accent)" opacity="${y === 2027 ? 1 : .55}"></rect>
+      <text x="25" y="-4" text-anchor="middle">${won(vals[i])}</text>
+      <text x="25" y="${h + 14}" text-anchor="middle">${y}</text></g>`;
+  }).join("");
+  document.getElementById("detail").innerHTML = `
+  <div class="card"><h2>${esc(p.name)}</h2>
+    <div class="sub">${p.ministry} · ${p.field} · 단위 ${D.unit}</div>
+    <svg viewBox="0 0 340 170" width="100%" style="max-width:420px;margin-top:8px">${bars}</svg>
+    <table><tr><th>연도</th><th>정부안</th><th>국회 확정(심의)</th></tr>
+      ${yrs.map(y => `<tr><td>${y}</td><td>${won(p.years[y].gov)}</td><td>${won(p.years[y].na)}</td></tr>`).join("")}
+    </table></div>
+  <div class="card"><h2>집행 이력</h2>
+    <table><tr><th>연도</th><th>예산</th><th>집행</th><th>불용</th><th>집행률</th></tr>
+      ${[2023, 2024, 2025].map(y => { const e = p.exec[y];
+        return `<tr><td>${y}</td><td>${won(e.budget)}</td><td>${won(e.spent)}</td>
+          <td>${won(e.unused)}</td><td class="${e.rate < 80 ? "warn" : ""}">${e.rate}%</td></tr>`; }).join("")}
+    </table></div>
+  <div class="card"><h2>국회 검토 문서 <span class="sub">(문서명·쪽수)</span></h2>
+    ${p.docs.map(d => `<div class="doc"><b>${esc(d.title)}</b> · ${d.page}쪽<br>${esc(d.text)}</div>`).join("")}
+  </div>`;
+  document.getElementById("detail").scrollIntoView({ behavior: "smooth" });
+}
+
+/* 4. 심사 참고: 규칙 기반으로 검토 대상 우선 표시 */
+const RULES = [
+  { id: "low_exec", label: "2025 집행률 80% 미만", test: p => p.exec[2025].rate < 80 },
+  { id: "big_up", label: "2027 정부안 증가율 20% 이상", test: p => chg(p) >= 0.2 },
+  { id: "big_cut", label: "2027 정부안 감소율 20% 이상", test: p => chg(p) <= -0.2 },
+  { id: "repeat_low", label: "2023~2025 집행률 3년 연속 85% 미만", test: p => [2023, 2024, 2025].every(y => p.exec[y].rate < 85) }
+];
+VIEWS.review = () => {
+  const rows = P.map(p => ({ p, hit: RULES.filter(r => r.test(p)) })).filter(x => x.hit.length)
+    .sort((a, b) => b.hit.length - a.hit.length || b.p.years[2027].gov - a.p.years[2027].gov);
+  document.getElementById("view").innerHTML = `
+  <div class="card"><h2>심사 참고: 규칙 기반 검토 대상</h2>
+    <div class="sub">규칙은 참고용입니다. 최종 판단은 심사자가 합니다.</div>
+    <div style="margin-top:8px">${RULES.map(r => `<span class="tag">${r.label}</span>`).join("")}</div></div>
+  <div class="card"><h2>검토 대상 ${rows.length}건 (우선순위순)</h2>
+    ${rows.map(({ p, hit }) => `<div style="padding:8px 0;border-bottom:1px solid var(--line)">
+      <a href="#" onclick="openProject('${p.id}');return false">${esc(p.name)}</a>
+      <span class="sub">${p.field} · 2027 ${won(p.years[2027].gov)} (${pct(chg(p) * 100)})</span><br>
+      ${hit.map(h => `<span class="tag warn">${h.label}</span>`).join("")}</div>`).join("") || "<div class='sub'>해당 없음</div>"}
+  </div>`;
+};
+
+/* 5. 조건으로 찾기: 문장형 조건 -> 필터 */
+VIEWS.filter = () => {
+  document.getElementById("view").innerHTML = `
+  <div class="card"><h2>조건을 문장으로 입력</h2>
+    <div class="row"><input id="cond" placeholder="예: 교육 분야 증가율 10% 이상 집행률 90% 이상"><button class="go" onclick="runFilter()">찾기</button></div>
+    <div class="sub" style="margin-top:8px">지원 조건: 분야명, "증가율 N% 이상/이하", "감소율 N% 이상", "집행률 N% 이상/미만"</div>
+    <div id="fres" style="margin-top:12px"></div></div>`;
+};
+function runFilter() {
+  const s = document.getElementById("cond").value;
+  const conds = [];
+  const field = FIELDS_ALL().find(f => s.includes(f));
+  if (field) conds.push(p => p.field === field);
+  const num = re => { const m = s.match(re); return m ? +m[1] : null; };
+  const up = num(/증가율\s*(\d+)\s*%\s*이상/), down = num(/증가율\s*(\d+)\s*%\s*이하/);
+  const cut = num(/감소율\s*(\d+)\s*%\s*이상/), exMin = num(/집행률\s*(\d+)\s*%\s*이상/);
+  const exLow = num(/집행률\s*(\d+)\s*%\s*미만/);
+  if (up != null) conds.push(p => chg(p) * 100 >= up);
+  if (down != null) conds.push(p => chg(p) * 100 <= down);
+  if (cut != null) conds.push(p => chg(p) * -100 >= cut);
+  if (exMin != null) conds.push(p => p.exec[2025].rate >= exMin);
+  if (exLow != null) conds.push(p => p.exec[2025].rate < exLow);
+  const res = conds.length ? P.filter(p => conds.every(c => c(p))) : [];
+  document.getElementById("fres").innerHTML = conds.length
+    ? `<div class="sub">해석된 조건 ${conds.length}개 · 결과 ${res.length}건</div>` +
+      res.slice(0, 30).map(p => `<div style="padding:6px 0"><a href="#" onclick="openProject('${p.id}');return false">${esc(p.name)}</a>
+        <span class="sub">${p.field} · ${pct(chg(p) * 100)} · 집행률 ${p.exec[2025].rate}%</span></div>`).join("")
+    : "<div class='sub'>조건을 인식하지 못했습니다. 예시 문장을 참고하세요.</div>";
+}
+const FIELDS_ALL = () => [...new Set(P.map(p => p.field))];
+
+/* 6. AI에게 묻기: 문서 검색 + (선택) Upstage Solar 호출 */
+const STOP = new Set(["은", "는", "이", "가", "을", "를", "의", "에", "와", "과", "도", "로", "으로", "어떻게", "무엇", "있나요", "뭐야"]);
+function tokens(s) { return s.toLowerCase().split(/[\s,?.!·]+/).filter(t => t && !STOP.has(t)); }
+function retrieve(q, k = 3) {
+  const qt = tokens(q);
+  const chunks = [];
+  P.forEach(p => p.docs.forEach(d => chunks.push({ p, d, text: `${p.name} ${p.field} ${p.ministry} ${d.text}` })));
+  return chunks.map(c => ({ ...c, score: qt.reduce((a, t) => a + (c.text.toLowerCase().includes(t) ? 1 : 0), 0) }))
+    .filter(c => c.score > 0).sort((a, b) => b.score - a.score).slice(0, k);
+}
+VIEWS.ask = () => {
+  document.getElementById("view").innerHTML = `
+  <div class="card"><h2>국회 검토 문서 기반 질문</h2>
+    <div class="row"><input id="aq" placeholder="예: 기초연금 증액 사유는?" onkeydown="if(event.key==='Enter')ask()"><button class="go" onclick="ask()">질문</button></div>
+    <details style="margin-top:10px"><summary class="sub">AI 답변 사용 (선택: Upstage API 키 입력 시 요약 생성)</summary>
+      <input id="akey" type="password" placeholder="API 키는 저장되지 않고 이 창을 닫으면 사라집니다" style="margin-top:8px">
+      <input id="amodel" value="solar-pro2" style="margin-top:6px"></details>
+    <div id="ans" style="margin-top:12px"></div></div>`;
+};
+async function ask() {
+  const q = document.getElementById("aq").value.trim();
+  if (!q) return;
+  const hits = retrieve(q);
+  const box = document.getElementById("ans");
+  if (!hits.length) { box.innerHTML = "<div class='sub'>관련 문서를 찾지 못했습니다.</div>"; return; }
+  const cite = hits.map(h => `<div class="doc"><b>${esc(h.d.title)}</b> · ${h.d.page}쪽<br>${esc(h.d.text)}</div>`).join("");
+  const key = document.getElementById("akey").value.trim();
+  if (!key) { box.innerHTML = `<div class="sub">근거 문서 (AI 요약 미사용)</div>${cite}`; return; }
+  box.innerHTML = `<div class="sub">요약 생성 중…</div>`;
+  try {
+    const r = await fetch("https://api.upstage.ai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: document.getElementById("amodel").value,
+        messages: [
+          { role: "system", content: "제공된 문서 발췌만 근거로 답하고, 근거가 없으면 없다고 말하세요. 문서명과 쪽수를 인용하세요." },
+          { role: "user", content: "질문: " + q + "\n\n문서:\n" + hits.map(h => `[${h.d.title}, ${h.d.page}쪽] ${h.d.text}`).join("\n") }
+        ]
+      })
+    });
+    const j = await r.json();
+    const text = j.choices ? j.choices[0].message.content : JSON.stringify(j);
+    box.innerHTML = `<div class="doc">${esc(text)}</div><div class="sub">근거</div>${cite}`;
+  } catch (e) {
+    box.innerHTML = `<div class="warn">요약 호출 실패: ${esc(e.message)}</div>${cite}`;
+  }
+}
+
+/* 7. 삶의 질 지표 (부가 메뉴) */
+VIEWS.quality = () => {
+  const q = [...D.quality].sort((a, b) => b.rate - a.rate);
+  document.getElementById("view").innerHTML = `
+  <div class="card"><h2>시군구 삶의 질 지표 <span class="sub">(샘플)</span></h2>
+    <table><tr><th>시군구</th><th>지표 A(%)</th><th>지표 B(만원)</th></tr>
+    ${q.map((c, i) => `<tr><td>${i + 1}. ${esc(c.name)}</td><td>${c.rate}</td><td>${won(c.income)}</td></tr>`).join("")}
+    </table></div>`;
+};
+
+drawTabs();
+VIEWS.home();
+</script>
+</body>
+</html>
