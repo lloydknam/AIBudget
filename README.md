@@ -9,15 +9,20 @@
 
 ## 실데이터로 바꾸기
 1. 열린재정 Open API 인증키를 발급받습니다.
-2. `scripts/fetch_openfiscal.py`의 `ENDPOINTS`, `FIELD_MAP`, 응답 파싱을 **명세서에 맞춰** 채웁니다. (이 뼈대는 엔드포인트를 검증하지 않은 상태입니다.)
-3. 국회 검토보고서·사업설명자료는 PDF를 텍스트로 추출해 `docs` 배열에 넣습니다 (쪽수 포함).
-4. 실행:
+2. 먼저 키 구조만 확인합니다 (행 키 목록 출력):
    ```
    export OPENFISCAL_KEY=발급키
+   python scripts/fetch_openfiscal.py --year 2027 --inspect
+   ```
+3. 출력된 키 이름을 `scripts/fetch_openfiscal.py`의 `AMOUNT_FIELDS`에 채웁니다. 금액 필드명은 아직 확인되지 않은 상태입니다.
+4. 수집 실행 후 화면 생성:
+   ```
    python scripts/fetch_openfiscal.py --year 2027
    python scripts/build.py
    ```
-5. 수집이 끝나면 `data/budget.js`가 갱신되고, 샘플 안내 문구는 `index.html` 상단에서 지웁니다.
+5. 국회 검토보고서·사업설명자료는 PDF를 텍스트로 추출해 `docs` 배열에 넣습니다 (쪽수 포함).
+
+**현재 한계:** 수집 스크립트는 2027 정부안만 채웁니다. 국회 확정액, 집행 이력, 검토문서는 아직 연결되지 않았고, 화면은 이 항목들을 기대하므로 실데이터를 넣으면 일부 화면이 오류가 날 수 있습니다.
 
 ## 구조
 - `data/budget.json`: 원본 데이터 (사업별 정부안·국회확정·집행, 검토문서)
