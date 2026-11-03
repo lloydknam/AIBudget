@@ -100,6 +100,11 @@ const unitOf = p => (p.unit != null && U[p.unit]) || null;
 const E = (p, y) => { const u = unitOf(p); const v = u && u.years[y]; return v ? { budget: v.cur, spent: v.spent, carry: v.carry, unused: v.unused, rate: v.rate } : (p.exec && p.exec[y]) || null; };
 const EXEC_LAST = (D.exec_years || []).slice(-1)[0] || CUR - 2;
 const idle = e => e && e.budget > 0 ? (e.carry + e.unused) / e.budget * 100 : null;  // 이월+불용 비율
+// 금융·내부거래성 단위사업 (원리금 상환, 예탁·예수, 회계·기금 간 전출입): 집행 부진 판단에서 제외
+const FIN_RE = /(원금상환|이자상환|원리금|예탁|예수|전출|전입|회계간|기금간|내부거래|차입금|국공채|국채)/;
+const isFin = u => !!u && FIN_RE.test(u.activity);
+const isFundUnit = u => u.funds.length > 0 && u.funds.every(f => /기금/.test(f));
+const Eb = (p, y) => isFin(unitOf(p)) ? null : E(p, y);   // 심사 규칙용 (금융·내부거래 제외)
 // 연도별 대표값: 국회 확정이 있으면 확정, 없으면 정부안
 const amt = (p, y) => { const v = Y(p, y); return v.na != null ? v.na : v.gov; };
 const base = p => Y(p, PREV).na;           // 비교 기준: 전년도 국회 확정
@@ -201,13 +206,18 @@ VIEWS.overview = () => {
 function execSummary() {
   if (!U.length) return `<div class="card"><h2>결산 요약</h2><div class="sub">결산(집행·이월·불용) 데이터는 아직 연결 전입니다.</div></div>`;
   const ey = D.exec_years;
-  const sum = (y, k) => U.reduce((a, u) => a + ((u.years[y] || {})[k] || 0), 0);
-  const top = U.filter(u => u.years[EXEC_LAST]).sort((a, b) => b.years[EXEC_LAST].unused - a.years[EXEC_LAST].unused).slice(0, 10);
-  return `<div class="card"><h2>결산 요약 <span class="sub">(세출·지출, 여유자금 운용 제외)</span></h2>
+  const table = (label, sel) => {
+    const sum = (y, k) => U.reduce((a, u) => a + (sel(u) ? ((u.years[y] || {})[k] || 0) : 0), 0);
+    return `<tr><td colspan="6" style="text-align:left;padding-top:12px"><b>${label}</b></td></tr>` + ey.map(y => { const c = sum(y, "cur"), s = sum(y, "spent");
+      return `<tr><td>${y}</td><td>${jo(c)}</td><td>${jo(s)}</td><td>${jo(sum(y, "carry"))}</td><td class="warn">${jo(sum(y, "unused"))}</td><td>${(s / c * 100).toFixed(1)}%</td></tr>`; }).join("");
+  };
+  const top = U.filter(u => u.years[EXEC_LAST] && !isFin(u)).sort((a, b) => b.years[EXEC_LAST].unused - a.years[EXEC_LAST].unused).slice(0, 10);
+  return `<div class="card"><h2>결산 요약</h2>
+    <div class="sub">기금은 원리금 상환·예탁 같은 금융 거래가 섞여 있어 회계와 나눠 봅니다. 기금 여유자금 운용은 제외했습니다.</div>
     <table><tr><th>연도</th><th>예산현액</th><th>지출</th><th>이월</th><th>불용</th><th>집행률</th></tr>
-    ${ey.map(y => { const c = sum(y, "cur"), s = sum(y, "spent"); return `<tr><td>${y}</td><td>${jo(c)}</td><td>${jo(s)}</td><td>${jo(sum(y, "carry"))}</td><td class="warn">${jo(sum(y, "unused"))}</td><td>${(s / c * 100).toFixed(1)}%</td></tr>`; }).join("")}
+    ${table("일반·특별회계", u => !isFundUnit(u))}${table("기금", isFundUnit)}
     </table></div>
-  <div class="card"><h2>${EXEC_LAST} 불용액 큰 단위사업 <span class="sub">(억원)</span></h2>
+  <div class="card"><h2>${EXEC_LAST} 불용액 큰 단위사업 <span class="sub">(억원, 금융·내부거래 제외)</span></h2>
     ${top.map(u => { const v = u.years[EXEC_LAST]; return `<div class="item"><b>${esc(u.activity)}</b> <span class="sub">${esc(u.ministry)} · ${esc(u.program)}</span><br>
       <span class="sub">현액 ${won(v.cur)} · 지출 ${won(v.spent)} · 이월 ${won(v.carry)} · <span class="warn">불용 ${won(v.unused)}</span> · 집행률 ${v.rate.toFixed(1)}%</span></div>`; }).join("")}</div>`;
 }
@@ -267,9 +277,9 @@ const RULES = [
   { label: "전년 대비 30% 이상 감소 (100억 이상)", test: p => chg(p) <= -0.3 && base(p) >= 100 },
   { label: "전년 대비 1,000억 이상 감소", test: p => diff(p) <= -1000 },
   { label: `${PREV} 국회에서 10% 이상 증액된 사업`, test: p => { const v = Y(p, PREV); return v.gov > 0 && v.na >= v.gov * 1.1 && v.na - v.gov >= 10; } },
-  { label: `${EXEC_LAST} 단위사업 집행률 80% 미만 (현액 100억 이상)`, test: p => { const e = E(p, EXEC_LAST); return e && e.rate != null && e.rate < 80 && e.budget >= 100; } },
-  { label: `${EXEC_LAST - 1}·${EXEC_LAST} 2년 연속 이월+불용 20% 이상`, test: p => [EXEC_LAST - 1, EXEC_LAST].every(y => { const e = E(p, y); return e && e.budget >= 100 && idle(e) >= 20; }) },
-  { label: `${EXEC_LAST} 집행률 90% 미만인데 ${CUR} 증액`, test: p => { const e = E(p, EXEC_LAST); return e && e.rate != null && e.rate < 90 && e.budget >= 100 && diff(p) > 0 && chg(p) > 0.05; } },
+  { label: `${EXEC_LAST} 단위사업 집행률 80% 미만 (현액 100억 이상)`, test: p => { const e = Eb(p, EXEC_LAST); return e && e.rate != null && e.rate < 80 && e.budget >= 100; } },
+  { label: `${EXEC_LAST - 1}·${EXEC_LAST} 2년 연속 이월+불용 20% 이상`, test: p => [EXEC_LAST - 1, EXEC_LAST].every(y => { const e = Eb(p, y); return e && e.budget >= 100 && idle(e) >= 20; }) },
+  { label: `${EXEC_LAST} 집행률 90% 미만인데 ${CUR} 증액`, test: p => { const e = Eb(p, EXEC_LAST); return e && e.rate != null && e.rate < 90 && e.budget >= 100 && diff(p) > 0 && chg(p) > 0.05; } },
 ];
 VIEWS.review = () => {
   const hits = P.map(p => ({ p, hit: RULES.filter(r => r.test(p)) })).filter(x => x.hit.length)
