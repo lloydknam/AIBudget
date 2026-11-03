@@ -1,0 +1,32 @@
+name: 키 구조 확인
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "회계연도"
+        required: false
+        default: "2027"
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 열린재정 응답 키 확인
+        env:
+          OPENFISCAL_KEY: ${{ secrets.OPENFISCAL_KEY }}
+        run: |
+          if [ -z "$OPENFISCAL_KEY" ]; then
+            echo "OPENFISCAL_KEY 비밀값이 없습니다. Settings → Secrets and variables → Actions 에서 등록하세요."
+            exit 1
+          fi
+          python scripts/fetch_openfiscal.py --year "${{ inputs.year }}" --inspect
