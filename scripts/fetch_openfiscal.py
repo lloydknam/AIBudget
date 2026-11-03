@@ -21,6 +21,7 @@
 """
 import argparse
 import json
+import re
 import os
 import sys
 import urllib.parse
@@ -64,7 +65,10 @@ def call(code: str, key: str, **params) -> list[dict]:
         try:
             body = json.loads(raw)
         except json.JSONDecodeError:
-            sys.exit(f"[{code}] JSON이 아닌 응답 (HTTP {status}). 응답 앞부분: {raw[:300]!r}")
+            text = re.sub(r"<style.*?</style>|<script.*?</script>", " ", raw, flags=re.S)
+            text = re.sub(r"<[^>]+>", " ", text)
+            text = re.sub(r"\s+", " ", text).strip()
+            sys.exit(f"[{code}] JSON이 아닌 응답 (HTTP {status}). 페이지 문구: {text[:500]}")
         if isinstance(body, str):          # 레퍼런스처럼 이중 인코딩된 경우
             body = json.loads(body)
         if code not in body:               # 오류 응답
