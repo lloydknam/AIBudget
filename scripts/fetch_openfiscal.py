@@ -33,17 +33,19 @@ EXEC_CODE = "FSCPGMEXEC"
 PAGE_SIZE = 1000
 OUT = Path(__file__).resolve().parent.parent / "data" / "budget.json"
 
-# 내부 필드 -> 실제 row 키. 첫 실행(--inspect) 결과를 보고 채우세요. 비어 있으면 실행이 멈춥니다.
-AMOUNT_FIELDS = {
-    "gov_amount": "",     # 정부안 금액 필드
-    "na_amount": "",      # 국회 확정 금액 필드
-    "project_name": "",   # 세부사업명 필드 (예: SACTV_NM 추정, 확인 필요)
-    "field_name": "",     # 분야명 필드 (예: FLD_NM 추정, 확인 필요)
-    "ministry_name": "",  # 소관명 필드 (예: OFFC_NM 추정, 확인 필요)
-    "program_code": "",   # 집행 조회용 사업 코드 필드
-    "spent": "",          # 집행(지출) 필드
-    "unused": "",         # 불용 필드
+# 확인된 실제 row 키 (2027 응답으로 검증)
+FIELD = {
+    "ministry": "OFFC_NM",   # 소관
+    "fund": "FSCL_NM",       # 회계
+    "field": "FLD_NM",       # 분야
+    "sector": "SECT_NM",     # 부문
+    "program": "PGM_NM",     # 프로그램
+    "activity": "ACTV_NM",   # 단위사업
+    "project": "SACTV_NM",   # 세부사업
+    "amount": "Y_YY_MEDI_KCUR_AMT",          # 금액 (정부안으로 추정)
+    "amount_alt": "Y_YY_DFN_MEDI_KCUR_AMT",  # 금액 (국회 확정으로 추정, 2026으로 검증 중)
 }
+UNIT_DIVISOR = 100000  # 천원 -> 억원 (천원 단위 추정, 결과 합계로 검증)
 
 
 def call(code: str, key: str, **params) -> list[dict]:
@@ -99,32 +101,41 @@ def main():
     if not key:
         sys.exit("OPENFISCAL_KEY 환경변수가 없습니다.")
 
-    budget_rows = call(BUDGET_CODE, key, FSCL_YY=args.year)
-    inspect(budget_rows, f"{BUDGET_CODE} {args.year}")
-    if args.inspect:
-        return
+    summary = {}
+    all_projects = {}
+    for year in (args.year - 1, args.year):
+        rows = call(BUDGET_CODE, key, FSCL_YY=year)
+        if year == args.year:
+            inspect(rows, f"{BUDGET_CODE} {year}")
+            if args.inspect:
+                return
+        print(f"\n[{year}] 행 수 {len(rows)}")
+        gov_sum = sum(to_num(r.get(FIELD["amount"])) or 0 for r in rows)
+        alt_sum = sum(to_num(r.get(FIELD["amount_alt"])) or 0 for r in rows)
+        print(f"  {FIELD['amount']} 합계: {gov_sum:,} (천원 가정 시 약 {gov_sum/UNIT_DIVISOR:,.0f}억원)")
+        print(f"  {FIELD['amount_alt']} 합계: {alt_sum:,} (0이 아니면 확정액 후보)")
+        for r in rows:
+            k = (r.get(FIELD["ministry"]), r.get(FIELD["fund"]), r.get(FIELD["field"]),
+                 r.get(FIELD["sector"]), r.get(FIELD["program"]), r.get(FIELD["activity"]),
+                 r.get(FIELD["project"]))
+            pj = all_projects.setdefault(k, {
+                "id": "", "name": r.get(FIELD["project"]) or "", "field": r.get(FIELD["field"]) or "",
+                "ministry": r.get(FIELD["ministry"]) or "", "years": {}, "exec": {}, "docs": []})
+            y = pj["years"].setdefault(str(year), {"gov": 0, "na": 0})
+            y["gov"] += (to_num(r.get(FIELD["amount"])) or 0)
+            y["na"] += (to_num(r.get(FIELD["amount_alt"])) or 0)
 
-    missing = [k for k, v in AMOUNT_FIELDS.items() if not v]
-    if missing:
-        sys.exit(f"AMOUNT_FIELDS가 비어 있습니다: {missing}. --inspect 결과로 채운 뒤 다시 실행하세요.")
-
-    # 변환: 세부사업 단위로 묶고, 연도별 정부안만 우선 채움 (국회 확정·집행은 후속 작업)
-    m = AMOUNT_FIELDS
     projects = []
-    for i, r in enumerate(budget_rows):
-        projects.append({
-            "id": f"B{i+1:05d}",
-            "name": str(r.get(m["project_name"], "")),
-            "field": str(r.get(m["field_name"], "")),
-            "ministry": str(r.get(m["ministry_name"], "")),
-            "years": {str(args.year): {"gov": to_num(r.get(m["gov_amount"])), "na": None}},
-            "exec": {},
-            "docs": [],
-        })
+    for i, pj in enumerate(all_projects.values()):
+        pj["id"] = f"B{i+1:05d}"
+        for y in pj["years"].values():
+            y["gov"] = round(y["gov"] / UNIT_DIVISOR)
+            y["na"] = round(y["na"] / UNIT_DIVISOR)
+        projects.append(pj)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps({"notice": "", "unit": "억원", "projects": projects, "quality": []},
+    OUT.write_text(json.dumps({"notice": "", "unit": "억원 (천원 가정)", "projects": projects, "quality": []},
                               ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"저장: {OUT} ({len(projects)}건). 집행·검토문서·국회 확정은 아직 채워지지 않았습니다.")
+    print(f"\n저장: {OUT} ({len(projects)}개 세부사업, 연도 {args.year-1}·{args.year}). 집행·검토문서는 아직 없음.")
 
 
 def to_num(v):

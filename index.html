@@ -55,8 +55,12 @@ const P = D.projects;
 const won = n => n == null ? "-" : Number(n).toLocaleString("ko-KR");
 const pct = n => (n == null || isNaN(n)) ? "-" : (n > 0 ? "+" : "") + n.toFixed(1) + "%";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const chg = p => p.years[2027].gov / p.years[2026].na - 1;   // 2027 정부안 vs 2026 국회 확정
-const sumYear = (y, key) => P.reduce((a, p) => a + (p.years[y] && p.years[y][key] || 0), 0);
+const chg = p => safeDiv(Y(p, 2027).gov, Y(p, 2026).na) - 1;   // 2027 정부안 vs 2026 국회 확정
+const Y = (p, y) => (p.years && p.years[y]) || { gov: 0, na: 0 };
+const E = (p, y) => (p.exec && p.exec[y]) || { budget: 0, spent: 0, unused: 0, rate: null };
+const rateOf = (p, y) => { const r = E(p, y).rate; return r == null ? null : r; };
+const safeDiv = (a, b) => (b ? a / b : NaN);
+const sumYear = (y, key) => P.reduce((a, p) => a + (Y(p, y) && Y(p, y)[key] || 0), 0);
 
 const TABS = [
   ["home", "홈"], ["overview", "한눈에 보기"], ["explore", "예산 탐색"], ["review", "심사 참고"],
@@ -87,7 +91,7 @@ VIEWS.home = () => {
   <div class="card"><h2>규모 큰 사업 Top 5 (2027 정부안)</h2>
     <table><tr><th>사업</th><th>2027</th><th>증감</th></tr>
     ${top.map(p => `<tr><td><a href="#" onclick="openProject('${p.id}');return false">${esc(p.name)}</a></td>
-      <td>${won(p.years[2027].gov)}</td><td class="${chg(p) > 0 ? "warn" : "ok"}">${pct(chg(p) * 100)}</td></tr>`).join("")}
+      <td>${won(Y(p, 2027).gov)}</td><td class="${chg(p) > 0 ? "warn" : "ok"}">${pct(chg(p) * 100)}</td></tr>`).join("")}
     </table></div>
   <div class="card"><h2>사업 검색</h2>
     <input id="q" placeholder="사업명 또는 분야 입력 (예: 기초연금, 교육)" oninput="searchHome(this.value)">
@@ -106,8 +110,8 @@ VIEWS.overview = () => {
   const fields = {};
   P.forEach(p => {
     const f = fields[p.field] = fields[p.field] || { g26: 0, g27: 0, ex25: 0, bud25: 0 };
-    f.g26 += p.years[2026].na; f.g27 += p.years[2027].gov;
-    f.ex25 += p.exec[2025].spent; f.bud25 += p.exec[2025].budget;
+    f.g26 += Y(p, 2026).na; f.g27 += Y(p, 2027).gov;
+    f.ex25 += E(p, 2025).spent; f.bud25 += E(p, 2025).budget;
   });
   const rows = Object.entries(fields).sort((a, b) => b[1].g27 - a[1].g27);
   const max = Math.max(...rows.map(r => r[1].g27));
@@ -123,8 +127,8 @@ VIEWS.overview = () => {
   <div class="card"><h2>2025 결산 요약 <span class="sub">(샘플)</span></h2>
     <div class="kpis">
       <div class="kpi"><span>예산현액</span><b>${won(sumYear(2025, "na"))}</b></div>
-      <div class="kpi"><span>집행액</span><b>${won(P.reduce((a, p) => a + p.exec[2025].spent, 0))}</b></div>
-      <div class="kpi"><span>불용액</span><b class="warn">${won(P.reduce((a, p) => a + p.exec[2025].unused, 0))}</b></div>
+      <div class="kpi"><span>집행액</span><b>${won(P.reduce((a, p) => a + E(p, 2025).spent, 0))}</b></div>
+      <div class="kpi"><span>불용액</span><b class="warn">${won(P.reduce((a, p) => a + E(p, 2025).unused, 0))}</b></div>
     </div></div>`;
 };
 
@@ -144,7 +148,7 @@ function openProject(id) {
   const p = P.find(x => x.id === id);
   if (!p) return;
   const yrs = [2024, 2025, 2026, 2027];
-  const vals = yrs.map(y => p.years[y].gov);
+  const vals = yrs.map(y => Y(p, y).gov);
   const mx = Math.max(...vals);
   const bars = yrs.map((y, i) => {
     const h = vals[i] / mx * 120;
@@ -158,13 +162,13 @@ function openProject(id) {
     <div class="sub">${p.ministry} · ${p.field} · 단위 ${D.unit}</div>
     <svg viewBox="0 0 340 170" width="100%" style="max-width:420px;margin-top:8px">${bars}</svg>
     <table><tr><th>연도</th><th>정부안</th><th>국회 확정(심의)</th></tr>
-      ${yrs.map(y => `<tr><td>${y}</td><td>${won(p.years[y].gov)}</td><td>${won(p.years[y].na)}</td></tr>`).join("")}
+      ${yrs.map(y => `<tr><td>${y}</td><td>${won(Y(p, y).gov)}</td><td>${won(Y(p, y).na)}</td></tr>`).join("")}
     </table></div>
   <div class="card"><h2>집행 이력</h2>
     <table><tr><th>연도</th><th>예산</th><th>집행</th><th>불용</th><th>집행률</th></tr>
-      ${[2023, 2024, 2025].map(y => { const e = p.exec[y];
+      ${[2023, 2024, 2025].map(y => { const e = E(p, y);
         return `<tr><td>${y}</td><td>${won(e.budget)}</td><td>${won(e.spent)}</td>
-          <td>${won(e.unused)}</td><td class="${e.rate < 80 ? "warn" : ""}">${e.rate}%</td></tr>`; }).join("")}
+          <td>${won(e.unused)}</td><td class="${e.rate != null && e.rate < 80 ? "warn" : ""}">${e.rate == null ? "-" : e.rate + "%"}</td></tr>`; }).join("")}
     </table></div>
   <div class="card"><h2>국회 검토 문서 <span class="sub">(문서명·쪽수)</span></h2>
     ${p.docs.map(d => `<div class="doc"><b>${esc(d.title)}</b> · ${d.page}쪽<br>${esc(d.text)}</div>`).join("")}
@@ -174,14 +178,14 @@ function openProject(id) {
 
 /* 4. 심사 참고: 규칙 기반으로 검토 대상 우선 표시 */
 const RULES = [
-  { id: "low_exec", label: "2025 집행률 80% 미만", test: p => p.exec[2025].rate < 80 },
+  { id: "low_exec", label: "2025 집행률 80% 미만", test: p => rateOf(p, 2025) < 80 },
   { id: "big_up", label: "2027 정부안 증가율 20% 이상", test: p => chg(p) >= 0.2 },
   { id: "big_cut", label: "2027 정부안 감소율 20% 이상", test: p => chg(p) <= -0.2 },
-  { id: "repeat_low", label: "2023~2025 집행률 3년 연속 85% 미만", test: p => [2023, 2024, 2025].every(y => p.exec[y].rate < 85) }
+  { id: "repeat_low", label: "2023~2025 집행률 3년 연속 85% 미만", test: p => [2023, 2024, 2025].every(y => rateOf(p, y) < 85) }
 ];
 VIEWS.review = () => {
   const rows = P.map(p => ({ p, hit: RULES.filter(r => r.test(p)) })).filter(x => x.hit.length)
-    .sort((a, b) => b.hit.length - a.hit.length || b.p.years[2027].gov - a.p.years[2027].gov);
+    .sort((a, b) => b.hit.length - a.hit.length || Y(b.p, 2027).gov - Y(a.p, 2027).gov);
   document.getElementById("view").innerHTML = `
   <div class="card"><h2>심사 참고: 규칙 기반 검토 대상</h2>
     <div class="sub">규칙은 참고용입니다. 최종 판단은 심사자가 합니다.</div>
@@ -189,7 +193,7 @@ VIEWS.review = () => {
   <div class="card"><h2>검토 대상 ${rows.length}건 (우선순위순)</h2>
     ${rows.map(({ p, hit }) => `<div style="padding:8px 0;border-bottom:1px solid var(--line)">
       <a href="#" onclick="openProject('${p.id}');return false">${esc(p.name)}</a>
-      <span class="sub">${p.field} · 2027 ${won(p.years[2027].gov)} (${pct(chg(p) * 100)})</span><br>
+      <span class="sub">${p.field} · 2027 ${won(Y(p, 2027).gov)} (${pct(chg(p) * 100)})</span><br>
       ${hit.map(h => `<span class="tag warn">${h.label}</span>`).join("")}</div>`).join("") || "<div class='sub'>해당 없음</div>"}
   </div>`;
 };
@@ -214,13 +218,13 @@ function runFilter() {
   if (up != null) conds.push(p => chg(p) * 100 >= up);
   if (down != null) conds.push(p => chg(p) * 100 <= down);
   if (cut != null) conds.push(p => chg(p) * -100 >= cut);
-  if (exMin != null) conds.push(p => p.exec[2025].rate >= exMin);
-  if (exLow != null) conds.push(p => p.exec[2025].rate < exLow);
+  if (exMin != null) conds.push(p => rateOf(p, 2025) >= exMin);
+  if (exLow != null) conds.push(p => rateOf(p, 2025) < exLow);
   const res = conds.length ? P.filter(p => conds.every(c => c(p))) : [];
   document.getElementById("fres").innerHTML = conds.length
     ? `<div class="sub">해석된 조건 ${conds.length}개 · 결과 ${res.length}건</div>` +
       res.slice(0, 30).map(p => `<div style="padding:6px 0"><a href="#" onclick="openProject('${p.id}');return false">${esc(p.name)}</a>
-        <span class="sub">${p.field} · ${pct(chg(p) * 100)} · 집행률 ${p.exec[2025].rate}%</span></div>`).join("")
+        <span class="sub">${p.field} · ${pct(chg(p) * 100)} · 집행률 ${rateOf(p, 2025) ?? "-"}${rateOf(p, 2025) == null ? "" : "%"}</span></div>`).join("")
     : "<div class='sub'>조건을 인식하지 못했습니다. 예시 문장을 참고하세요.</div>";
 }
 const FIELDS_ALL = () => [...new Set(P.map(p => p.field))];
