@@ -4,27 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>예산 지도</title>
+<meta name="theme-color" content="#0b0d12">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
-:root{--bg:#f5f6f9;--card:#fff;--ink:#141a2b;--sub:#5f6779;--line:#e2e5ee;--accent:#2b4acb;
-  --d0:#1e3f9a;--d0f:#fff;--d1:#4f7fe0;--d1f:#fff;--d2:#c4d7fb;--d2f:#14234a;
-  --dm:#e9ebf1;--dmf:#141a2b;
-  --u2:#fbd2c3;--u2f:#5a1d0e;--u1:#f08a62;--u1f:#2e0c04;--u0:#c93a24;--u0f:#fff}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#10131b;--card:#181d2a;--ink:#eceff7;--sub:#9aa3b8;--line:#2a3144;--accent:#8ea6ff;
-  --d0:#7fb0ff;--d0f:#06142b;--d1:#3566c9;--d1f:#fff;--d2:#1c3262;--d2f:#d6e4ff;
-  --dm:#2a2f3e;--dmf:#eceff7;
-  --u2:#6e2c1d;--u2f:#ffe2d6;--u1:#c9573b;--u1f:#fff;--u0:#f26b52;--u0f:#2b0a04}}
-:root[data-theme="dark"]{--bg:#10131b;--card:#181d2a;--ink:#eceff7;--sub:#9aa3b8;--line:#2a3144;--accent:#8ea6ff;
-  --d0:#7fb0ff;--d0f:#06142b;--d1:#3566c9;--d1f:#fff;--d2:#1c3262;--d2f:#d6e4ff;
-  --dm:#2a2f3e;--dmf:#eceff7;
-  --u2:#6e2c1d;--u2f:#ffe2d6;--u1:#c9573b;--u1f:#fff;--u0:#f26b52;--u0f:#2b0a04}
+:root{color-scheme:dark;--bg:#0b0d12;--card:#141821;--ink:#f2f4f8;--sub:#8b93a7;--line:#222835;--accent:#7c9cff;
+  --d0:#4c8dff;--d0f:#04122e;--d1:#2456b8;--d1f:#e6efff;--d2:#1a2f5c;--d2f:#cfe0ff;
+  --dm:#222835;--dmf:#dfe4ee;
+  --u2:#5a2a20;--u2f:#ffd9cf;--u1:#c4472e;--u1f:#fff;--u0:#ff6a45;--u0f:#200600}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden}
-body{background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Malgun Gothic",sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 "Pretendard Variable",Pretendard,system-ui,-apple-system,"Malgun Gothic",sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}
 button{font:inherit;color:inherit}
 /* 상단: 연도 + 합계 */
 .top{flex:none;display:flex;align-items:center;gap:8px;padding:8px 0 6px}
 .top .t{flex:1;min-width:0}
-.top .t b{font-size:19px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.top .t b{font-size:23px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
 .top .t span{display:block;font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .years{flex:none;display:flex;border:1px solid var(--line);border-radius:999px;background:var(--card);padding:2px}
 .years button{border:0;background:none;padding:5px 8px;border-radius:999px;font-size:12.5px;color:var(--sub);cursor:pointer;line-height:1.2;font-variant-numeric:tabular-nums}
@@ -40,13 +35,14 @@ button{font:inherit;color:inherit}
 .crumb li:last-child button{color:var(--ink);font-weight:700;cursor:default}
 .crumb .lv{flex:none;font-size:11px;color:var(--accent);font-weight:700;padding:2px 7px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
 /* 본문: 남은 높이를 전부 씀 */
-.stage{flex:1 1 auto;min-height:0;position:relative;margin:4px 0 6px;border-radius:12px;overflow:hidden;background:var(--card);border:1px solid var(--line)}
+.stage{flex:1 1 auto;min-height:0;position:relative;margin:4px 0 6px;border-radius:14px;overflow:hidden}
 .map{position:absolute;inset:0}
-.tile{position:absolute;margin:0;border:1.5px solid var(--card);border-radius:3px;padding:5px 6px;text-align:left;cursor:pointer;overflow:hidden;line-height:1.2;-webkit-tap-highlight-color:transparent}
+.tile{position:absolute;margin:0;border:2px solid var(--bg);border-radius:12px;padding:8px 9px;text-align:left;cursor:pointer;overflow:hidden;line-height:1.2;-webkit-tap-highlight-color:transparent}
 .tile b{display:block;font-size:12.5px;font-weight:700;word-break:keep-all;overflow-wrap:anywhere}
 .tile span{display:block;font-size:11px;font-variant-numeric:tabular-nums;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tile.big b{font-size:16px}.tile.big span{font-size:13px}
-.tile.tiny{padding:0}
+.tile.big b{font-size:17px}.tile.big span{font-size:13px}
+.tile.tiny{padding:0;border-width:1px;border-radius:4px}
+.tile.mid{border-radius:8px;padding:5px 6px}
 .tile:focus-visible,.rowbtn:focus-visible,.years button:focus-visible,.crumb button:focus-visible,.seg button:focus-visible,.back:focus-visible{outline:3px solid var(--accent);outline-offset:-2px;z-index:3}
 .c-d0{background:var(--d0);color:var(--d0f)}.c-d1{background:var(--d1);color:var(--d1f)}.c-d2{background:var(--d2);color:var(--d2f)}
 .c-m{background:var(--dm);color:var(--dmf)}
@@ -56,7 +52,7 @@ button{font:inherit;color:inherit}
 #lvname .seg{position:static;flex:none}
 .seg button{border:0;background:none;padding:4px 9px;font-size:12px;color:var(--sub);cursor:pointer}
 .seg button.on{background:var(--ink);color:var(--bg)}
-.list{position:absolute;inset:0;overflow-y:auto;padding:4px 0;-webkit-overflow-scrolling:touch}
+.list{background:var(--card);border-radius:14px;position:absolute;inset:0;overflow-y:auto;padding:4px 0;-webkit-overflow-scrolling:touch}
 .rowbtn{display:grid;grid-template-columns:10px 1fr auto;gap:2px 10px;align-items:center;width:100%;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;padding:8px 12px;cursor:pointer}
 .rowbtn .sw{width:10px;height:10px;border-radius:2px}
 .rowbtn .nm{font-size:13.5px;font-weight:600;word-break:keep-all;line-height:1.3}
@@ -65,7 +61,7 @@ button{font:inherit;color:inherit}
 .rowbtn .bar{grid-column:2 / 4;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
 .rowbtn .bar i{display:block;height:100%;background:var(--sub)}
 /* 세부사업 상세 */
-.detail{position:absolute;inset:0;padding:14px 14px 10px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.detail{background:var(--card);border-radius:14px;position:absolute;inset:0;padding:14px 14px 10px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
 .detail h2{margin:0;font-size:18px;line-height:1.3;letter-spacing:-.01em;word-break:keep-all}
 .detail .meta{font-size:12.5px;color:var(--sub)}
 .detail dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0;font-size:12.5px}
@@ -81,11 +77,13 @@ button{font:inherit;color:inherit}
 .detail .empty{font-size:12.5px;color:var(--sub);background:var(--bg);border-radius:8px;padding:8px 10px}
 /* 하단 */
 .foot{flex:none;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);padding:0 2px 8px;min-height:26px}
-.foot .src{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.foot .src button{border:0;background:none;padding:0;color:var(--accent);cursor:pointer;font-size:11px}
-.logo{font-family:"D-DIN","DIN Alternate","Bahnschrift","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.14em;color:var(--ink);font-size:10.5px;text-decoration:none;white-space:nowrap}
+.foot .src{flex:1;min-width:0;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden}
+.foot .src i{flex:none;width:10px;height:9px;border-radius:2px;display:block}
+.foot .src .sc{display:flex;gap:2px}
+#aboutBtn{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:2px 8px;color:var(--sub);cursor:pointer;font-size:11px}
+.logo{font-family:"D-DIN","DIN Alternate","Bahnschrift","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.1em;color:var(--ink);font-size:10.5px;text-decoration:none;white-space:nowrap}
 .logo sup{color:#d0342c;font-size:10px;margin-left:1px}
-.about{position:absolute;left:12px;right:12px;bottom:calc(100% + 4px);z-index:20;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--sub);display:none;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.about{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 40px);line-height:1.55;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--sub);display:none;box-shadow:0 8px 24px rgba(0,0,0,.12)}
 .about.on{display:block}
 #tip{position:fixed;z-index:10;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;line-height:1.45;padding:6px 8px;border-radius:6px;max-width:240px;display:none;font-variant-numeric:tabular-nums}
 #tip b{display:block;font-size:12.5px}
@@ -114,7 +112,7 @@ button{font:inherit;color:inherit}
 <div class="stage" id="stage"></div>
 <div class="foot">
   <span class="src" id="src"></span>
-  <button id="aboutBtn" aria-expanded="false">출처</button>
+  <button id="aboutBtn" aria-expanded="false" aria-label="범례와 출처">ⓘ</button>
   <a class="logo" href="https://github.com/lloydknam">LLOYD'S BALCONY LAB<sup>*</sup></a>
 </div>
 <div class="about" id="about"></div>
@@ -191,10 +189,15 @@ function change(n, y) {
   if (!(b > 0)) return a > 0 ? Infinity : null;
   return (a / b - 1) * 100;
 }
+// 색은 그해 총지출 증가율과의 차이 (평균보다 더 늘었나, 덜 늘었나)
 function cls(p) {
   if (p == null) return "c-m";
-  if (p > 20) return "c-u0"; if (p > 10) return "c-u1"; if (p > 3) return "c-u2";
-  if (p < -20) return "c-d0"; if (p < -10) return "c-d1"; if (p < -3) return "c-d2";
+  if (p === Infinity) return "c-u0";
+  const avg = change(ROOT, year);
+  if (avg == null || !isFinite(avg)) return "c-m";
+  const g = p - avg;
+  if (g > 20) return "c-u0"; if (g > 10) return "c-u1"; if (g > 3) return "c-u2";
+  if (g < -20) return "c-d0"; if (g < -10) return "c-d1"; if (g < -3) return "c-d2";
   return "c-m";
 }
 const children = (n, y) => [...n.kids.values()].filter(c => c.v[y] > 0).sort((a, b) => b.v[y] - a.v[y]);
@@ -304,8 +307,10 @@ function render() {
   enterAnim = false;
 
   // 출처
-  $("src").textContent = `열린재정 · 총지출 기준 · 세부사업 ${PK.rows.length.toLocaleString()}개 · 수집 ${(D.fetched_at || "").slice(0, 10)}`;
-  $("about").textContent = "열린재정 Open API 총지출 기준 자료입니다. 분야·부문은 16대 기능별 분류라 보도자료의 12대 분야와 묶음이 다릅니다. 여러 해를 같은 틀로 보려고 각 사업을 가장 최근 연도의 분류·소관에 놓았습니다. 2024~2026은 국회 확정, 2027은 정부안입니다. 공식 자료가 아닌 개인 프로젝트입니다.";
+  const avg = change(ROOT, year);
+  $("src").innerHTML = avg == null ? `${year}년은 비교할 전년 자료가 없습니다`
+    : `<span>덜</span><span class="sc">${["d0", "d1", "d2", "m", "u2", "u1", "u0"].map(c => `<i class="c-${c}"></i>`).join("")}</span><span>더 증가</span>`;
+  $("about").textContent = "칸 넓이는 금액, 색은 그해 총지출 증가율" + (avg == null ? "" : "(" + pctTxt(avg) + ")") + "과의 차이입니다. 파랑은 평균보다 덜 늘거나 줄어든 곳, 주황은 평균보다 더 늘어난 곳입니다(경계 ±3·10·20%p, 가장 진한 주황에는 신규 포함). 칸 안의 %는 실제 전년 대비 증감률입니다. 열린재정 Open API 총지출 기준 자료입니다. 분야·부문은 16대 기능별 분류라 보도자료의 12대 분야와 묶음이 다릅니다. 여러 해를 같은 틀로 보려고 각 사업을 가장 최근 연도의 분류·소관에 놓았습니다. 2024~2026은 국회 확정, 2027은 정부안입니다. 공식 자료가 아닌 개인 프로젝트입니다.";
 }
 
 function drawChildren(parent) {
@@ -335,7 +340,7 @@ function drawChildren(parent) {
     const [x, y, w, h] = rects[i], p = change(k, year);
     const b = document.createElement("button");
     const big = w > 150 && h > 100;
-    b.className = "tile " + cls(p) + (big ? " big" : "") + (w < 22 || h < 18 ? " tiny" : "");
+    b.className = "tile " + cls(p) + (big ? " big" : "") + (w < 22 || h < 18 ? " tiny" : w < 70 || h < 46 ? " mid" : "");
     b.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
     b.setAttribute("aria-label", `${k.name}${k.sub ? " " + k.sub : ""} ${money(k.v[year])}원 ${pctTxt(p)}`);
     if (w >= 44 && h >= 22) {
