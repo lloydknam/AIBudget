@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>예산 지도</title>
 <style>
-:root{--bg:#f6f7fb;--card:#fff;--ink:#1d2330;--sub:#6b7385;--line:#e3e6ef;--accent:#2f4fb8;--spine:#c9cfe0;
-  --d0:#2a78d6;--d0f:#fff;--d1:#7fb0ea;--d1f:#0d2140;--d2:#c9ddf5;--d2f:#0d2140;
-  --dm:#e9e8e4;--dmf:#1d2330;
-  --u2:#f7cdcc;--u2f:#3d0d0d;--u1:#ee8f8e;--u1f:#3d0d0d;--u0:#d93a39;--u0f:#fff}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#12151c;--card:#1b2030;--ink:#e8ebf3;--sub:#9aa3b8;--line:#2a3144;--accent:#7b96ff;--spine:#3a435c;
-  --d0:#3987e5;--d0f:#06142b;--d1:#2a5c9e;--d1f:#eef4ff;--d2:#22395c;--d2f:#dbe7fb;
-  --dm:#383835;--dmf:#e8ebf3;
-  --u2:#5a2626;--u2f:#fbe1e1;--u1:#a04040;--u1f:#fff1f1;--u0:#e66767;--u0f:#2b0707}}
-:root[data-theme="dark"]{--bg:#12151c;--card:#1b2030;--ink:#e8ebf3;--sub:#9aa3b8;--line:#2a3144;--accent:#7b96ff;--spine:#3a435c;
-  --d0:#3987e5;--d0f:#06142b;--d1:#2a5c9e;--d1f:#eef4ff;--d2:#22395c;--d2f:#dbe7fb;
-  --dm:#383835;--dmf:#e8ebf3;
-  --u2:#5a2626;--u2f:#fbe1e1;--u1:#a04040;--u1f:#fff1f1;--u0:#e66767;--u0f:#2b0707}
+:root{--bg:#f5f6f9;--card:#fff;--ink:#141a2b;--sub:#5f6779;--line:#e2e5ee;--accent:#2b4acb;--spine:#cfd4e2;
+  --d0:#1e3f9a;--d0f:#fff;--d1:#4f7fe0;--d1f:#fff;--d2:#c4d7fb;--d2f:#14234a;
+  --dm:#e9ebf1;--dmf:#141a2b;
+  --u2:#fbd2c3;--u2f:#5a1d0e;--u1:#f08a62;--u1f:#2e0c04;--u0:#c93a24;--u0f:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#10131b;--card:#181d2a;--ink:#eceff7;--sub:#9aa3b8;--line:#2a3144;--accent:#8ea6ff;--spine:#3a435c;
+  --d0:#7fb0ff;--d0f:#06142b;--d1:#3566c9;--d1f:#fff;--d2:#1c3262;--d2f:#d6e4ff;
+  --dm:#2a2f3e;--dmf:#eceff7;
+  --u2:#6e2c1d;--u2f:#ffe2d6;--u1:#c9573b;--u1f:#fff;--u0:#f26b52;--u0f:#2b0a04}}
+:root[data-theme="dark"]{--bg:#10131b;--card:#181d2a;--ink:#eceff7;--sub:#9aa3b8;--line:#2a3144;--accent:#8ea6ff;--spine:#3a435c;
+  --d0:#7fb0ff;--d0f:#06142b;--d1:#3566c9;--d1f:#fff;--d2:#1c3262;--d2f:#d6e4ff;
+  --dm:#2a2f3e;--dmf:#eceff7;
+  --u2:#6e2c1d;--u2f:#ffe2d6;--u1:#c9573b;--u1f:#fff;--u0:#f26b52;--u0f:#2b0a04}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Malgun Gothic",sans-serif}
 header,main,footer{max-width:960px;margin:auto;padding-left:16px;padding-right:16px}
@@ -51,7 +51,7 @@ main{padding-top:6px;padding-bottom:24px}
 .tile span{display:block;font-size:11.5px;font-variant-numeric:tabular-nums;opacity:.9}
 .tile.big b{font-size:15px}.tile.big span{font-size:13px}
 .tile.sm{padding:3px 4px}.tile.sm b{font-size:10.5px;letter-spacing:-.03em}.tile.sm span{font-size:10px}
-.tile.dim{opacity:.45}
+.tile.dim{opacity:.8}
 .tile.sel{outline:3px solid var(--ink);outline-offset:-3px;z-index:2}
 .tile:focus-visible,.rowbtn:focus-visible,.years button:focus-visible,.toggle button:focus-visible,.more:focus-visible{outline:3px solid var(--accent);outline-offset:-2px;z-index:3}
 .c-d0{background:var(--d0);color:var(--d0f)}.c-d1{background:var(--d1);color:var(--d1f)}.c-d2{background:var(--d2);color:var(--d2f)}
