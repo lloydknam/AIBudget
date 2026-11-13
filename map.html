@@ -91,6 +91,12 @@ button{font:inherit;color:inherit}
 #tip b{display:block;font-size:12.5px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 #trail .seg{position:static;flex:none}
+.map.enter .tile{animation:tin .32s cubic-bezier(.2,.7,.2,1) both}
+@keyframes tin{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.map.fade .tile{opacity:0;transition:opacity .18s ease}
+.tile.zoom{z-index:6;pointer-events:none;border-width:0;transition:left .32s cubic-bezier(.2,.7,.2,1),top .32s cubic-bezier(.2,.7,.2,1),width .32s cubic-bezier(.2,.7,.2,1),height .32s cubic-bezier(.2,.7,.2,1),border-radius .32s}
+.detail.enter{animation:tin .28s ease-out both}
+@media (prefers-reduced-motion: reduce){.map.enter .tile,.detail.enter{animation:none}.tile.zoom{transition:none}.map.fade .tile{transition:none}}
 #trail .seg button{font-weight:600;max-width:none;color:var(--sub);padding:4px 10px;font-size:12.5px;cursor:pointer}
 #trail .seg button.on{background:var(--ink);color:var(--bg)}
 </style>
@@ -232,8 +238,31 @@ const LV = d => { const L = LEVELS(); return L[Math.min(d, L.length - 1)]; };
 function setView(v) { view = v; ROOT = ROOTS[v]; path = []; mode = "map"; render(); }
 
 function go(next) { path = next; render(); }
-function drill(n) { path = [...path, n]; mode = "map"; render(); }
-function jump(i) { path = path.slice(0, i); render(); }
+let enterAnim = false, busy = false;
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+function drill(n, el) {
+  if (busy) return;
+  if (!el || reduced()) { path = [...path, n]; mode = "map"; enterAnim = true; render(); return; }
+  // 누른 칸이 화면 전체로 커지고, 나머지 칸은 흐려진 뒤 다음 단계로 바뀐다
+  busy = true;
+  const box = el.parentElement, W = stage.clientWidth, H = stage.clientHeight;
+  const clone = el.cloneNode(true);
+  clone.classList.add("zoom");
+  clone.innerHTML = "";
+  clone.style.left = el.style.left; clone.style.top = el.style.top;
+  clone.style.width = el.style.width; clone.style.height = el.style.height;
+  stage.appendChild(clone);
+  box.classList.add("fade");
+  void clone.offsetWidth;                       // 현재 위치를 먼저 확정
+  clone.style.left = "0px"; clone.style.top = "0px";
+  clone.style.width = W + "px"; clone.style.height = H + "px";
+  clone.style.borderRadius = "0px";
+  setTimeout(() => {
+    busy = false;
+    path = [...path, n]; mode = "map"; enterAnim = true; render();
+  }, 320);
+}
+function jump(i) { path = path.slice(0, i); enterAnim = true; render(); }
 
 function setYear(y) {
   year = y;
@@ -272,6 +301,7 @@ function render() {
   // 본문
   stage.innerHTML = "";
   if (node.leaf) drawDetail(node); else drawChildren(node);
+  enterAnim = false;
 
   // 출처
   $("src").textContent = `열린재정 · 총지출 기준 · 세부사업 ${PK.rows.length.toLocaleString()}개 · 수집 ${(D.fetched_at || "").slice(0, 10)}`;
@@ -298,7 +328,7 @@ function drawChildren(parent) {
     return;
   }
 
-  box.className = "map";
+  box.className = "map" + (enterAnim ? " enter" : "");
   const W = stage.clientWidth, H = stage.clientHeight;
   const rects = squarify(kids.map(k => k.v[year]), W, H);
   kids.forEach((k, i) => {
@@ -314,7 +344,8 @@ function drawChildren(parent) {
       if (h >= 62 && w >= 110 && k.sub) html += `<span>${esc(k.sub)}</span>`;
       b.innerHTML = html;
     }
-    b.onclick = () => drill(k);
+    b.onclick = () => drill(k, b);
+    b.style.animationDelay = Math.min(i * 12, 160) + "ms";
     box.appendChild(b);
   });
   stage.appendChild(box);
@@ -322,7 +353,7 @@ function drawChildren(parent) {
 
 function drawDetail(n) {
   const r = n.raw, box = document.createElement("div");
-  box.className = "detail";
+  box.className = "detail" + (enterAnim ? " enter" : "");
   const rows = YEARS.map(y => {
     const rep = CONFIRMED[y] ? r.na[y] : r.gov[y], mx = Math.max(...YEARS.map(z => Math.max(r.gov[z] || 0, r.na[z] || 0)));
     return `<tr><td>${y}</td><td>${r.gov[y] ? num(r.gov[y]) : "-"}</td><td>${CONFIRMED[y] ? (r.na[y] ? num(r.na[y]) : "-") : "심의 중"}</td>
