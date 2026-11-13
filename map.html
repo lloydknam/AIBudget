@@ -26,8 +26,6 @@ button{font:inherit;color:inherit}
 .years button.on{background:var(--ink);color:var(--bg)}
 /* 경로 */
 .crumb{flex:none;display:flex;align-items:center;gap:6px;min-height:34px}
-.crumb .back{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer;visibility:hidden}
-.crumb .back.on{visibility:visible}
 .crumb ol{list-style:none;margin:0;padding:0;display:flex;gap:2px;overflow:hidden;white-space:nowrap;min-width:0;flex:1}
 .crumb li{display:flex;align-items:center;flex:none;min-width:0}
 .crumb li+li::before{content:"›";color:var(--sub);padding:0 4px}
@@ -76,14 +74,20 @@ button{font:inherit;color:inherit}
 .detail .items{flex:1 1 auto;min-height:0;overflow-y:auto;border-top:1px solid var(--line)}
 .detail .empty{font-size:12.5px;color:var(--sub);background:var(--bg);border-radius:8px;padding:8px 10px}
 /* 하단 */
-.foot{flex:none;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);padding:0 2px 8px;min-height:26px}
+.foot{flex:none;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);padding:0 2px 6px;min-height:22px}
 .foot .src{flex:1;min-width:0;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden}
 .foot .src i{flex:none;width:10px;height:9px;border-radius:2px;display:block}
 .foot .src .sc{display:flex;gap:2px}
-#aboutBtn{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:2px 8px;color:var(--sub);cursor:pointer;font-size:11px}
+.bar{flex:none;display:grid;grid-template-columns:repeat(5,1fr);margin:0 -12px;padding:2px 6px 4px;border-top:1px solid var(--line);background:var(--bg)}
+.bar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;border:0;background:none;color:var(--sub);font-size:10.5px;font-weight:600;cursor:pointer;border-radius:10px;-webkit-tap-highlight-color:transparent}
+.bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bar button.on{color:var(--ink)}
+.bar button.on svg{stroke:var(--accent)}
+.bar button:disabled{opacity:.3;cursor:default}
+.bar button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
 .logo{font-family:"D-DIN","DIN Alternate","Bahnschrift","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.1em;color:var(--ink);font-size:10.5px;text-decoration:none;white-space:nowrap}
 .logo sup{color:#d0342c;font-size:10px;margin-left:1px}
-.about{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 40px);line-height:1.55;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--sub);display:none;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.about{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 62px);line-height:1.55;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--sub);display:none;box-shadow:0 8px 24px rgba(0,0,0,.12)}
 .about.on{display:block}
 #tip{position:fixed;z-index:10;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;line-height:1.45;padding:6px 8px;border-radius:6px;max-width:240px;display:none;font-variant-numeric:tabular-nums}
 #tip b{display:block;font-size:12.5px}
@@ -105,16 +109,21 @@ button{font:inherit;color:inherit}
   <div class="years" id="years" role="group" aria-label="회계연도"></div>
 </div>
 <div class="crumb">
-  <button class="back" id="back" aria-label="한 단계 위로">‹ 뒤로</button>
   <ol id="trail"></ol>
   <span class="lv" id="lvname"></span>
 </div>
 <div class="stage" id="stage"></div>
 <div class="foot">
   <span class="src" id="src"></span>
-  <button id="aboutBtn" aria-expanded="false" aria-label="범례와 출처">ⓘ</button>
   <a class="logo" href="https://github.com/lloydknam">LLOYD'S BALCONY LAB<sup>*</sup></a>
 </div>
+<nav class="bar" aria-label="메뉴">
+  <button id="back" aria-label="한 단계 위로"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>뒤로</span></button>
+  <button id="tabField"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="18" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg><span>분야별</span></button>
+  <button id="tabMin"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V10M19 21V10M9.5 21V10M14.5 21V10M3 10l9-6 9 6z"/></svg><span>부처별</span></button>
+  <button id="tabList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>목록</span></button>
+  <button id="aboutBtn" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>정보</span></button>
+</nav>
 <div class="about" id="about"></div>
 <div id="tip"></div>
 
@@ -291,15 +300,20 @@ function render() {
     `<button class="${y === year ? "on" : ""}" aria-pressed="${y === year}" data-y="${y}">${y}${CONFIRMED[y] ? "" : "·정부안"}</button>`).join("");
 
   // 경로
-  $("back").classList.toggle("on", path.length > 0);
   const crumbs = [{ i: 0, name: "총지출" }].concat(path.map((n, i) => ({ i: i + 1, name: n.name })));
   const shown = crumbs.length > 3 ? [crumbs[0], null, ...crumbs.slice(-2)] : crumbs;   // 깊으면 가운데를 줄임
-  $("trail").innerHTML = path.length === 0
-    ? `<li><span class="seg" role="group" aria-label="시작 기준"><button data-v="field" class="${view === "field" ? "on" : ""}" aria-pressed="${view === "field"}">분야별</button><button data-v="ministry" class="${view === "ministry" ? "on" : ""}" aria-pressed="${view === "ministry"}">부처별</button></span></li>`
-    : shown.map(c => c ? `<li><button data-i="${c.i}" title="${esc(c.name)}">${esc(c.name)}</button></li>` : `<li><span style="color:var(--sub)">…</span></li>`).join("");
-  $("lvname").innerHTML = node.leaf
-    ? `<span style="color:var(--accent);font-weight:700">${LV(path.length - 1)}</span>`
-    : `<span class="seg" role="group" aria-label="보기 방식"><button data-m="map" class="${mode === "map" ? "on" : ""}" aria-pressed="${mode === "map"}">지도</button><button data-m="list" class="${mode === "list" ? "on" : ""}" aria-pressed="${mode === "list"}">목록</button></span>`;
+  $("trail").innerHTML = shown.map(c => c ? `<li><button data-i="${c.i}" title="${esc(c.name)}">${esc(c.name)}</button></li>` : `<li><span style="color:var(--sub)">…</span></li>`).join("");
+  $("lvname").textContent = node.leaf ? LV(path.length - 1) : LV(path.length);   // 지금 화면에 펼쳐진 단계
+
+  // 하단 메뉴
+  $("back").disabled = path.length === 0;
+  $("tabField").classList.toggle("on", view === "field");
+  $("tabMin").classList.toggle("on", view === "ministry");
+  $("tabField").setAttribute("aria-pressed", view === "field");
+  $("tabMin").setAttribute("aria-pressed", view === "ministry");
+  $("tabList").classList.toggle("on", mode === "list" && !node.leaf);
+  $("tabList").setAttribute("aria-pressed", mode === "list");
+  $("tabList").disabled = !!node.leaf;
 
   // 본문
   stage.innerHTML = "";
@@ -389,14 +403,11 @@ function drawDetail(n) {
 
 /* ---------- 이벤트 ---------- */
 $("years").onclick = e => { const b = e.target.closest("button"); if (b) setYear(+b.dataset.y); };
-$("back").onclick = () => jump(path.length - 1);
-$("trail").onclick = e => {
-  const b = e.target.closest("button");
-  if (!b) return;
-  if (b.dataset.v) setView(b.dataset.v);
-  else if (b.dataset.i != null) jump(+b.dataset.i);
-};
-$("lvname").onclick = e => { const b = e.target.closest("button[data-m]"); if (b) { mode = b.dataset.m; render(); } };
+$("back").onclick = () => { if (path.length) jump(path.length - 1); };
+$("trail").onclick = e => { const b = e.target.closest("button"); if (b && b.dataset.i != null) jump(+b.dataset.i); };
+$("tabField").onclick = () => setView("field");      // 이미 보고 있던 기준을 누르면 맨 처음으로
+$("tabMin").onclick = () => setView("ministry");
+$("tabList").onclick = () => { mode = mode === "list" ? "map" : "list"; enterAnim = true; render(); };
 $("aboutBtn").onclick = () => {
   const a = $("about"), on = !a.classList.contains("on");
   a.classList.toggle("on", on); $("aboutBtn").setAttribute("aria-expanded", on);
