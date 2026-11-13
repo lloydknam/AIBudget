@@ -2,110 +2,113 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>예산 지도</title>
 <style>
-:root{--bg:#f5f6f9;--card:#fff;--ink:#141a2b;--sub:#5f6779;--line:#e2e5ee;--accent:#2b4acb;--spine:#cfd4e2;
+:root{--bg:#f5f6f9;--card:#fff;--ink:#141a2b;--sub:#5f6779;--line:#e2e5ee;--accent:#2b4acb;
   --d0:#1e3f9a;--d0f:#fff;--d1:#4f7fe0;--d1f:#fff;--d2:#c4d7fb;--d2f:#14234a;
   --dm:#e9ebf1;--dmf:#141a2b;
   --u2:#fbd2c3;--u2f:#5a1d0e;--u1:#f08a62;--u1f:#2e0c04;--u0:#c93a24;--u0f:#fff}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#10131b;--card:#181d2a;--ink:#eceff7;--sub:#9aa3b8;--line:#2a3144;--accent:#8ea6ff;--spine:#3a435c;
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#10131b;--card:#181d2a;--ink:#eceff7;--sub:#9aa3b8;--line:#2a3144;--accent:#8ea6ff;
   --d0:#7fb0ff;--d0f:#06142b;--d1:#3566c9;--d1f:#fff;--d2:#1c3262;--d2f:#d6e4ff;
   --dm:#2a2f3e;--dmf:#eceff7;
   --u2:#6e2c1d;--u2f:#ffe2d6;--u1:#c9573b;--u1f:#fff;--u0:#f26b52;--u0f:#2b0a04}}
-:root[data-theme="dark"]{--bg:#10131b;--card:#181d2a;--ink:#eceff7;--sub:#9aa3b8;--line:#2a3144;--accent:#8ea6ff;--spine:#3a435c;
+:root[data-theme="dark"]{--bg:#10131b;--card:#181d2a;--ink:#eceff7;--sub:#9aa3b8;--line:#2a3144;--accent:#8ea6ff;
   --d0:#7fb0ff;--d0f:#06142b;--d1:#3566c9;--d1f:#fff;--d2:#1c3262;--d2f:#d6e4ff;
   --dm:#2a2f3e;--dmf:#eceff7;
   --u2:#6e2c1d;--u2f:#ffe2d6;--u1:#c9573b;--u1f:#fff;--u0:#f26b52;--u0f:#2b0a04}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Malgun Gothic",sans-serif}
-header,main,footer{max-width:960px;margin:auto;padding-left:16px;padding-right:16px}
-header{padding-top:18px}
-.back{color:var(--sub);font-size:13px;text-decoration:none}
-h1{font-size:22px;margin:2px 0 0;letter-spacing:-.02em}
-.total{margin:10px 0 0;font-size:15px;color:var(--sub)}
-.total b{font-size:30px;color:var(--ink);letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-right:6px}
-.years{display:flex;gap:6px;margin:14px 0 0;overflow-x:auto;scrollbar-width:none}
-.years button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:14px;line-height:1.3}
-.years button small{display:block;font-size:11px;color:var(--sub)}
-.years button.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.years button.on small{color:#fff;opacity:.85}
-.legend{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-size:12px;color:var(--sub);flex-wrap:wrap}
-.legend .scale{display:flex;gap:2px}
-.legend .scale i{width:26px;height:12px;border-radius:2px;display:block}
-.hint{font-size:13px;color:var(--sub);margin:4px 0 0}
-
-main{padding-top:6px;padding-bottom:24px}
-.level{position:relative;padding:14px 0 6px 18px;border-left:2px solid var(--spine);margin-left:7px}
-.level::before{content:"";position:absolute;left:-7px;top:19px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
-.lvhead{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}
-.lvname{font-size:12px;color:var(--accent);font-weight:700}
-.lvtitle{font-size:17px;font-weight:700;line-height:1.35;letter-spacing:-.01em;word-break:keep-all}
-.lvmeta{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums}
-.toggle{flex:none;display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
-.toggle button{border:0;background:none;color:var(--sub);padding:5px 9px;font:inherit;font-size:12px;cursor:pointer}
-.toggle button.on{background:var(--ink);color:var(--bg)}
-.map{position:relative;margin-top:10px;border-radius:10px;overflow:hidden}
-.tile{position:absolute;border:1px solid var(--bg);border-radius:3px;padding:5px 6px;margin:0;font:inherit;text-align:left;cursor:pointer;overflow:hidden;line-height:1.25;transition:opacity .15s}
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Malgun Gothic",sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}
+button{font:inherit;color:inherit}
+/* 상단: 연도 + 합계 */
+.top{flex:none;display:flex;align-items:center;gap:8px;padding:8px 0 6px}
+.top .t{flex:1;min-width:0}
+.top .t b{font-size:19px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.top .t span{display:block;font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.years{flex:none;display:flex;border:1px solid var(--line);border-radius:999px;background:var(--card);padding:2px}
+.years button{border:0;background:none;padding:5px 8px;border-radius:999px;font-size:12.5px;color:var(--sub);cursor:pointer;line-height:1.2;font-variant-numeric:tabular-nums}
+.years button.on{background:var(--ink);color:var(--bg)}
+/* 경로 */
+.crumb{flex:none;display:flex;align-items:center;gap:6px;min-height:34px}
+.crumb .back{flex:none;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 10px;font-size:13px;cursor:pointer;visibility:hidden}
+.crumb .back.on{visibility:visible}
+.crumb ol{list-style:none;margin:0;padding:0;display:flex;gap:2px;overflow:hidden;white-space:nowrap;min-width:0;flex:1}
+.crumb li{display:flex;align-items:center;flex:none;min-width:0}
+.crumb li+li::before{content:"›";color:var(--sub);padding:0 4px}
+.crumb li button{border:0;background:none;padding:2px 2px;cursor:pointer;font-size:13.5px;color:var(--sub);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crumb li:last-child button{color:var(--ink);font-weight:700;cursor:default}
+.crumb .lv{flex:none;font-size:11px;color:var(--accent);font-weight:700;padding:2px 7px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
+/* 본문: 남은 높이를 전부 씀 */
+.stage{flex:1 1 auto;min-height:0;position:relative;margin:4px 0 6px;border-radius:12px;overflow:hidden;background:var(--card);border:1px solid var(--line)}
+.map{position:absolute;inset:0}
+.tile{position:absolute;margin:0;border:1.5px solid var(--card);border-radius:3px;padding:5px 6px;text-align:left;cursor:pointer;overflow:hidden;line-height:1.2;-webkit-tap-highlight-color:transparent}
 .tile b{display:block;font-size:12.5px;font-weight:700;word-break:keep-all;overflow-wrap:anywhere}
-.tile span{display:block;font-size:11.5px;font-variant-numeric:tabular-nums;opacity:.9}
-.tile.big b{font-size:15px}.tile.big span{font-size:13px}
-.tile.sm{padding:3px 4px}.tile.sm b{font-size:10.5px;letter-spacing:-.03em}.tile.sm span{font-size:10px}
-.tile.dim{opacity:.8}
-.tile.sel{outline:3px solid var(--ink);outline-offset:-3px;z-index:2}
-.tile:focus-visible,.rowbtn:focus-visible,.years button:focus-visible,.toggle button:focus-visible,.more:focus-visible{outline:3px solid var(--accent);outline-offset:-2px;z-index:3}
+.tile span{display:block;font-size:11px;font-variant-numeric:tabular-nums;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile.big b{font-size:16px}.tile.big span{font-size:13px}
+.tile.tiny{padding:0}
+.tile:focus-visible,.rowbtn:focus-visible,.years button:focus-visible,.crumb button:focus-visible,.seg button:focus-visible,.back:focus-visible{outline:3px solid var(--accent);outline-offset:-2px;z-index:3}
 .c-d0{background:var(--d0);color:var(--d0f)}.c-d1{background:var(--d1);color:var(--d1f)}.c-d2{background:var(--d2);color:var(--d2f)}
 .c-m{background:var(--dm);color:var(--dmf)}
 .c-u2{background:var(--u2);color:var(--u2f)}.c-u1{background:var(--u1);color:var(--u1f)}.c-u0{background:var(--u0);color:var(--u0f)}
-.small{font-size:12px;color:var(--sub);margin:6px 0 0}
-.small button,.more{border:0;background:none;color:var(--accent);font:inherit;font-size:inherit;cursor:pointer;padding:0;text-decoration:underline}
-.list{margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.rowbtn{display:grid;grid-template-columns:10px 1fr auto;gap:2px 10px;align-items:center;width:100%;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;padding:9px 12px;cursor:pointer}
-.rowbtn:last-child{border-bottom:0}
-.rowbtn.sel{background:var(--bg);box-shadow:inset 3px 0 0 var(--ink)}
-.rowbtn .sw{width:10px;height:10px;border-radius:2px;grid-row:1}
-.rowbtn .nm{font-size:14px;font-weight:600;word-break:keep-all;overflow-wrap:anywhere;line-height:1.35}
-.rowbtn .nm small{font-weight:400;color:var(--sub);font-size:12px;margin-left:4px}
-.rowbtn .am{font-size:13px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
-.rowbtn .am small{display:block;color:var(--sub);font-size:11.5px}
-.rowbtn .bar{grid-column:2 / 4;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
-.rowbtn .bar i{display:block;height:100%;background:var(--sub);border-radius:2px}
-.more{display:block;width:100%;padding:10px;text-align:center;font-size:13px;background:var(--card)}
-.detail{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:10px}
-.detail dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0 0 10px;font-size:13px}
+/* 목록 보기 */
+.seg{position:absolute;top:8px;right:8px;z-index:4;display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+#lvname .seg{position:static;flex:none}
+.seg button{border:0;background:none;padding:4px 9px;font-size:12px;color:var(--sub);cursor:pointer}
+.seg button.on{background:var(--ink);color:var(--bg)}
+.list{position:absolute;inset:0;overflow-y:auto;padding:4px 0;-webkit-overflow-scrolling:touch}
+.rowbtn{display:grid;grid-template-columns:10px 1fr auto;gap:2px 10px;align-items:center;width:100%;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;padding:8px 12px;cursor:pointer}
+.rowbtn .sw{width:10px;height:10px;border-radius:2px}
+.rowbtn .nm{font-size:13.5px;font-weight:600;word-break:keep-all;line-height:1.3}
+.rowbtn .am{font-size:12.5px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.rowbtn .am small{display:block;color:var(--sub);font-size:11px}
+.rowbtn .bar{grid-column:2 / 4;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.rowbtn .bar i{display:block;height:100%;background:var(--sub)}
+/* 세부사업 상세 */
+.detail{position:absolute;inset:0;padding:14px 14px 10px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.detail h2{margin:0;font-size:18px;line-height:1.3;letter-spacing:-.01em;word-break:keep-all}
+.detail .meta{font-size:12.5px;color:var(--sub)}
+.detail dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0;font-size:12.5px}
 .detail dt{color:var(--sub)}.detail dd{margin:0;word-break:keep-all}
-.detail table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
-.detail th,.detail td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right;font-weight:400}
-.detail th{color:var(--sub);font-size:12px}
+.detail table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.detail th,.detail td{padding:4px 2px;border-bottom:1px solid var(--line);text-align:right;font-weight:400}
+.detail th{color:var(--sub);font-size:11.5px}
 .detail th:first-child,.detail td:first-child{text-align:left}
-.detail td.b{width:34%;padding-left:10px}
-.detail td.b i{display:block;height:8px;background:var(--accent);border-radius:0 4px 4px 0;min-width:1px}
-.empty{font-size:13px;color:var(--sub);background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:10px}
-#tip{position:fixed;z-index:10;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;line-height:1.45;padding:7px 9px;border-radius:6px;max-width:260px;display:none;font-variant-numeric:tabular-nums}
-#tip b{display:block;font-size:13px}
-footer{padding-top:8px;padding-bottom:40px;color:var(--sub);font-size:12px}
-.logo{font-family:"D-DIN","DIN Alternate","Bahnschrift","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.18em;color:var(--ink);font-size:13px;text-decoration:none}
-.logo sup{color:#d0342c;font-size:12px;margin-left:1px}
-.src{margin:0 0 10px}
-@media (prefers-reduced-motion: reduce){.tile{transition:none}}
+.detail td.b{width:30%;padding-left:8px}
+.detail td.b i{display:block;height:6px;background:var(--accent);border-radius:0 3px 3px 0;min-width:1px}
+.detail .sub-h{font-size:12px;color:var(--sub)}
+.detail .items{flex:1 1 auto;min-height:0;overflow-y:auto;border-top:1px solid var(--line)}
+.detail .empty{font-size:12.5px;color:var(--sub);background:var(--bg);border-radius:8px;padding:8px 10px}
+/* 하단 */
+.foot{flex:none;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);padding:0 2px 8px;min-height:26px}
+.foot .src{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.foot .src button{border:0;background:none;padding:0;color:var(--accent);cursor:pointer;font-size:11px}
+.logo{font-family:"D-DIN","DIN Alternate","Bahnschrift","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.14em;color:var(--ink);font-size:10.5px;text-decoration:none;white-space:nowrap}
+.logo sup{color:#d0342c;font-size:10px;margin-left:1px}
+.about{position:absolute;left:12px;right:12px;bottom:calc(100% + 4px);z-index:20;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--sub);display:none;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.about.on{display:block}
+#tip{position:fixed;z-index:10;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;line-height:1.45;padding:6px 8px;border-radius:6px;max-width:240px;display:none;font-variant-numeric:tabular-nums}
+#tip b{display:block;font-size:12.5px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-<header>
-  <a class="back" href="./">‹ 예산 AI 분석</a>
-  <h1>예산 지도</h1>
-  <p class="total" id="total"></p>
+<div class="top">
+  <div class="t"><b id="total"></b><span id="sub"></span></div>
   <div class="years" id="years" role="group" aria-label="회계연도"></div>
-  <div class="legend" id="legend"></div>
-  <p class="hint">칸을 누르면 아래로 한 단계씩 펼쳐집니다. 칸 넓이는 금액, 색은 전년 대비 증감률입니다.</p>
-</header>
-<main id="levels"></main>
-<footer>
-  <p class="src" id="src"></p>
+</div>
+<div class="crumb">
+  <button class="back" id="back" aria-label="한 단계 위로">‹ 뒤로</button>
+  <ol id="trail"></ol>
+  <span class="lv" id="lvname"></span>
+</div>
+<div class="stage" id="stage"></div>
+<div class="foot">
+  <span class="src" id="src"></span>
+  <button id="aboutBtn" aria-expanded="false">출처</button>
   <a class="logo" href="https://github.com/lloydknam">LLOYD'S BALCONY LAB<sup>*</sup></a>
-  <span> · with claude · <a href="https://github.com/lloydknam" style="color:inherit">GitHub(@lloydknam)</a></span>
-  <div style="margin-top:2px">*아직 실험 중</div>
-</footer>
+</div>
+<div class="about" id="about"></div>
 <div id="tip"></div>
 
 <script src="data/budget.js"></script>
@@ -207,181 +210,151 @@ function squarify(vals, W, H) {
   return out;
 }
 
-/* ---------- 상태 ---------- */
-let year = YEARS[YEARS.length - 1];
-let path = [];            // 선택한 노드들 (분야 → … → 세부사업)
-const mode = {};          // 단계별 보기: map | list
-const expanded = {};      // 목록 전체 펼침 여부
-const LIST_CAP = 12;
 
-function select(depth, n) {
-  const same = path[depth] === n;
-  path = path.slice(0, depth);
-  if (!same) path.push(n);
-  for (const k in expanded) if (k > depth) delete expanded[k];
+/* ---------- 상태: 한 화면에서 한 단계씩 바꿔 보기 ---------- */
+let year = YEARS[YEARS.length - 1];
+let path = [];                 // ROOT 아래로 내려간 노드들 (분야 → … → 세부사업)
+let mode = "map";              // map | list
+const $ = id => document.getElementById(id);
+const stage = $("stage");
+const cur = () => path.length ? path[path.length - 1] : ROOT;
+const LV = d => LEVELS[Math.min(d, LEVELS.length - 1)];
+
+function go(next) { path = next; render(); }
+function drill(n) { path = [...path, n]; mode = "map"; render(); }
+function jump(i) { path = path.slice(0, i); render(); }
+
+function setYear(y) {
+  year = y;
+  while (path.length && !(path[path.length - 1].v[year] > 0)) path = path.slice(0, -1);
   render();
 }
 
-/* ---------- 그리기 ---------- */
 function render() {
-  // 선택 경로 중 이 연도에 금액이 없는 단계부터는 접는다
-  const bad = path.findIndex(n => !(n.v[year] > 0));
-  if (bad >= 0) path = path.slice(0, bad);
+  const node = cur(), total = node.v[year] || 0, rootTot = ROOT.v[year] || 0;
+  const conf = CONFIRMED[year] ? "국회 확정" : "정부안";
+  const prevTot = node.v[year - 1];
+  const ch = change(node, year);
 
-  const t = D.totals[year], cur = ROOT.v[year], prev = ROOT.v[year - 1];
-  document.getElementById("total").innerHTML =
-    `<b>${num(cur / 10000)}조원</b>${year}년 ${CONFIRMED[year] ? "국회 확정" : "정부안"} 총지출` +
-    (prev ? ` · 전년 확정 대비 ${pctTxt((cur / prev - 1) * 100)}` : "");
-  document.getElementById("years").innerHTML = YEARS.map(y =>
-    `<button class="${y === year ? "on" : ""}" aria-pressed="${y === year}" data-y="${y}">${y}<small>${CONFIRMED[y] ? "국회 확정" : "정부안"}</small></button>`).join("");
-  document.getElementById("legend").innerHTML = YEARS.includes(year - 1)
-    ? `<span>감소</span><span class="scale">${["d0", "d1", "d2", "m", "u2", "u1", "u0"].map(c => `<i class="c-${c}"></i>`).join("")}</span><span>증가</span><span>(경계 ±3% · ±10% · ±20%, 가장 진한 빨강에는 신규 포함)</span>`
-    : `<span>${year}년은 비교할 전년 자료가 없어 색을 칠하지 않았습니다.</span>`;
+  // 상단 요약
+  $("total").textContent = path.length === 0
+    ? `${num(total / 10000)}조원`
+    : `${money(total)}원`;
+  $("sub").textContent = (path.length ? `총지출의 ${(total / rootTot * 100).toFixed(1)}%` : `${year}년 ${conf} 총지출`) +
+    (ch != null ? ` · 전년 대비 ${pctTxt(ch)}` : "");
 
-  TIP.style.display = "none";
-  const host = document.getElementById("levels");
-  host.innerHTML = "";
-  for (let d = 0; d <= path.length; d++) {
-    const parent = d === 0 ? ROOT : path[d - 1];
-    host.appendChild(parent.leaf ? leafBlock(d, parent) : levelBlock(d, parent));
-    if (parent.leaf) break;
-  }
-  document.getElementById("src").innerHTML =
-    `출처: 열린재정 Open API (총지출 기준, 세부사업 ${PK.rows.length.toLocaleString()}개), 수집 ${esc((D.fetched_at || "").slice(0, 10))}. ` +
-    `분야·부문은 16대 분야 기능별 분류라서 보도자료의 12대 분야와 묶음이 다릅니다. 여러 해를 같은 틀로 비교하려고 각 사업을 가장 최근 연도의 분류·소관에 놓았습니다. 공식 자료가 아닌 개인 프로젝트입니다.`;
+  // 연도
+  $("years").innerHTML = YEARS.map(y =>
+    `<button class="${y === year ? "on" : ""}" aria-pressed="${y === year}" data-y="${y}">${y}${CONFIRMED[y] ? "" : "·정부안"}</button>`).join("");
+
+  // 경로
+  $("back").classList.toggle("on", path.length > 0);
+  const crumbs = [{ i: 0, name: "총지출" }].concat(path.map((n, i) => ({ i: i + 1, name: n.name })));
+  const shown = crumbs.length > 3 ? [crumbs[0], null, ...crumbs.slice(-2)] : crumbs;   // 깊으면 가운데를 줄임
+  $("trail").innerHTML = shown.map(c => c ? `<li><button data-i="${c.i}" title="${esc(c.name)}">${esc(c.name)}</button></li>` : `<li><span style="color:var(--sub)">…</span></li>`).join("");
+  $("lvname").innerHTML = node.leaf
+    ? `<span style="color:var(--accent);font-weight:700">${LV(path.length - 1)}</span>`
+    : `<span class="seg" role="group" aria-label="보기 방식"><button data-m="map" class="${mode === "map" ? "on" : ""}" aria-pressed="${mode === "map"}">지도</button><button data-m="list" class="${mode === "list" ? "on" : ""}" aria-pressed="${mode === "list"}">목록</button></span>`;
+
+  // 본문
+  stage.innerHTML = "";
+  if (node.leaf) drawDetail(node); else drawChildren(node);
+
+  // 출처
+  $("src").textContent = `열린재정 · 총지출 기준 · 세부사업 ${PK.rows.length.toLocaleString()}개 · 수집 ${(D.fetched_at || "").slice(0, 10)}`;
+  $("about").textContent = "열린재정 Open API 총지출 기준 자료입니다. 분야·부문은 16대 기능별 분류라 보도자료의 12대 분야와 묶음이 다릅니다. 여러 해를 같은 틀로 보려고 각 사업을 가장 최근 연도의 분류·소관에 놓았습니다. 2024~2026은 국회 확정, 2027은 정부안입니다. 공식 자료가 아닌 개인 프로젝트입니다.";
 }
 
-function headHtml(d, parent, count) {
-  const share = d > 0 ? parent.v[year] / ROOT.v[year] * 100 : null;
-  const ch = d > 0 ? change(parent, year) : null;
-  const meta = d === 0 ? `${count}개`
-    : `${money(parent.v[year])}원 · 총지출의 ${share >= 0.1 ? share.toFixed(1) : share.toFixed(2)}%` + (ch != null ? ` · 전년 대비 ${pctTxt(ch)}` : "") + (count != null ? ` · ${LEVELS[d]} ${count}개` : "");
-  return `<div><div class="lvname">${LEVELS[d]}</div>
-    <div class="lvtitle">${d === 0 ? "어느 분야에 쓰나" : esc(parent.name)}${parent.sub ? ` <span class="lvmeta">${esc(parent.sub)}</span>` : ""}</div>
-    <div class="lvmeta">${meta}</div></div>`;
-}
-
-function levelBlock(d, parent) {
-  const kids = children(parent, year), sel = path[d];
-  const sec = document.createElement("section");
-  sec.className = "level"; sec.id = "lv" + d;
-  const m = mode[d] || (kids.length > 40 ? "list" : "map");
-  sec.innerHTML = `<div class="lvhead">${headHtml(d, parent, kids.length)}
-    <div class="toggle" role="group" aria-label="보기 방식"><button data-m="map" class="${m === "map" ? "on" : ""}" aria-pressed="${m === "map"}">지도</button><button data-m="list" class="${m === "list" ? "on" : ""}" aria-pressed="${m === "list"}">목록</button></div></div>`;
-  sec.querySelector(".toggle").onclick = e => { const b = e.target.closest("button"); if (b) { mode[d] = b.dataset.m; render(); } };
+function drawChildren(parent) {
+  const kids = children(parent, year), box = document.createElement("div");
+  if (!kids.length) { box.className = "detail"; box.innerHTML = `<div class="empty">표시할 하위 항목이 없습니다.</div>`; stage.appendChild(box); return; }
   const total = parent.v[year];
 
-  if (m === "map") {
-    const W = Math.max(240, Math.min(960, document.documentElement.clientWidth) - 16 * 2 - 27);
-    const H = kids.length === 1 ? 84 : kids.length <= 3 ? 150 : Math.round(Math.min(440, Math.max(250, W * (kids.length > 8 ? 1.1 : 0.72))));
-    const box = document.createElement("div");
-    box.className = "map"; box.style.height = H + "px";
-    const rects = squarify(kids.map(k => k.v[year]), W, H);
-    let hidden = 0;
-    kids.forEach((k, i) => {
-      const [x, y, w, h] = rects[i], p = change(k, year);
-      const b = document.createElement("button");
-      b.className = "tile " + cls(p) + (sel ? (sel === k ? " sel" : " dim") : "") + (w > 150 && h > 90 ? " big" : w < 62 || h < 40 ? " sm" : "");
-      b.style.cssText = `left:${x / W * 100}%;top:${y}px;width:${w / W * 100}%;height:${h}px`;
-      const showName = w >= 36 && h >= 20;
-      if (!showName) { hidden++; b.style.padding = "0"; }
-      const lines = Math.floor((h - 8) / (w < 62 || h < 40 ? 13.5 : 16));
-      b.innerHTML = showName ? `<b>${esc(k.name)}</b>` +
-        (lines >= 2 ? `<span>${money(k.v[year])}${w >= 96 && p != null ? " " + pctTxt(p) : ""}</span>` : "") +
-        (lines >= 4 && k.sub ? `<span>${esc(k.sub)}</span>` : "") : "";
-      b.setAttribute("aria-label", `${k.name}${k.sub ? " " + k.sub : ""} ${money(k.v[year])}원 ${pctTxt(p)}`);
-      b.setAttribute("aria-pressed", sel === k);
-      b.onclick = () => select(d, k);
-      b.onmouseenter = e => tip(e, k, total); b.onmousemove = e => tip(e, k, total); b.onmouseleave = () => tip(null);
-      box.appendChild(b);
-    });
-    sec.appendChild(box);
-    if (hidden) {
-      const s = document.createElement("p");
-      s.className = "small";
-      s.innerHTML = `이름이 안 보이는 작은 칸 ${hidden}개는 <button>목록으로 보기</button>`;
-      s.querySelector("button").onclick = () => { mode[d] = "list"; render(); };
-      sec.appendChild(s);
-    }
-  } else {
-    const box = document.createElement("div");
+  if (mode === "list") {
     box.className = "list";
-    const selIdx = kids.indexOf(sel);
-    const cap = expanded[d] || kids.length <= LIST_CAP + 2 ? kids.length : Math.max(LIST_CAP, selIdx + 1);
-    const top = kids[0].v[year];
-    kids.slice(0, cap).forEach(k => {
-      const p = change(k, year), b = document.createElement("button");
-      b.className = "rowbtn" + (sel === k ? " sel" : "");
-      b.setAttribute("aria-pressed", sel === k);
-      const sh = k.v[year] / total * 100;
-      b.innerHTML = `<i class="sw ${cls(p)}"></i><span class="nm">${esc(k.name)}${k.sub ? `<small>${esc(k.sub)}</small>` : ""}</span>
+    box.innerHTML = kids.map(k => {
+      const p = change(k, year), sh = k.v[year] / total * 100;
+      return `<button class="rowbtn" data-idx="${kids.indexOf(k)}">
+        <i class="sw ${cls(p)}"></i>
+        <span class="nm">${esc(k.name)}${k.sub ? ` <span style="color:var(--sub);font-weight:400;font-size:11.5px">${esc(k.sub)}</span>` : ""}</span>
         <span class="am">${money(k.v[year])}<small>${sh >= 0.1 ? sh.toFixed(1) : "0.1 미만"}%${p != null ? " · " + pctTxt(p) : ""}</small></span>
-        <span class="bar"><i style="width:${Math.max(0.5, k.v[year] / top * 100)}%"></i></span>`;
-      b.onclick = () => select(d, k);
-      box.appendChild(b);
-    });
-    if (cap < kids.length) {
-      const b = document.createElement("button");
-      b.className = "more"; b.textContent = `나머지 ${kids.length - cap}개 더 보기`;
-      b.onclick = () => { expanded[d] = true; render(); };
-      box.appendChild(b);
-    }
-    sec.appendChild(box);
+        <span class="bar"><i style="width:${Math.max(0.5, k.v[year] / kids[0].v[year] * 100)}%"></i></span></button>`;
+    }).join("");
+    box.querySelectorAll(".rowbtn").forEach(b => b.onclick = () => drill(kids[+b.dataset.idx]));
+    stage.appendChild(box);
+    return;
   }
-  return sec;
+
+  box.className = "map";
+  const W = stage.clientWidth, H = stage.clientHeight;
+  const rects = squarify(kids.map(k => k.v[year]), W, H);
+  kids.forEach((k, i) => {
+    const [x, y, w, h] = rects[i], p = change(k, year);
+    const b = document.createElement("button");
+    const big = w > 150 && h > 100;
+    b.className = "tile " + cls(p) + (big ? " big" : "") + (w < 22 || h < 18 ? " tiny" : "");
+    b.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
+    b.setAttribute("aria-label", `${k.name}${k.sub ? " " + k.sub : ""} ${money(k.v[year])}원 ${pctTxt(p)}`);
+    if (w >= 44 && h >= 22) {
+      let html = `<b>${esc(k.name)}</b>`;
+      if (h >= 40 && w >= 60) html += `<span>${money(k.v[year])}${w >= 110 && p != null ? " " + pctTxt(p) : ""}</span>`;
+      if (h >= 62 && w >= 110 && k.sub) html += `<span>${esc(k.sub)}</span>`;
+      b.innerHTML = html;
+    }
+    b.onclick = () => drill(k);
+    box.appendChild(b);
+  });
+  stage.appendChild(box);
 }
 
-function leafBlock(d, n) {
-  const sec = document.createElement("section");
-  sec.className = "level"; sec.id = "lv" + d;
-  const r = n.raw;
-  const mx = Math.max(...YEARS.map(y => Math.max(r.gov[y] || 0, r.na[y] || 0)));
+function drawDetail(n) {
+  const r = n.raw, box = document.createElement("div");
+  box.className = "detail";
   const rows = YEARS.map(y => {
-    const rep = CONFIRMED[y] ? r.na[y] : r.gov[y];
+    const rep = CONFIRMED[y] ? r.na[y] : r.gov[y], mx = Math.max(...YEARS.map(z => Math.max(r.gov[z] || 0, r.na[z] || 0)));
     return `<tr><td>${y}</td><td>${r.gov[y] ? num(r.gov[y]) : "-"}</td><td>${CONFIRMED[y] ? (r.na[y] ? num(r.na[y]) : "-") : "심의 중"}</td>
       <td class="b"><i style="width:${rep > 0 ? Math.max(1, rep / mx * 100) : 0}%"></i></td></tr>`;
   }).join("");
   const key = r.ministry + "|" + n.name, items = NAEYEOK && NAEYEOK[key];
-  let inner;
+  let inner = `<div class="empty">내역사업 자료는 아직 없습니다. 열린재정 공개 자료는 세부사업까지만 나옵니다. 부처 사업설명자료의 내역사업을 <code>data/naeyeok.json</code>에 넣으면 여기에 펼쳐집니다.</div>`;
   if (items && items.length) {
     const tot = items.reduce((a, b) => a + (b.amt || 0), 0), top = Math.max(...items.map(i => i.amt || 0));
-    inner = `<div class="list">` + [...items].sort((a, b) => (b.amt || 0) - (a.amt || 0)).map(i =>
+    inner = [...items].sort((a, b) => (b.amt || 0) - (a.amt || 0)).map(i =>
       `<div class="rowbtn" style="cursor:default"><i class="sw c-m"></i><span class="nm">${esc(i.name)}</span>
        <span class="am">${money(i.amt)}<small>${tot > 0 ? (i.amt / tot * 100).toFixed(1) : "-"}%</small></span>
-       <span class="bar"><i style="width:${top > 0 ? Math.max(0.5, i.amt / top * 100) : 0}%"></i></span></div>`).join("") + `</div>`;
+       <span class="bar"><i style="width:${top > 0 ? Math.max(0.5, i.amt / top * 100) : 0}%"></i></span></div>`).join("");
+    inner = `<div class="sub-h">내역사업 ${items.length}개</div><div class="items">${inner}</div>`;
   } else {
-    inner = `<div class="empty">내역사업 자료는 아직 없습니다. 열린재정 공개 자료는 세부사업까지만 나옵니다. 부처 사업설명자료의 내역사업을 <code>data/naeyeok.json</code>에 넣으면 이 자리에 펼쳐집니다.</div>`;
+    inner = `<div class="sub-h">내역사업</div>${inner}`;
   }
-  sec.innerHTML = `<div class="lvhead"><div><div class="lvname">${LEVELS[d]}</div>
-      <div class="lvtitle">${esc(n.name)}</div>
-      <div class="lvmeta">${money(n.v[year])}원${change(n, year) != null ? ` · 전년 대비 ${pctTxt(change(n, year))}` : ""}</div></div></div>
-    <div class="detail">
-      <dl><dt>소관</dt><dd>${esc(r.ministry)}</dd><dt>회계·기금</dt><dd>${esc(r.fund)}</dd>
+  const ch = change(n, year);
+  box.innerHTML = `
+    <div><h2>${esc(n.name)}</h2>
+      <div class="meta">${money(n.v[year])}원 (${year}) ${ch != null ? "· 전년 대비 " + pctTxt(ch) : ""}</div></div>
+    <dl><dt>소관</dt><dd>${esc(r.ministry)}</dd><dt>회계·기금</dt><dd>${esc(r.fund)}</dd>
       <dt>위치</dt><dd>${path.slice(0, -1).map(p => esc(p.name)).join(" › ")}</dd></dl>
-      <table><thead><tr><th>연도</th><th>정부안(억원)</th><th>국회 확정</th><th></th></tr></thead><tbody>${rows}</tbody></table>
-    </div>${inner}`;
-  return sec;
+    <table><thead><tr><th>연도</th><th>정부안(억)</th><th>국회 확정(억)</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    ${inner}`;
+  stage.appendChild(box);
 }
 
-/* ---------- 마우스 설명 상자 ---------- */
-const TIP = document.getElementById("tip");
-function tip(e, k, total) {
-  if (!e || !matchMedia("(hover: hover)").matches) { TIP.style.display = "none"; return; }
-  const p = change(k, year), prev = k.v[year - 1];
-  TIP.innerHTML = `<b>${esc(k.name)}</b>${k.sub ? esc(k.sub) + "<br>" : ""}${year}년 ${money(k.v[year])}원 (${(k.v[year] / total * 100).toFixed(1)}%)` +
-    (p != null ? `<br>${year - 1}년 ${prev ? money(prev) + "원" : "없음"} → ${pctTxt(p)}` : "");
-  TIP.style.display = "block";
-  const w = TIP.offsetWidth, h = TIP.offsetHeight;
-  TIP.style.left = Math.min(innerWidth - w - 8, Math.max(8, e.clientX + 14)) + "px";
-  TIP.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) + "px";
-}
-
-document.getElementById("years").onclick = e => {
-  const b = e.target.closest("button");
-  if (b) { year = +b.dataset.y; render(); }
+/* ---------- 이벤트 ---------- */
+$("years").onclick = e => { const b = e.target.closest("button"); if (b) setYear(+b.dataset.y); };
+$("back").onclick = () => jump(path.length - 1);
+$("trail").onclick = e => { const b = e.target.closest("button"); if (b && b.dataset.i != null) jump(+b.dataset.i); };
+$("lvname").onclick = e => { const b = e.target.closest("button[data-m]"); if (b) { mode = b.dataset.m; render(); } };
+$("aboutBtn").onclick = () => {
+  const a = $("about"), on = !a.classList.contains("on");
+  a.classList.toggle("on", on); $("aboutBtn").setAttribute("aria-expanded", on);
 };
-let rw = document.documentElement.clientWidth;
-addEventListener("resize", () => { const w = document.documentElement.clientWidth; if (w !== rw) { rw = w; render(); } });
+
+// 화면 크기가 바뀌면 지도를 다시 짠다
+let rt = null, lastW = innerWidth, lastH = innerHeight;
+addEventListener("resize", () => {
+  if (innerWidth === lastW && innerHeight === lastH) return;
+  lastW = innerWidth; lastH = innerHeight;
+  clearTimeout(rt); rt = setTimeout(render, 120);
+});
 render();
 </script>
 </body>
