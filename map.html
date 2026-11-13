@@ -90,6 +90,9 @@ button{font:inherit;color:inherit}
 #tip{position:fixed;z-index:10;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;line-height:1.45;padding:6px 8px;border-radius:6px;max-width:240px;display:none;font-variant-numeric:tabular-nums}
 #tip b{display:block;font-size:12.5px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+#trail .seg{position:static;flex:none}
+#trail .seg button{font-weight:600;max-width:none;color:var(--sub);padding:4px 10px;font-size:12.5px;cursor:pointer}
+#trail .seg button.on{background:var(--ink);color:var(--bg)}
 </style>
 </head>
 <body>
@@ -119,13 +122,16 @@ const YEARS = PK.years;
 // 국회 확정 합계가 있는 연도는 확정액만, 없는 연도(심의 중)는 정부안
 const CONFIRMED = {};
 YEARS.forEach(y => CONFIRMED[y] = !!(D.totals[y] && D.totals[y].na > 0));
-const LEVELS = ["분야", "부문", "프로그램", "단위사업", "세부사업", "내역사업"];
+const LEVELS_FIELD = ["분야", "부문", "프로그램", "단위사업", "세부사업", "내역사업"];
+const LEVELS_MIN = ["부처", "분야", "부문", "프로그램", "단위사업", "세부사업", "내역사업"];
+let view = "field";   // field: 분야별로 시작 | ministry: 부처별로 시작
+const LEVELS = () => view === "ministry" ? LEVELS_MIN : LEVELS_FIELD;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-/* ---------- 계층 만들기 ---------- */
+/* ---------- 계층 만들기 (시작 기준별로 한 번씩) ---------- */
 function node(name, sub) { return { name, sub: sub || "", v: {}, kids: new Map(), raw: null }; }
-const ROOT = node("총지출");
-(function build() {
+function buildTree(kind) {
+  const root = node("총지출");
   const K = PK.keys, d = PK.dicts, nk = K.length, ix = {};
   K.forEach((k, i) => ix[k] = i);
   for (const r of PK.rows) {
@@ -138,12 +144,13 @@ const ROOT = node("총지출");
     });
     if (!any) continue;
     const ministry = d.ministry[r[ix.ministry]];
-    // 프로그램은 소관별로 따로 있으므로 이름이 같아도 소관이 다르면 다른 칸
-    const path = [
-      [d.field[r[ix.field]], ""], [d.sector[r[ix.sector]], ""],
-      [d.program[r[ix.program]], ministry], [d.activity[r[ix.activity]], ""]
-    ];
-    let cur = ROOT;
+    const field = d.field[r[ix.field]], sector = d.sector[r[ix.sector]];
+    const program = d.program[r[ix.program]], activity = d.activity[r[ix.activity]];
+    // 분야별: 분야 > 부문 > 프로그램(소관별) > 단위사업   /  부처별: 소관 > 분야 > 부문 > 프로그램 > 단위사업
+    const path = kind === "ministry"
+      ? [[ministry, ""], [field, ""], [sector, ""], [program, ""], [activity, ""]]
+      : [[field, ""], [sector, ""], [program, ministry], [activity, ""]];
+    let cur = root;
     add(cur, amt);
     for (const [nm, sub] of path) {
       const key = nm + "\u0001" + sub;
@@ -158,7 +165,10 @@ const ROOT = node("총지출");
     cur.kids.set(cur.kids.size + "\u0001" + r[nk], leaf);
   }
   function add(n, amt) { for (const y in amt) n.v[y] = (n.v[y] || 0) + amt[y]; }
-})();
+  return root;
+}
+const ROOTS = { field: buildTree("field"), ministry: buildTree("ministry") };
+let ROOT = ROOTS.field;
 
 /* ---------- 내역사업 (선택 자료: data/naeyeok.json) ---------- */
 let NAEYEOK = null;
@@ -218,7 +228,8 @@ let mode = "map";              // map | list
 const $ = id => document.getElementById(id);
 const stage = $("stage");
 const cur = () => path.length ? path[path.length - 1] : ROOT;
-const LV = d => LEVELS[Math.min(d, LEVELS.length - 1)];
+const LV = d => { const L = LEVELS(); return L[Math.min(d, L.length - 1)]; };
+function setView(v) { view = v; ROOT = ROOTS[v]; path = []; mode = "map"; render(); }
 
 function go(next) { path = next; render(); }
 function drill(n) { path = [...path, n]; mode = "map"; render(); }
@@ -251,7 +262,9 @@ function render() {
   $("back").classList.toggle("on", path.length > 0);
   const crumbs = [{ i: 0, name: "총지출" }].concat(path.map((n, i) => ({ i: i + 1, name: n.name })));
   const shown = crumbs.length > 3 ? [crumbs[0], null, ...crumbs.slice(-2)] : crumbs;   // 깊으면 가운데를 줄임
-  $("trail").innerHTML = shown.map(c => c ? `<li><button data-i="${c.i}" title="${esc(c.name)}">${esc(c.name)}</button></li>` : `<li><span style="color:var(--sub)">…</span></li>`).join("");
+  $("trail").innerHTML = path.length === 0
+    ? `<li><span class="seg" role="group" aria-label="시작 기준"><button data-v="field" class="${view === "field" ? "on" : ""}" aria-pressed="${view === "field"}">분야별</button><button data-v="ministry" class="${view === "ministry" ? "on" : ""}" aria-pressed="${view === "ministry"}">부처별</button></span></li>`
+    : shown.map(c => c ? `<li><button data-i="${c.i}" title="${esc(c.name)}">${esc(c.name)}</button></li>` : `<li><span style="color:var(--sub)">…</span></li>`).join("");
   $("lvname").innerHTML = node.leaf
     ? `<span style="color:var(--accent);font-weight:700">${LV(path.length - 1)}</span>`
     : `<span class="seg" role="group" aria-label="보기 방식"><button data-m="map" class="${mode === "map" ? "on" : ""}" aria-pressed="${mode === "map"}">지도</button><button data-m="list" class="${mode === "list" ? "on" : ""}" aria-pressed="${mode === "list"}">목록</button></span>`;
@@ -341,7 +354,12 @@ function drawDetail(n) {
 /* ---------- 이벤트 ---------- */
 $("years").onclick = e => { const b = e.target.closest("button"); if (b) setYear(+b.dataset.y); };
 $("back").onclick = () => jump(path.length - 1);
-$("trail").onclick = e => { const b = e.target.closest("button"); if (b && b.dataset.i != null) jump(+b.dataset.i); };
+$("trail").onclick = e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.v) setView(b.dataset.v);
+  else if (b.dataset.i != null) jump(+b.dataset.i);
+};
 $("lvname").onclick = e => { const b = e.target.closest("button[data-m]"); if (b) { mode = b.dataset.m; render(); } };
 $("aboutBtn").onclick = () => {
   const a = $("about"), on = !a.classList.contains("on");
