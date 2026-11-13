@@ -220,8 +220,6 @@ function select(depth, n) {
   if (!same) path.push(n);
   for (const k in expanded) if (k > depth) delete expanded[k];
   render();
-  const el = document.getElementById("lv" + (same ? depth : depth + 1));
-  if (el) el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: same ? "nearest" : "start" });
 }
 
 /* ---------- 그리기 ---------- */
