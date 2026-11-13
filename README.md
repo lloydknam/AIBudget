@@ -34,6 +34,7 @@
 
 ## 구조
 - `index.html`: 단일 파일 화면 (외부 라이브러리 없음)
+- `map.html`: 예산 지도. 분야 → 부문 → 프로그램 → 단위사업 → 세부사업 순으로 누를 때마다 아래로 펼쳐지는 트리맵 (같은 `data/budget.js` 사용). 내역사업은 공개 자료에 없어, `data/naeyeok.json`(`{"소관|세부사업명":[{"name":"내역사업명","amt":억원}]}`)을 넣으면 표시
 - `data/budget.json`: 사업별 연도별 정부안·국회 확정 (억원)
 - `data/budget.js`: 화면용 압축 데이터 (`build.py`가 생성, 화면에서 풀어서 사용)
 - `scripts/make_sample.py`: 화면 시험용 샘플 데이터 생성기

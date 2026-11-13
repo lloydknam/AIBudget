@@ -15,6 +15,7 @@ h1{font-size:20px;margin:0}
 .notice{margin:8px 0 0;padding:8px 12px;border-radius:8px;background:var(--note-bg);color:var(--note-ink);font-size:13px}
 nav{display:flex;gap:6px;overflow-x:auto;padding:12px 16px;max-width:960px;margin:auto;scrollbar-width:none}
 nav button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 12px;border-radius:999px;cursor:pointer;font-size:14px}
+nav a{flex:none;border:1px solid var(--accent);color:var(--accent);padding:8px 12px;border-radius:999px;font-size:14px;text-decoration:none;line-height:1.6}
 nav button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 main{max-width:960px;margin:auto;padding:0 16px 24px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
@@ -129,7 +130,8 @@ const TABS = [["home", "홈"], ["overview", "한눈에 보기"], ["explore", "�
 let cur = "home";
 function drawTabs() {
   document.getElementById("tabs").innerHTML = TABS.map(([k, l]) =>
-    `<button class="${k === cur ? "on" : ""}" onclick="go('${k}')">${l}</button>`).join("");
+    `<button class="${k === cur ? "on" : ""}" onclick="go('${k}')">${l}</button>`).join("") +
+    `<a href="map.html">예산 지도</a>`;
 }
 function go(k) { cur = k; drawTabs(); VIEWS[k](); window.scrollTo(0, 0); }
 const VIEWS = {};

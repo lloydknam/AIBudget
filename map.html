@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>예산 지도</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#1d2330;--sub:#6b7385;--line:#e3e6ef;--accent:#2f4fb8;--spine:#c9cfe0;
+  --d0:#2a78d6;--d0f:#fff;--d1:#7fb0ea;--d1f:#0d2140;--d2:#c9ddf5;--d2f:#0d2140;
+  --dm:#e9e8e4;--dmf:#1d2330;
+  --u2:#f7cdcc;--u2f:#3d0d0d;--u1:#ee8f8e;--u1f:#3d0d0d;--u0:#d93a39;--u0f:#fff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#12151c;--card:#1b2030;--ink:#e8ebf3;--sub:#9aa3b8;--line:#2a3144;--accent:#7b96ff;--spine:#3a435c;
+  --d0:#3987e5;--d0f:#06142b;--d1:#2a5c9e;--d1f:#eef4ff;--d2:#22395c;--d2f:#dbe7fb;
+  --dm:#383835;--dmf:#e8ebf3;
+  --u2:#5a2626;--u2f:#fbe1e1;--u1:#a04040;--u1f:#fff1f1;--u0:#e66767;--u0f:#2b0707}}
+:root[data-theme="dark"]{--bg:#12151c;--card:#1b2030;--ink:#e8ebf3;--sub:#9aa3b8;--line:#2a3144;--accent:#7b96ff;--spine:#3a435c;
+  --d0:#3987e5;--d0f:#06142b;--d1:#2a5c9e;--d1f:#eef4ff;--d2:#22395c;--d2f:#dbe7fb;
+  --dm:#383835;--dmf:#e8ebf3;
+  --u2:#5a2626;--u2f:#fbe1e1;--u1:#a04040;--u1f:#fff1f1;--u0:#e66767;--u0f:#2b0707}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Malgun Gothic",sans-serif}
+header,main,footer{max-width:960px;margin:auto;padding-left:16px;padding-right:16px}
+header{padding-top:18px}
+.back{color:var(--sub);font-size:13px;text-decoration:none}
+h1{font-size:22px;margin:2px 0 0;letter-spacing:-.02em}
+.total{margin:10px 0 0;font-size:15px;color:var(--sub)}
+.total b{font-size:30px;color:var(--ink);letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-right:6px}
+.years{display:flex;gap:6px;margin:14px 0 0;overflow-x:auto;scrollbar-width:none}
+.years button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:14px;line-height:1.3}
+.years button small{display:block;font-size:11px;color:var(--sub)}
+.years button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.years button.on small{color:#fff;opacity:.85}
+.legend{display:flex;align-items:center;gap:8px;margin:14px 0 4px;font-size:12px;color:var(--sub);flex-wrap:wrap}
+.legend .scale{display:flex;gap:2px}
+.legend .scale i{width:26px;height:12px;border-radius:2px;display:block}
+.hint{font-size:13px;color:var(--sub);margin:4px 0 0}
+
+main{padding-top:6px;padding-bottom:24px}
+.level{position:relative;padding:14px 0 6px 18px;border-left:2px solid var(--spine);margin-left:7px}
+.level::before{content:"";position:absolute;left:-7px;top:19px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+.lvhead{display:flex;align-items:flex-start;gap:8px;justify-content:space-between}
+.lvname{font-size:12px;color:var(--accent);font-weight:700}
+.lvtitle{font-size:17px;font-weight:700;line-height:1.35;letter-spacing:-.01em;word-break:keep-all}
+.lvmeta{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums}
+.toggle{flex:none;display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+.toggle button{border:0;background:none;color:var(--sub);padding:5px 9px;font:inherit;font-size:12px;cursor:pointer}
+.toggle button.on{background:var(--ink);color:var(--bg)}
+.map{position:relative;margin-top:10px;border-radius:10px;overflow:hidden}
+.tile{position:absolute;border:1px solid var(--bg);border-radius:3px;padding:5px 6px;margin:0;font:inherit;text-align:left;cursor:pointer;overflow:hidden;line-height:1.25;transition:opacity .15s}
+.tile b{display:block;font-size:12.5px;font-weight:700;word-break:keep-all;overflow-wrap:anywhere}
+.tile span{display:block;font-size:11.5px;font-variant-numeric:tabular-nums;opacity:.9}
+.tile.big b{font-size:15px}.tile.big span{font-size:13px}
+.tile.sm{padding:3px 4px}.tile.sm b{font-size:10.5px;letter-spacing:-.03em}.tile.sm span{font-size:10px}
+.tile.dim{opacity:.45}
+.tile.sel{outline:3px solid var(--ink);outline-offset:-3px;z-index:2}
+.tile:focus-visible,.rowbtn:focus-visible,.years button:focus-visible,.toggle button:focus-visible,.more:focus-visible{outline:3px solid var(--accent);outline-offset:-2px;z-index:3}
+.c-d0{background:var(--d0);color:var(--d0f)}.c-d1{background:var(--d1);color:var(--d1f)}.c-d2{background:var(--d2);color:var(--d2f)}
+.c-m{background:var(--dm);color:var(--dmf)}
+.c-u2{background:var(--u2);color:var(--u2f)}.c-u1{background:var(--u1);color:var(--u1f)}.c-u0{background:var(--u0);color:var(--u0f)}
+.small{font-size:12px;color:var(--sub);margin:6px 0 0}
+.small button,.more{border:0;background:none;color:var(--accent);font:inherit;font-size:inherit;cursor:pointer;padding:0;text-decoration:underline}
+.list{margin-top:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.rowbtn{display:grid;grid-template-columns:10px 1fr auto;gap:2px 10px;align-items:center;width:100%;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:inherit;text-align:left;padding:9px 12px;cursor:pointer}
+.rowbtn:last-child{border-bottom:0}
+.rowbtn.sel{background:var(--bg);box-shadow:inset 3px 0 0 var(--ink)}
+.rowbtn .sw{width:10px;height:10px;border-radius:2px;grid-row:1}
+.rowbtn .nm{font-size:14px;font-weight:600;word-break:keep-all;overflow-wrap:anywhere;line-height:1.35}
+.rowbtn .nm small{font-weight:400;color:var(--sub);font-size:12px;margin-left:4px}
+.rowbtn .am{font-size:13px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.rowbtn .am small{display:block;color:var(--sub);font-size:11.5px}
+.rowbtn .bar{grid-column:2 / 4;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.rowbtn .bar i{display:block;height:100%;background:var(--sub);border-radius:2px}
+.more{display:block;width:100%;padding:10px;text-align:center;font-size:13px;background:var(--card)}
+.detail{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:10px}
+.detail dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0 0 10px;font-size:13px}
+.detail dt{color:var(--sub)}.detail dd{margin:0;word-break:keep-all}
+.detail table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.detail th,.detail td{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right;font-weight:400}
+.detail th{color:var(--sub);font-size:12px}
+.detail th:first-child,.detail td:first-child{text-align:left}
+.detail td.b{width:34%;padding-left:10px}
+.detail td.b i{display:block;height:8px;background:var(--accent);border-radius:0 4px 4px 0;min-width:1px}
+.empty{font-size:13px;color:var(--sub);background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:10px}
+#tip{position:fixed;z-index:10;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;line-height:1.45;padding:7px 9px;border-radius:6px;max-width:260px;display:none;font-variant-numeric:tabular-nums}
+#tip b{display:block;font-size:13px}
+footer{padding-top:8px;padding-bottom:40px;color:var(--sub);font-size:12px}
+.logo{font-family:"D-DIN","DIN Alternate","Bahnschrift","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.18em;color:var(--ink);font-size:13px;text-decoration:none}
+.logo sup{color:#d0342c;font-size:12px;margin-left:1px}
+.src{margin:0 0 10px}
+@media (prefers-reduced-motion: reduce){.tile{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="./">‹ 예산 AI 분석</a>
+  <h1>예산 지도</h1>
+  <p class="total" id="total"></p>
+  <div class="years" id="years" role="group" aria-label="회계연도"></div>
+  <div class="legend" id="legend"></div>
+  <p class="hint">칸을 누르면 아래로 한 단계씩 펼쳐집니다. 칸 넓이는 금액, 색은 전년 대비 증감률입니다.</p>
+</header>
+<main id="levels"></main>
+<footer>
+  <p class="src" id="src"></p>
+  <a class="logo" href="https://github.com/lloydknam">LLOYD'S BALCONY LAB<sup>*</sup></a>
+  <span> · with claude · <a href="https://github.com/lloydknam" style="color:inherit">GitHub(@lloydknam)</a></span>
+  <div style="margin-top:2px">*아직 실험 중</div>
+</footer>
+<div id="tip"></div>
+
+<script src="data/budget.js"></script>
+<script>
+"use strict";
+const D = window.BUDGET, PK = D.packed;
+const YEARS = PK.years;
+// 국회 확정 합계가 있는 연도는 확정액만, 없는 연도(심의 중)는 정부안
+const CONFIRMED = {};
+YEARS.forEach(y => CONFIRMED[y] = !!(D.totals[y] && D.totals[y].na > 0));
+const LEVELS = ["분야", "부문", "프로그램", "단위사업", "세부사업", "내역사업"];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ---------- 계층 만들기 ---------- */
+function node(name, sub) { return { name, sub: sub || "", v: {}, kids: new Map(), raw: null }; }
+const ROOT = node("총지출");
+(function build() {
+  const K = PK.keys, d = PK.dicts, nk = K.length, ix = {};
+  K.forEach((k, i) => ix[k] = i);
+  for (const r of PK.rows) {
+    const amt = {};
+    let any = false;
+    YEARS.forEach((y, j) => {
+      const g = r[nk + 1 + j * 2], n = r[nk + 2 + j * 2];
+      const v = CONFIRMED[y] ? (n || 0) : (g || 0);
+      if (v > 0) { amt[y] = v; any = true; }
+    });
+    if (!any) continue;
+    const ministry = d.ministry[r[ix.ministry]];
+    // 프로그램은 소관별로 따로 있으므로 이름이 같아도 소관이 다르면 다른 칸
+    const path = [
+      [d.field[r[ix.field]], ""], [d.sector[r[ix.sector]], ""],
+      [d.program[r[ix.program]], ministry], [d.activity[r[ix.activity]], ""]
+    ];
+    let cur = ROOT;
+    add(cur, amt);
+    for (const [nm, sub] of path) {
+      const key = nm + "\u0001" + sub;
+      let c = cur.kids.get(key);
+      if (!c) { c = node(nm, sub); cur.kids.set(key, c); }
+      add(c, amt); cur = c;
+    }
+    const leaf = node(r[nk], "");
+    leaf.v = amt; leaf.leaf = true;
+    leaf.raw = { ministry, fund: d.fund[r[ix.fund]], gov: {}, na: {} };
+    YEARS.forEach((y, j) => { leaf.raw.gov[y] = r[nk + 1 + j * 2]; leaf.raw.na[y] = r[nk + 2 + j * 2]; });
+    cur.kids.set(cur.kids.size + "\u0001" + r[nk], leaf);
+  }
+  function add(n, amt) { for (const y in amt) n.v[y] = (n.v[y] || 0) + amt[y]; }
+})();
+
+/* ---------- 내역사업 (선택 자료: data/naeyeok.json) ---------- */
+let NAEYEOK = null;
+fetch("data/naeyeok.json").then(r => r.ok ? r.json() : null).then(j => { NAEYEOK = j; if (j) render(); }).catch(() => {});
+
+/* ---------- 표시 형식 ---------- */
+const num = (n, f = 1) => n.toLocaleString("ko-KR", { maximumFractionDigits: f, minimumFractionDigits: 0 });
+const money = v => v == null ? "-" : v >= 10000 ? num(v / 10000) + "조" : v >= 100 ? num(v, 0) + "억" : num(v) + "억";
+const pctTxt = p => p == null ? "" : p === Infinity ? "신규" : (p > 0 ? "+" : "") + (Math.abs(p) >= 1000 ? num(p, 0) : p.toFixed(1)) + "%";
+function change(n, y) {
+  const py = y - 1;
+  if (!YEARS.includes(py)) return null;
+  const a = n.v[y] || 0, b = n.v[py] || 0;
+  if (!(b > 0)) return a > 0 ? Infinity : null;
+  return (a / b - 1) * 100;
+}
+function cls(p) {
+  if (p == null) return "c-m";
+  if (p > 20) return "c-u0"; if (p > 10) return "c-u1"; if (p > 3) return "c-u2";
+  if (p < -20) return "c-d0"; if (p < -10) return "c-d1"; if (p < -3) return "c-d2";
+  return "c-m";
+}
+const children = (n, y) => [...n.kids.values()].filter(c => c.v[y] > 0).sort((a, b) => b.v[y] - a.v[y]);
+
+/* ---------- 트리맵 배치 (squarified) ---------- */
+function squarify(vals, W, H) {
+  const tot = vals.reduce((a, b) => a + b, 0), area = vals.map(v => v / tot * W * H), out = [];
+  let x = 0, y = 0, w = W, h = H, i = 0;
+  const worst = (s, mn, mx, side) => Math.max(side * side * mx / (s * s), s * s / (side * side * mn));
+  while (i < area.length) {
+    const side = Math.min(w, h);
+    let j = i, s = 0, mn = Infinity, mx = 0, best = Infinity;
+    while (j < area.length) {
+      const a = area[j], s2 = s + a, mn2 = Math.min(mn, a), mx2 = Math.max(mx, a), wst = worst(s2, mn2, mx2, side);
+      if (wst > best) break;
+      s = s2; mn = mn2; mx = mx2; best = wst; j++;
+    }
+    if (w >= h) {
+      const cw = s / h; let cy = y;
+      for (let k = i; k < j; k++) { const ch = area[k] / cw; out.push([x, cy, cw, ch]); cy += ch; }
+      x += cw; w -= cw;
+    } else {
+      const rh = s / w; let cx = x;
+      for (let k = i; k < j; k++) { const cw = area[k] / rh; out.push([cx, y, cw, rh]); cx += cw; }
+      y += rh; h -= rh;
+    }
+    i = j;
+  }
+  return out;
+}
+
+/* ---------- 상태 ---------- */
+let year = YEARS[YEARS.length - 1];
+let path = [];            // 선택한 노드들 (분야 → … → 세부사업)
+const mode = {};          // 단계별 보기: map | list
+const expanded = {};      // 목록 전체 펼침 여부
+const LIST_CAP = 12;
+
+function select(depth, n) {
+  const same = path[depth] === n;
+  path = path.slice(0, depth);
+  if (!same) path.push(n);
+  for (const k in expanded) if (k > depth) delete expanded[k];
+  render();
+  const el = document.getElementById("lv" + (same ? depth : depth + 1));
+  if (el) el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: same ? "nearest" : "start" });
+}
+
+/* ---------- 그리기 ---------- */
+function render() {
+  // 선택 경로 중 이 연도에 금액이 없는 단계부터는 접는다
+  const bad = path.findIndex(n => !(n.v[year] > 0));
+  if (bad >= 0) path = path.slice(0, bad);
+
+  const t = D.totals[year], cur = ROOT.v[year], prev = ROOT.v[year - 1];
+  document.getElementById("total").innerHTML =
+    `<b>${num(cur / 10000)}조원</b>${year}년 ${CONFIRMED[year] ? "국회 확정" : "정부안"} 총지출` +
+    (prev ? ` · 전년 확정 대비 ${pctTxt((cur / prev - 1) * 100)}` : "");
+  document.getElementById("years").innerHTML = YEARS.map(y =>
+    `<button class="${y === year ? "on" : ""}" aria-pressed="${y === year}" data-y="${y}">${y}<small>${CONFIRMED[y] ? "국회 확정" : "정부안"}</small></button>`).join("");
+  document.getElementById("legend").innerHTML = YEARS.includes(year - 1)
+    ? `<span>감소</span><span class="scale">${["d0", "d1", "d2", "m", "u2", "u1", "u0"].map(c => `<i class="c-${c}"></i>`).join("")}</span><span>증가</span><span>(경계 ±3% · ±10% · ±20%, 가장 진한 빨강에는 신규 포함)</span>`
+    : `<span>${year}년은 비교할 전년 자료가 없어 색을 칠하지 않았습니다.</span>`;
+
+  TIP.style.display = "none";
+  const host = document.getElementById("levels");
+  host.innerHTML = "";
+  for (let d = 0; d <= path.length; d++) {
+    const parent = d === 0 ? ROOT : path[d - 1];
+    host.appendChild(parent.leaf ? leafBlock(d, parent) : levelBlock(d, parent));
+    if (parent.leaf) break;
+  }
+  document.getElementById("src").innerHTML =
+    `출처: 열린재정 Open API (총지출 기준, 세부사업 ${PK.rows.length.toLocaleString()}개), 수집 ${esc((D.fetched_at || "").slice(0, 10))}. ` +
+    `분야·부문은 16대 분야 기능별 분류라서 보도자료의 12대 분야와 묶음이 다릅니다. 여러 해를 같은 틀로 비교하려고 각 사업을 가장 최근 연도의 분류·소관에 놓았습니다. 공식 자료가 아닌 개인 프로젝트입니다.`;
+}
+
+function headHtml(d, parent, count) {
+  const share = d > 0 ? parent.v[year] / ROOT.v[year] * 100 : null;
+  const ch = d > 0 ? change(parent, year) : null;
+  const meta = d === 0 ? `${count}개`
+    : `${money(parent.v[year])}원 · 총지출의 ${share >= 0.1 ? share.toFixed(1) : share.toFixed(2)}%` + (ch != null ? ` · 전년 대비 ${pctTxt(ch)}` : "") + (count != null ? ` · ${LEVELS[d]} ${count}개` : "");
+  return `<div><div class="lvname">${LEVELS[d]}</div>
+    <div class="lvtitle">${d === 0 ? "어느 분야에 쓰나" : esc(parent.name)}${parent.sub ? ` <span class="lvmeta">${esc(parent.sub)}</span>` : ""}</div>
+    <div class="lvmeta">${meta}</div></div>`;
+}
+
+function levelBlock(d, parent) {
+  const kids = children(parent, year), sel = path[d];
+  const sec = document.createElement("section");
+  sec.className = "level"; sec.id = "lv" + d;
+  const m = mode[d] || (kids.length > 40 ? "list" : "map");
+  sec.innerHTML = `<div class="lvhead">${headHtml(d, parent, kids.length)}
+    <div class="toggle" role="group" aria-label="보기 방식"><button data-m="map" class="${m === "map" ? "on" : ""}" aria-pressed="${m === "map"}">지도</button><button data-m="list" class="${m === "list" ? "on" : ""}" aria-pressed="${m === "list"}">목록</button></div></div>`;
+  sec.querySelector(".toggle").onclick = e => { const b = e.target.closest("button"); if (b) { mode[d] = b.dataset.m; render(); } };
+  const total = parent.v[year];
+
+  if (m === "map") {
+    const W = Math.max(240, Math.min(960, document.documentElement.clientWidth) - 16 * 2 - 27);
+    const H = kids.length === 1 ? 84 : kids.length <= 3 ? 150 : Math.round(Math.min(440, Math.max(250, W * (kids.length > 8 ? 1.1 : 0.72))));
+    const box = document.createElement("div");
+    box.className = "map"; box.style.height = H + "px";
+    const rects = squarify(kids.map(k => k.v[year]), W, H);
+    let hidden = 0;
+    kids.forEach((k, i) => {
+      const [x, y, w, h] = rects[i], p = change(k, year);
+      const b = document.createElement("button");
+      b.className = "tile " + cls(p) + (sel ? (sel === k ? " sel" : " dim") : "") + (w > 150 && h > 90 ? " big" : w < 62 || h < 40 ? " sm" : "");
+      b.style.cssText = `left:${x / W * 100}%;top:${y}px;width:${w / W * 100}%;height:${h}px`;
+      const showName = w >= 36 && h >= 20;
+      if (!showName) { hidden++; b.style.padding = "0"; }
+      const lines = Math.floor((h - 8) / (w < 62 || h < 40 ? 13.5 : 16));
+      b.innerHTML = showName ? `<b>${esc(k.name)}</b>` +
+        (lines >= 2 ? `<span>${money(k.v[year])}${w >= 96 && p != null ? " " + pctTxt(p) : ""}</span>` : "") +
+        (lines >= 4 && k.sub ? `<span>${esc(k.sub)}</span>` : "") : "";
+      b.setAttribute("aria-label", `${k.name}${k.sub ? " " + k.sub : ""} ${money(k.v[year])}원 ${pctTxt(p)}`);
+      b.setAttribute("aria-pressed", sel === k);
+      b.onclick = () => select(d, k);
+      b.onmouseenter = e => tip(e, k, total); b.onmousemove = e => tip(e, k, total); b.onmouseleave = () => tip(null);
+      box.appendChild(b);
+    });
+    sec.appendChild(box);
+    if (hidden) {
+      const s = document.createElement("p");
+      s.className = "small";
+      s.innerHTML = `이름이 안 보이는 작은 칸 ${hidden}개는 <button>목록으로 보기</button>`;
+      s.querySelector("button").onclick = () => { mode[d] = "list"; render(); };
+      sec.appendChild(s);
+    }
+  } else {
+    const box = document.createElement("div");
+    box.className = "list";
+    const selIdx = kids.indexOf(sel);
+    const cap = expanded[d] || kids.length <= LIST_CAP + 2 ? kids.length : Math.max(LIST_CAP, selIdx + 1);
+    const top = kids[0].v[year];
+    kids.slice(0, cap).forEach(k => {
+      const p = change(k, year), b = document.createElement("button");
+      b.className = "rowbtn" + (sel === k ? " sel" : "");
+      b.setAttribute("aria-pressed", sel === k);
+      const sh = k.v[year] / total * 100;
+      b.innerHTML = `<i class="sw ${cls(p)}"></i><span class="nm">${esc(k.name)}${k.sub ? `<small>${esc(k.sub)}</small>` : ""}</span>
+        <span class="am">${money(k.v[year])}<small>${sh >= 0.1 ? sh.toFixed(1) : "0.1 미만"}%${p != null ? " · " + pctTxt(p) : ""}</small></span>
+        <span class="bar"><i style="width:${Math.max(0.5, k.v[year] / top * 100)}%"></i></span>`;
+      b.onclick = () => select(d, k);
+      box.appendChild(b);
+    });
+    if (cap < kids.length) {
+      const b = document.createElement("button");
+      b.className = "more"; b.textContent = `나머지 ${kids.length - cap}개 더 보기`;
+      b.onclick = () => { expanded[d] = true; render(); };
+      box.appendChild(b);
+    }
+    sec.appendChild(box);
+  }
+  return sec;
+}
+
+function leafBlock(d, n) {
+  const sec = document.createElement("section");
+  sec.className = "level"; sec.id = "lv" + d;
+  const r = n.raw;
+  const mx = Math.max(...YEARS.map(y => Math.max(r.gov[y] || 0, r.na[y] || 0)));
+  const rows = YEARS.map(y => {
+    const rep = CONFIRMED[y] ? r.na[y] : r.gov[y];
+    return `<tr><td>${y}</td><td>${r.gov[y] ? num(r.gov[y]) : "-"}</td><td>${CONFIRMED[y] ? (r.na[y] ? num(r.na[y]) : "-") : "심의 중"}</td>
+      <td class="b"><i style="width:${rep > 0 ? Math.max(1, rep / mx * 100) : 0}%"></i></td></tr>`;
+  }).join("");
+  const key = r.ministry + "|" + n.name, items = NAEYEOK && NAEYEOK[key];
+  let inner;
+  if (items && items.length) {
+    const tot = items.reduce((a, b) => a + (b.amt || 0), 0), top = Math.max(...items.map(i => i.amt || 0));
+    inner = `<div class="list">` + [...items].sort((a, b) => (b.amt || 0) - (a.amt || 0)).map(i =>
+      `<div class="rowbtn" style="cursor:default"><i class="sw c-m"></i><span class="nm">${esc(i.name)}</span>
+       <span class="am">${money(i.amt)}<small>${tot > 0 ? (i.amt / tot * 100).toFixed(1) : "-"}%</small></span>
+       <span class="bar"><i style="width:${top > 0 ? Math.max(0.5, i.amt / top * 100) : 0}%"></i></span></div>`).join("") + `</div>`;
+  } else {
+    inner = `<div class="empty">내역사업 자료는 아직 없습니다. 열린재정 공개 자료는 세부사업까지만 나옵니다. 부처 사업설명자료의 내역사업을 <code>data/naeyeok.json</code>에 넣으면 이 자리에 펼쳐집니다.</div>`;
+  }
+  sec.innerHTML = `<div class="lvhead"><div><div class="lvname">${LEVELS[d]}</div>
+      <div class="lvtitle">${esc(n.name)}</div>
+      <div class="lvmeta">${money(n.v[year])}원${change(n, year) != null ? ` · 전년 대비 ${pctTxt(change(n, year))}` : ""}</div></div></div>
+    <div class="detail">
+      <dl><dt>소관</dt><dd>${esc(r.ministry)}</dd><dt>회계·기금</dt><dd>${esc(r.fund)}</dd>
+      <dt>위치</dt><dd>${path.slice(0, -1).map(p => esc(p.name)).join(" › ")}</dd></dl>
+      <table><thead><tr><th>연도</th><th>정부안(억원)</th><th>국회 확정</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+    </div>${inner}`;
+  return sec;
+}
+
+/* ---------- 마우스 설명 상자 ---------- */
+const TIP = document.getElementById("tip");
+function tip(e, k, total) {
+  if (!e || !matchMedia("(hover: hover)").matches) { TIP.style.display = "none"; return; }
+  const p = change(k, year), prev = k.v[year - 1];
+  TIP.innerHTML = `<b>${esc(k.name)}</b>${k.sub ? esc(k.sub) + "<br>" : ""}${year}년 ${money(k.v[year])}원 (${(k.v[year] / total * 100).toFixed(1)}%)` +
+    (p != null ? `<br>${year - 1}년 ${prev ? money(prev) + "원" : "없음"} → ${pctTxt(p)}` : "");
+  TIP.style.display = "block";
+  const w = TIP.offsetWidth, h = TIP.offsetHeight;
+  TIP.style.left = Math.min(innerWidth - w - 8, Math.max(8, e.clientX + 14)) + "px";
+  TIP.style.top = (e.clientY + 18 + h > innerHeight ? e.clientY - h - 12 : e.clientY + 18) + "px";
+}
+
+document.getElementById("years").onclick = e => {
+  const b = e.target.closest("button");
+  if (b) { year = +b.dataset.y; render(); }
+};
+let rw = document.documentElement.clientWidth;
+addEventListener("resize", () => { const w = document.documentElement.clientWidth; if (w !== rw) { rw = w; render(); } });
+render();
+</script>
+</body>
+</html>
