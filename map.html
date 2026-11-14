@@ -345,7 +345,7 @@ function drill(n, el) {
   const nsc = Math.pow(0.85, path.length + 1), TW = W * nsc, TH = H * nsc;
   clone.style.left = ((W - TW) / 2) + "px"; clone.style.top = ((H - TH) / 2) + "px";
   clone.style.width = TW + "px"; clone.style.height = TH + "px";
-  clone.style.borderRadius = "0px";
+  clone.style.borderRadius = "14px";
   clone.querySelectorAll("b,span").forEach(n => { n.style.fontSize = (+n.dataset.fs * 2.2) + "px"; });
   setTimeout(() => {
     busy = false;
