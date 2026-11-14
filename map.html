@@ -76,6 +76,14 @@ button{font:inherit;color:inherit}
 .rowbtn .am small{display:block;color:var(--sub);font-size:11px}
 .rowbtn .bar{grid-column:2 / 4;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
 .rowbtn .bar i{display:block;height:100%;background:var(--sub)}
+/* 작은 칸 라벨 (오른쪽 여백) · 말풍선 */
+.map svg.lead{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.map svg.lead polyline{fill:none;stroke:var(--sub);stroke-width:1}
+.callout{position:absolute;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:var(--ink);font-size:11px;line-height:1.3;word-break:keep-all}
+.callout b{display:block;font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.callout span{display:block;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bubble{position:absolute;z-index:8;border:0;border-radius:8px;padding:6px 9px;background:var(--ink);color:var(--bg);font-size:12px;line-height:1.35;text-align:left;cursor:pointer;max-width:170px;box-shadow:0 6px 18px rgba(0,0,0,.35);font-variant-numeric:tabular-nums}
+.bubble b{display:block;font-size:12.5px}
 /* 세부사업 상세 */
 .detail{background:var(--card);border-radius:14px;position:absolute;inset:0;padding:14px 14px 10px;display:flex;flex-direction:column;gap:10px;overflow:hidden}
 .detail h2{margin:0;font-size:18px;line-height:1.3;letter-spacing:-.01em;word-break:keep-all}
@@ -433,7 +441,13 @@ function drawChildren(parent) {
   const SW = stage.clientWidth, SH = stage.clientHeight, sc = Math.pow(0.85, path.length);
   const W = SW * sc, H = SH * sc;
   box.style.cssText = `inset:auto;left:${(SW - W) / 2}px;top:${(SH - H) / 2}px;width:${W}px;height:${H}px`;
-  const rects = squarify(kids.map(k => k.v[year]), W, H);
+  // 글자가 안 들어가는 작은 칸이 있으면, 오른쪽 여백에 꺾은선으로 라벨을 붙인다
+  const probe = squarify(kids.map(k => k.v[year]), W, H);
+  const fits = (w, h) => w >= 44 && h >= 22;
+  const hasSmall = probe.some(([, , w, h]) => !fits(w, h));
+  const G = hasSmall ? Math.min(150, Math.round(W * 0.36)) : 0, MW = W - G;
+  const rects = G ? squarify(kids.map(k => k.v[year]), MW, H) : probe;
+  const small = [];
   kids.forEach((k, i) => {
     const [x, y, w, h] = rects[i], p = change(k, year);
     const b = document.createElement("button");
@@ -447,11 +461,56 @@ function drawChildren(parent) {
       if (h >= 62 && w >= 110 && k.sub) html += `<span>${esc(k.sub)}</span>`;
       b.innerHTML = html;
     }
-    b.onclick = () => drill(k, b);
+    // 글자가 없는 작은 칸: 누르면 말풍선, 말풍선을 다시 누르면 들어간다
+    if (!fits(w, h)) {
+      b.onclick = () => showBubble(k, b, box, W, H);
+      small.push({ k, x, y, w, h });
+    } else {
+      b.onclick = () => drill(k, b);
+    }
     b.style.animationDelay = "0ms"; // 모든 칸이 한꺼번에 나타난다
     box.appendChild(b);
   });
+
+  // 오른쪽 여백의 라벨 (값이 큰 순서로 최대 12개, 칸 위치 순서대로 줄을 맞춘다)
+  if (G && small.length) {
+    const cap = Math.max(1, Math.min(12, Math.floor((H - 16) / 34)));
+    const top = [...small].sort((a, b) => b.k.v[year] - a.k.v[year]).slice(0, cap).sort((a, b) => (a.y + a.h / 2) - (b.y + b.h / 2));
+    const n = top.length, NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("class", "lead");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    top.forEach((c, j) => {
+      const ly = n === 1 ? H / 2 : 14 + j * (H - 40) / (n - 1);
+      const cx = c.x + c.w / 2, cy = c.y + c.h / 2;
+      const line = document.createElementNS(NS, "polyline");
+      line.setAttribute("points", `${cx},${cy} ${MW + 6},${ly + 7}`);
+      svg.appendChild(line);
+      const dot = document.createElement("button");
+      const p = change(c.k, year);
+      dot.className = "callout";
+      dot.style.cssText = `left:${MW + 12}px;top:${ly}px;width:${G - 16}px`;
+      dot.innerHTML = `<b>${esc(c.k.name)}</b><span>${money(c.k.v[year])}${p != null ? " · " + pctTxt(p) : ""}</span>`;
+      dot.onclick = () => drill(c.k);
+      box.appendChild(dot);
+    });
+    box.insertBefore(svg, box.firstChild);
+  }
   stage.appendChild(box);
+}
+
+// 작은 칸을 누르면 그 칸 옆에 말풍선으로 이름·금액·증가율을 보여준다
+function showBubble(k, tile, box, W, H) {
+  box.querySelectorAll(".bubble").forEach(e => e.remove());
+  const p = change(k, year);
+  const bub = document.createElement("button");
+  bub.className = "bubble";
+  bub.innerHTML = `<b>${esc(k.name)}</b>${money(k.v[year])}${p != null ? " · " + pctTxt(p) : ""}<br><small style="opacity:.75">한 번 더 누르면 들어가요</small>`;
+  const tx = parseFloat(tile.style.left), ty = parseFloat(tile.style.top), tw = parseFloat(tile.style.width);
+  bub.style.left = Math.max(4, Math.min(tx + tw + 6, W - 170)) + "px";
+  bub.style.top = Math.max(4, Math.min(ty, H - 60)) + "px";
+  bub.onclick = e => { e.stopPropagation(); drill(k, tile); };
+  box.appendChild(bub);
 }
 
 function drawDetail(n) {
