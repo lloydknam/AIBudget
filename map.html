@@ -108,7 +108,7 @@ button{font:inherit;color:inherit}
 .map svg.lead{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
 .map svg.lead polyline{fill:none;stroke:var(--sub);stroke-width:1}
 .callout{position:absolute;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:var(--ink);font-size:10px;line-height:1.3;word-break:keep-all}
-.callout b{display:block;font-size:10.5px;font-weight:700;white-space:nowrap}
+.callout b{display:block;font-size:10.5px;font-weight:700;word-break:keep-all;overflow-wrap:anywhere}
 .callout span{display:block;white-space:nowrap;font-size:9.5px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
 .bubble{position:absolute;z-index:8;border:0;border-radius:8px;padding:6px 9px;background:var(--ink);color:var(--bg);font-size:12px;line-height:1.35;text-align:left;cursor:pointer;max-width:170px;box-shadow:0 6px 18px rgba(0,0,0,.35);font-variant-numeric:tabular-nums}
 .bubble b{display:block;font-size:12.5px}
@@ -603,7 +603,8 @@ function drawChildren(parent) {
       const dot = document.createElement("button");
       const p = change(c.k, year);
       dot.className = "callout";
-      dot.style.cssText = `left:${MW + 12}px;top:${ly}px`;
+      const avail = SW - ((SW - W) / 2 + MW + 12) - 4;   // 오른쪽 여백이 남으면 이름을 두 줄로 쓴다
+      dot.style.cssText = `left:${MW + 12}px;top:${ly}px;width:${Math.max(G - 16, avail)}px`;
       dot.innerHTML = `<b>${esc(c.k.name)}</b><span>${money(c.k.v[year])}${p != null ? " · " + pctTxt(p) : ""}</span>`;
       dot.onclick = () => drill(c.k);
       box.appendChild(dot);
