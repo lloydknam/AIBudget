@@ -610,7 +610,7 @@ function render() {
 /* ---------- 트리 보기: 현재 칸 아래를 가로 계통도로 (첨부 스타일) ---------- */
 const TREE_COL = 230, TREE_ROW = 50, TREE_PADL = 170, TREE_TOP = 24, TREE_MAX = Infinity, TREE_OPEN = 1;   // TREE_MAX: 한 번에 보일 하위 수(제한 없음)   // TREE_OPEN: 처음 펼쳐 둘 단계 수
 const TREE_PAL = ["#7cc4ff", "#5fe3a1", "#c9a7ff", "#ffc27a", "#ff8fa3", "#8ef0e6"];
-let treeOpen = new Map(), treeAll = new Set(), treeSeen = new Set(), treeBase = null, treeKeep = null, treeYOf = new Map(), treeShift = 0, treeSeqNext = 0, treeSuppress = false, treeGhost = null, treeFollow = null, treeTween = 0;
+let treeOpen = new Map(), treeAll = new Set(), treeSeen = new Set(), treeBase = null, treeKeep = null, treeYOf = new Map(), treeDepthOf = new Map(), treeShift = 0, treeSeqNext = 0, treeSuppress = false, treeGhost = null, treeFollow = null, treeTween = 0;
 const TREE_ID = new WeakMap(); let treeIdSeq = 0;
 const treeIdOf = n => { if (!TREE_ID.has(n)) TREE_ID.set(n, ++treeIdSeq); return TREE_ID.get(n); };
 function isOpen(n, d) { return treeOpen.has(n) ? treeOpen.get(n) : d < TREE_OPEN; }
@@ -634,18 +634,19 @@ function drawTree(base) {
   // 자리(y)는 처음 정한 뒤 바꾸지 않는다. 펼치면 새 가지는 부모 근처의 빈 자리에 붙는다:
   // 위쪽 노드는 위로, 아래쪽 노드는 아래로 자란다. 위로 자라 맨 위를 넘으면 전체를 밀어 올린다(상대 위치는 그대로).
   if (!animate) {   // 칸이 바뀌면 새로 짠다: 루트는 처음 보일 하위들의 한가운데에 둔다
-    treeYOf = new Map(); treeShift = 0; treeSeqNext = 0;
+    treeYOf = new Map(); treeDepthOf = new Map(); treeShift = 0; treeSeqNext = 0;
     treeYOf.set("n" + treeIdOf(base), TREE_TOP + Math.max(0, (children(base, year).length - 1) / 2) * TREE_ROW);
+    treeDepthOf.set("n" + treeIdOf(base), 0);
   }
   const seqYs = k => { const out = []; for (let i = 0; i < k; i++) out.push(TREE_TOP + (treeSeqNext++) * TREE_ROW); return out; };
-  const placeNear = (py, k) => {
-    const occ = [...treeYOf.values()];
-    const lo = Math.min(...occ), hi = Math.max(...occ), dir = py < (lo + hi) / 2 ? -1 : 1;
-    // 가지가 엇갈리지 않도록, 새 하위들은 한 덩어리(연속된 빈 자리)로만 붙는다
+  // 자식은 부모의 다음 열(같은 깊이끼리의 칸)에, 부모와 같은 높이를 중심으로 한 덩어리로 놓는다.
+  // 다른 가지를 가로지르지 않도록 같은 열의 빈 자리만 찾는다 (오른쪽 여백으로 펼치기)
+  const placeIn = (col, py, k) => {
+    const occ = [...treeDepthOf.keys()].filter(x => treeDepthOf.get(x) === col).map(x => treeYOf.get(x));
     const free = y => !occ.some(o => Math.abs(o - y) < TREE_ROW * 0.6);
-    for (let j0 = 1; j0 < 2000; j0++) {
-      const ys = [];
-      for (let i = 0; i < k; i++) ys.push(py + dir * (j0 + i) * TREE_ROW);
+    const order = [0]; for (let t = 1; t < 2000; t++) order.push(t, -t);
+    for (const sft of order) {
+      const ys = []; for (let i = 0; i < k; i++) ys.push(py + (sft + i - (k - 1) / 2) * TREE_ROW);
       if (ys.every(free)) return ys;
     }
     return [];
@@ -653,18 +654,18 @@ function drawTree(base) {
   let maxD = 0;
   function build(n, d, par, rel, col) {
     const hasKids = children(n, year).length > 0, key = "n" + treeIdOf(n);
-    if (!treeYOf.has(key)) treeYOf.set(key, placeNear(par ? par.raw : TREE_TOP, 1)[0]);
+    if (!treeYOf.has(key)) { treeYOf.set(key, placeIn(d, par ? par.raw : TREE_TOP, 1)[0]); treeDepthOf.set(key, d); }
     const L = { n, d, par, rel, kids: [], x: TREE_PADL + d * TREE_COL, raw: treeYOf.get(key), y: 0, col, id: flat.length, more: 0, moreOf: null, hasKids };
     L.y = L.raw + treeShift;
     flat.push(L); if (d > maxD) maxD = d;
     if (hasKids && isOpen(n, d)) {
       const kids = children(n, year), all = treeAll.has(n), shown = all ? kids : kids.slice(0, TREE_MAX);
       const newK = shown.filter(k => !treeYOf.has("n" + treeIdOf(k)));
-      if (newK.length) { const ys = animate ? placeNear(L.raw, newK.length) : seqYs(newK.length); newK.forEach((k, i) => treeYOf.set("n" + treeIdOf(k), ys[i])); }
+      if (newK.length) { const ys = animate ? placeIn(d + 1, L.raw, newK.length) : seqYs(newK.length); newK.forEach((k, i) => { treeYOf.set("n" + treeIdOf(k), ys[i]); treeDepthOf.set("n" + treeIdOf(k), d + 1); }); }
       shown.forEach((k, i) => L.kids.push(build(k, d + 1, L, [...rel, k], d === 0 ? TREE_PAL[i % TREE_PAL.length] : col)));
       if (!all && kids.length > TREE_MAX) {          // 나머지는 "외 N개" 한 줄로 묶고, 누르면 전부 펼친다
         const mk = "m" + treeIdOf(n);
-        if (!treeYOf.has(mk)) treeYOf.set(mk, placeNear(L.raw, 1)[0]);
+        if (!treeYOf.has(mk)) { treeYOf.set(mk, placeIn(d + 1, L.raw, 1)[0]); treeDepthOf.set(mk, d + 1); }
         const m = { n, d: d + 1, par: L, rel, kids: [], x: TREE_PADL + (d + 1) * TREE_COL, raw: treeYOf.get(mk), y: treeYOf.get(mk) + treeShift, col, id: flat.length, more: kids.length - TREE_MAX, moreOf: n, hasKids: false };
         flat.push(m); if (d + 1 > maxD) maxD = d + 1; L.kids.push(m);
       }
@@ -686,7 +687,7 @@ function drawTree(base) {
   flat.forEach(L => {
     if (!L.par) return;
     const P = L.par, c = colorOf(L), mx = (P.x + L.x) / 2;
-    const w = Math.max(0.8, Math.min(12, 12 * Math.sqrt(L.n.v[year] / total)));   // 가지 굵기 = 예산 규모 (면적에 비례하도록 제곱근)
+    const w = Math.max(0.8, Math.min(14, 14 * Math.pow(L.n.v[year] / total, 0.7)));   // 가지 굵기 = 예산 규모 (지수 0.7로 차이를 살림)
     defs.push(`<linearGradient id="tg${posKey(L)}" gradientUnits="userSpaceOnUse" x1="${P.x}" y1="${P.y}" x2="${L.x}" y2="${L.y}"><stop offset="0" stop-color="${colorOf(P)}" stop-opacity=".5"/><stop offset="1" stop-color="${c}" stop-opacity=".95"/></linearGradient>`);
     // 3차 베지에 곡선: 양 끝에서 수평으로 휘어지는 S자
     const inC = fresh(L) ? " in" : "";
