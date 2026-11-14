@@ -1076,7 +1076,7 @@ applyUrl(); syncUrl(false);
 /* 아래로 당겨 새로고침: 지도는 고정 화면이라 브라우저 기본 기능이 없어 직접 처리. 위치는 주소에 있어 그대로 돌아간다 */
 (() => {
   const ptr = document.createElement("div"); ptr.id = "ptr"; ptr.textContent = "↓ 당겨서 새로고침"; document.body.appendChild(ptr);
-  const listTop = () => { const l = document.querySelector("#stage .list, #stage .detail .items"); return !l || l.scrollTop <= 0; };
+  const listTop = () => { if (document.querySelector("#stage .tree")) return false; const l = document.querySelector("#stage .list, #stage .detail .items"); return !l || l.scrollTop <= 0; };   // 트리에서는 끌기·스크롤이 새로고침으로 이어지지 않게
   let y0 = null, armed = false;
   addEventListener("touchstart", e => { y0 = e.touches.length === 1 && listTop() ? e.touches[0].clientY : null; armed = false; }, { passive: true });
   addEventListener("touchmove", e => {
