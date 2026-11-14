@@ -5,45 +5,51 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 AI예산</title>
 <link rel="icon" href="assets/clerk.jpg">
+<meta name="theme-color" content="#0a0c10">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <meta property="og:title" content="클사무관의 AI예산">
 <meta property="og:image" content="assets/clerk-full.jpg">
 <style>
-:root{--bg:#f6f7fb;--card:#fff;--ink:#1d2330;--sub:#6b7385;--line:#e3e6ef;--accent:#2f4fb8;--warn:#c2410c;--ok:#15803d;--note-bg:#eef2ff;--note-ink:#2f3a6b}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#12151c;--card:#1b2030;--ink:#e8ebf3;--sub:#9aa3b8;--line:#2a3144;--accent:#7b96ff;--warn:#fb923c;--ok:#4ade80;--note-bg:#1f2747;--note-ink:#c9d3ff}}
-:root[data-theme="dark"]{--bg:#12151c;--card:#1b2030;--ink:#e8ebf3;--sub:#9aa3b8;--line:#2a3144;--accent:#7b96ff;--warn:#fb923c;--ok:#4ade80;--note-bg:#1f2747;--note-ink:#c9d3ff}
+:root{color-scheme:dark;--bg:#0a0c10;--card:#0e1217;--ink:#fff;--sub:#8a909c;--line:#20252d;--accent:#28cc95;--warn:#ff8a3d;--ok:#28cc95;--note-bg:#11161c;--note-ink:#9aa1ad}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Malgun Gothic",sans-serif}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Pretendard Variable",Pretendard,system-ui,-apple-system,"Malgun Gothic",sans-serif}
 header{padding:20px 16px 8px;max-width:960px;margin:auto}
 h1{font-size:27px;font-weight:800;letter-spacing:-.04em;line-height:1.1;margin:0}
 h1 em{font-style:normal;color:var(--accent)}
 .brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit}
-.brand img{width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid var(--note-bg);box-shadow:0 2px 8px rgba(20,39,94,.15)}
+.brand img{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--line)}
 @media (max-width:640px){.brand img{width:46px;height:46px}h1{font-size:20px}}
-.notice{margin:8px 0 0;padding:8px 12px;border-radius:8px;background:var(--note-bg);color:var(--note-ink);font-size:13px}
-nav{display:flex;gap:6px;overflow-x:auto;padding:12px 16px;max-width:960px;margin:auto;scrollbar-width:none}
-nav button{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 12px;border-radius:999px;cursor:pointer;font-size:14px}
-nav a{flex:none;border:1px solid var(--accent);color:var(--accent);padding:8px 12px;border-radius:999px;font-size:14px;text-decoration:none;line-height:1.6}
-nav button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.notice{margin:12px 0 0;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:var(--note-bg);color:var(--note-ink);font-size:13px}
+nav{display:flex;gap:22px;align-items:center;overflow-x:auto;padding:14px 16px;border-bottom:1px solid var(--line);margin-bottom:18px;max-width:960px;margin:auto;scrollbar-width:none}
+nav button{flex:none;border:0;background:none;color:var(--sub);padding:4px 0;cursor:pointer;font:inherit;font-size:17px;font-weight:600;letter-spacing:-.01em}
+nav button:hover{color:var(--ink)}
+nav a{flex:none;padding:4px 0;font-size:17px;font-weight:700;letter-spacing:-.01em;text-decoration:none;background:linear-gradient(90deg,#f0527f,#b56cf0 55%,#4c8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
+nav button.on{color:var(--ink);font-weight:700}
 main{max-width:960px;margin:auto;padding:0 16px 24px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
-.card h2{font-size:16px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px}
+.card h2{font-size:21px;font-weight:800;letter-spacing:-.035em;margin:0 0 12px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
-.kpi b{display:block;font-size:20px}
+.kpi b{display:block;font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .kpi span{color:var(--sub);font-size:13px}
 table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right}
+th,td{padding:10px 6px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+th{color:var(--sub);font-weight:500;font-size:13px}
 th:first-child,td:first-child{text-align:left}
-input,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:15px}
+input,select{width:100%;padding:11px 18px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:15px}
+input::placeholder{color:var(--sub)}
+input:focus,select:focus{outline:none;border-color:var(--accent)}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 .row>*{flex:1 1 200px}
-button.go{padding:10px 16px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer;font-size:15px}
-.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--sub);margin:2px 4px 2px 0}
+button.go{padding:11px 22px;border-radius:999px;border:0;background:var(--accent);color:#04241a;cursor:pointer;font:inherit;font-size:15px;font-weight:700}
+.tag{display:inline-block;font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--accent);color:var(--ink);margin:2px 4px 2px 0}
 .warn{color:var(--warn)} .ok{color:var(--ok)} .sub{color:var(--sub);font-size:13px}
-.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent)}
-.doc{border-left:3px solid var(--accent);padding:6px 10px;margin:8px 0;background:var(--bg);border-radius:6px;font-size:14px}
-.item{padding:8px 0;border-bottom:1px solid var(--line)}
-.item a{color:var(--accent);text-decoration:none;font-weight:600}
+.doc{border:1px solid var(--line);padding:10px 14px;margin:8px 0;background:var(--bg);border-radius:14px;font-size:14px}
+.item{padding:11px 0;border-bottom:1px solid var(--line)}
+.item a{color:var(--ink);text-decoration:none;font-weight:600}
+.item a:hover{color:var(--accent)}
 svg text{fill:var(--sub);font-size:11px}
 footer{max-width:960px;margin:auto;padding:8px 16px 40px;color:var(--sub);font-size:12px}
 .logo{font-family:"D-DIN","DIN Alternate","Bahnschrift","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.18em;color:var(--ink);font-size:13px;text-decoration:none}
@@ -137,9 +143,9 @@ const TABS = [["home", "홈"], ["overview", "한눈에 보기"], ["explore", "�
   ["filter", "조건으로 찾기"], ["ask", "AI에게 묻기"], ["quality", "삶의 질 지표"]];
 let cur = "home";
 function drawTabs() {
-  document.getElementById("tabs").innerHTML = TABS.map(([k, l]) =>
-    `<button class="${k === cur ? "on" : ""}" onclick="go('${k}')">${l}</button>`).join("") +
-    `<a href="map.html">예산 지도</a>`;
+  const items = TABS.map(([k, l]) => `<button class="${k === cur ? "on" : ""}" onclick="go('${k}')">${l}</button>`);
+  items.splice(1, 0, `<a href="map.html">예산 지도</a>`);   // 홈 바로 옆에 둬서 휴대폰에서도 바로 보이게
+  document.getElementById("tabs").innerHTML = items.join("");
 }
 function go(k) { cur = k; drawTabs(); VIEWS[k](); window.scrollTo(0, 0); }
 const VIEWS = {};

@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>클사무관의 AI예산 · 예산 지도</title>
 <link rel="icon" href="assets/clerk.jpg">
-<meta name="theme-color" content="#0b0d12">
+<meta name="theme-color" content="#0a0c10">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
-:root{color-scheme:dark;--bg:#0b0d12;--card:#141821;--ink:#f2f4f8;--sub:#8b93a7;--line:#222835;--accent:#7c9cff;
+:root{color-scheme:dark;--bg:#0a0c10;--card:#0e1217;--ink:#fff;--sub:#8a909c;--line:#20252d;--accent:#28cc95;
   --d0:#4c8dff;--d0f:#04122e;--d1:#2456b8;--d1f:#e6efff;--d2:#1a2f5c;--d2f:#cfe0ff;
   --dm:#222835;--dmf:#dfe4ee;
   --u2:#5a2a20;--u2f:#ffd9cf;--u1:#c4472e;--u1f:#fff;--u0:#ff6a45;--u0f:#200600}
@@ -125,7 +125,7 @@ button{font:inherit;color:inherit}
   <button id="tabList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>목록</span></button>
   <button id="aboutBtn" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>정보</span></button>
 </nav>
-<div class="about" id="about"></div>
+<div class="about" id="about"><p id="aboutText" style="margin:0 0 8px"></p><a href="./" style="color:var(--accent);font-weight:700;text-decoration:none">클사무관의 AI예산 홈으로 ›</a></div>
 <div id="tip"></div>
 
 <script src="data/budget.js"></script>
@@ -325,7 +325,7 @@ function render() {
   const avg = change(ROOT, year);
   $("src").innerHTML = avg == null ? `${year}년은 비교할 전년 자료가 없습니다`
     : `<span>덜</span><span class="sc">${["d0", "d1", "d2", "m", "u2", "u1", "u0"].map(c => `<i class="c-${c}"></i>`).join("")}</span><span>더 증가</span>`;
-  $("about").textContent = "칸 넓이는 금액, 색은 그해 총지출 증가율" + (avg == null ? "" : "(" + pctTxt(avg) + ")") + "과의 차이입니다. 파랑은 평균보다 덜 늘거나 줄어든 곳, 주황은 평균보다 더 늘어난 곳입니다(경계 ±3·10·20%p, 가장 진한 주황에는 신규 포함). 칸 안의 %는 실제 전년 대비 증감률입니다. 열린재정 Open API 총지출 기준 자료입니다. 분야·부문은 16대 기능별 분류라 보도자료의 12대 분야와 묶음이 다릅니다. 여러 해를 같은 틀로 보려고 각 사업을 가장 최근 연도의 분류·소관에 놓았습니다. 2024~2026은 국회 확정, 2027은 정부안입니다. 공식 자료가 아닌 개인 프로젝트입니다.";
+  $("aboutText").textContent = "칸 넓이는 금액, 색은 그해 총지출 증가율" + (avg == null ? "" : "(" + pctTxt(avg) + ")") + "과의 차이입니다. 파랑은 평균보다 덜 늘거나 줄어든 곳, 주황은 평균보다 더 늘어난 곳입니다(경계 ±3·10·20%p, 가장 진한 주황에는 신규 포함). 칸 안의 %는 실제 전년 대비 증감률입니다. 열린재정 Open API 총지출 기준 자료입니다. 분야·부문은 16대 기능별 분류라 보도자료의 12대 분야와 묶음이 다릅니다. 여러 해를 같은 틀로 보려고 각 사업을 가장 최근 연도의 분류·소관에 놓았습니다. 2024~2026은 국회 확정, 2027은 정부안입니다. 공식 자료가 아닌 개인 프로젝트입니다.";
 }
 
 function drawChildren(parent) {
