@@ -153,6 +153,10 @@ button{font:inherit;color:inherit}
 .detail .dbody p.li{padding-left:12px;text-indent:-9px}
 .dtbl td span{display:block}
 .dtbl td span.li{padding-left:12px;text-indent:-9px}
+.dtbl td span.o{font-weight:700;margin-top:6px}
+.detail .dbody p.o{font-weight:700;margin-top:14px}
+.sheet-body p.o{font-weight:700;margin-top:14px}
+.sheet-body p.li{padding-left:12px;text-indent:-9px}
 .detail .dbody h3{margin:18px 0 6px;font-size:15.5px;font-weight:800;color:var(--accent);line-height:1.35;word-break:keep-all}
 .detail .dbody h4{margin:12px 0 4px;font-size:13.5px;font-weight:700;color:var(--accent);line-height:1.4;word-break:keep-all}
 .detail .dbody h5{margin:10px 0 4px;font-size:13px;font-weight:700;color:var(--ink);line-height:1.4;word-break:keep-all}
@@ -721,7 +725,8 @@ const gunzipJSON = async url => {
 };
 // 줄바꿈: ○ ● ※ 같은 항목 표지와 "/ -" 구분을 줄 시작으로 바꾼다 (긴 한 문단을 읽기 좋게)
 const splitLines = s => s.replace(/\s*\/\s*-\s*/g, "\n- ").replace(/\s*([○●◎■□※▶])\s*/g, "\n$1 ").split("\n").map(x => x.trim()).filter(Boolean);
-const linesHTML = s => splitLines(s).map(x => `<p class="${/^- /.test(x) ? "li" : ""}">${esc(x)}</p>`).join("");
+const lineClass = x => /^○/.test(x) ? "o" : /^- /.test(x) ? "li" : "";   // ○ 소소목차(굵게, 윗줄 띄움) · - 항목
+const linesHTML = s => splitLines(s).map(x => `<p class="${lineClass(x)}">${esc(x)}</p>`).join("");
 const descBlock = b => {
   if (typeof b === "string") {
     const t = b.trim();
@@ -732,7 +737,7 @@ const descBlock = b => {
   if (b && b.tbl) {
     const rows = b.tbl.filter(r => r.some(c => c && c.trim()));
     if (!rows.length) return "";
-    const cellHTML = c => splitLines(c || "").map(x => `<span class="${/^- /.test(x) ? "li" : ""}">${esc(x)}</span>`).join("");   // 표 칸 안도 "/ -" 와 ○● 기준으로 줄바꿈
+    const cellHTML = c => splitLines(c || "").map(x => `<span class="${lineClass(x)}">${esc(x)}</span>`).join("");   // 표 칸 안도 "/ -" 와 ○● 기준으로 줄바꿈
     return `<div class="dtbl"><table>${rows.map((r, i) => `<tr>${r.map(c => i === 0 ? `<th>${esc(c)}</th>` : `<td>${cellHTML(c)}</td>`).join("")}</tr>`).join("")}</table></div>`;
   }
   return "";
