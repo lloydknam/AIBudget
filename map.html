@@ -24,12 +24,20 @@ button{font:inherit;color:inherit}
 .brand span{font-size:13px;font-weight:700;background:linear-gradient(90deg,#f0527f,#b56cf0 55%,#4c8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
 /* 검색 */
 .app{flex:1 1 auto;min-height:0;width:100%;max-width:960px;margin:0 auto;padding:0 4px;display:flex;flex-direction:column}
-.ghead{flex:none;display:flex;align-items:center;gap:12px;padding:10px 0 6px}
+.ghead{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 0 6px}
 .ghead .brand{flex:none;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
 .ghead .brand img{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--line)}
 .ghead h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.04em;line-height:1.1;white-space:nowrap}
 .ghead h1 em{font-style:normal;color:var(--accent)}
-.ghead .search{flex:1;min-width:0;position:relative;padding:0}
+.hsearch{position:relative;flex:0 1 340px;width:340px;max-width:100%;min-width:0}
+.hsearch::before{content:"";position:absolute;left:15px;top:50%;width:12px;height:12px;margin-top:-7px;border:2px solid var(--accent);border-radius:50%;pointer-events:none;z-index:1}
+.hsearch::after{content:"";position:absolute;left:25px;top:calc(50% + 4px);width:6px;height:2px;background:var(--accent);transform:rotate(45deg);transform-origin:left center;pointer-events:none;z-index:1}
+.hsearch input{width:100%;box-sizing:border-box;height:40px;border:2px solid var(--accent);background:var(--card);color:var(--ink);border-radius:999px;padding:0 38px;font-size:15px;font-family:inherit;outline:none;box-shadow:0 0 0 4px rgba(40,204,149,.18)}
+.hsearch input::placeholder{color:var(--sub)}
+.hsearch input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hsearch input::-webkit-search-cancel-button{display:none}
+.hsearch .clr{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:0;background:var(--line);color:var(--ink);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1}
+@media (max-width:640px){.hsearch{flex:1 1 100%;width:auto}}
 @media (min-width:641px){.ghead .brand img{width:56px;height:56px}.ghead h1{font-size:27px}}
 .gnav{flex:none;display:flex;gap:22px;align-items:center;overflow-x:auto;padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:6px;scrollbar-width:none}
 .gnav::-webkit-scrollbar{display:none}
@@ -56,12 +64,16 @@ button{font:inherit;color:inherit}
 .years button{border:0;background:none;padding:5px 8px;border-radius:999px;font-size:12.5px;color:var(--sub);cursor:pointer;line-height:1.2;font-variant-numeric:tabular-nums}
 .years button.on{background:var(--ink);color:var(--bg)}
 /* 경로 */
-.crumb{flex:none;display:flex;align-items:center;gap:6px;min-height:34px}
-.crumb ol{list-style:none;margin:0;padding:0;display:flex;gap:2px;overflow:hidden;white-space:nowrap;min-width:0;flex:1}
-.crumb li{display:flex;align-items:center;flex:none;min-width:0}
-.crumb li+li::before{content:"›";color:var(--sub);padding:0 4px}
-.crumb li button{border:0;background:none;padding:2px 2px;cursor:pointer;font-size:13.5px;color:var(--sub);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.crumb li:last-child button{color:var(--ink);font-weight:700;cursor:default}
+.crumb{flex:none;display:flex;align-items:flex-start;gap:8px;min-height:34px}
+.crumb ol{list-style:none;margin:0;padding:2px 0;display:grid;grid-auto-flow:column;grid-auto-columns:max-content;justify-content:space-between;gap:0 18px;overflow-x:auto;min-width:0;flex:1;scrollbar-width:none;white-space:nowrap}
+.crumb ol::-webkit-scrollbar{display:none}
+.crumb li{display:flex;min-width:0}
+.crumb li button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;border:0;background:none;padding:2px 0;cursor:pointer;font-family:inherit;text-align:left;color:var(--ink)}
+.crumb .cl{font-size:10.5px;font-weight:700;color:var(--accent);line-height:1.3}
+.crumb .cn{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.3}
+.crumb .ca{font-size:11px;color:var(--sub);font-variant-numeric:tabular-nums;line-height:1.3}
+.crumb li:last-child button{cursor:default}
+.crumb li:last-child .cn{font-weight:800}
 .crumb .lv{flex:none;font-size:11px;color:var(--accent);font-weight:700;padding:2px 7px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
 /* 본문: 남은 높이를 전부 씀 */
 .stage{flex:1 1 auto;min-height:0;position:relative;margin:4px 0 6px;border-radius:14px;overflow:hidden}
@@ -99,8 +111,8 @@ button{font:inherit;color:inherit}
 .bubble b{display:block;font-size:12.5px}
 /* 사업 설명 */
 .desc-btn{margin-top:4px;align-self:flex-start;border:1px solid var(--line);background:var(--card);color:var(--accent);font-weight:700;font-size:13px;border-radius:999px;padding:7px 14px;cursor:pointer}
-.sheet{position:fixed;left:0;right:0;bottom:0;height:82dvh;background:var(--bg);border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.4);transform:translateY(105%);transition:transform .35s cubic-bezier(.16,1,.3,1);z-index:30;display:flex;flex-direction:column}
-.sheet.on{transform:none}
+.sheet{position:fixed;left:50%;width:min(960px,100vw);bottom:0;height:82dvh;background:var(--bg);border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.4);transform:translate(-50%,105%);transition:transform .35s cubic-bezier(.16,1,.3,1);z-index:30;display:flex;flex-direction:column}
+.sheet.on{transform:translate(-50%,0)}
 .sheet-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
 .sheet-bar b{font-size:16px;line-height:1.3;word-break:keep-all}
 .sheet-bar button{flex:none;border:0;background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px}
@@ -186,7 +198,7 @@ button{font:inherit;color:inherit}
 <body>
 <div class="app">
 <header class="ghead"><a class="brand" href="index.html#analysis"><img src="assets/clerk.jpg" alt="클사무관" width="46" height="46"><h1>클사무관의 <em>AI예산</em></h1></a>
-<div class="search" role="search">
+<div class="hsearch" role="search">
   <input id="q" type="search" placeholder="사업 검색" autocomplete="off" aria-label="예산 검색" enterkeyhint="search">
   <button class="clr" id="qclr" aria-label="검색어 지우기" hidden>×</button>
 </div>
@@ -194,7 +206,6 @@ button{font:inherit;color:inherit}
 <nav class="gnav" aria-label="사이트 메뉴">
   <a class="here" href="map.html" aria-current="page">예산 지도</a>
   <a href="index.html#analysis">주요분석</a>
-  <a href="index.html#explore">예산 탐색</a>
   <a href="index.html#review">심사 참고</a>
   <a href="index.html#filter">조건으로 찾기</a>
   <a href="index.html#ask">AI에게 묻기</a>
@@ -486,9 +497,9 @@ function render() {
     `<button class="${y === year ? "on" : ""}" aria-pressed="${y === year}" data-y="${y}" aria-label="${y}년${CONFIRMED[y] ? "" : " 정부안"}">'${String(y).slice(2)}${CONFIRMED[y] ? "" : "안"}</button>`).join("");
 
   // 경로
-  const crumbs = [{ i: 0, name: "총지출" }].concat(path.map((n, i) => ({ i: i + 1, name: n.name })));
-  const shown = crumbs.length > 3 ? [crumbs[0], null, ...crumbs.slice(-2)] : crumbs;   // 깊으면 가운데를 줄임
-  $("trail").innerHTML = shown.map(c => c ? `<li><button data-i="${c.i}" title="${esc(c.name)}">${esc(c.name)}</button></li>` : `<li><span style="color:var(--sub)">…</span></li>`).join("");
+  // 경로: 1줄 단계명(작은 초록) · 2줄 사업명(흰색) · 3줄 금액(작은 회색). 말줄임 없이 칸을 벌려 전부 보여준다
+  const cols = [{ i: 0, label: "총지출", name: "", v: rootTot }].concat(path.map((n, i) => ({ i: i + 1, label: LEVELS()[i], name: n.name, v: n.v[year] })));
+  $("trail").innerHTML = cols.map(c => `<li><button data-i="${c.i}" title="${esc(c.name || c.label)}"><span class="cl">${esc(c.label)}</span><span class="cn">${esc(c.name) || "&nbsp;"}</span><span class="ca">${money(c.v)}</span></button></li>`).join("");
   $("lvname").textContent = node.leaf ? LV(path.length - 1) : LV(path.length);   // 지금 화면에 펼쳐진 단계
 
   // 하단 메뉴
