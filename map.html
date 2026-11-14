@@ -453,7 +453,10 @@ function setView(v) { view = v; ROOT = ROOTS[v]; path = []; syncUrl(true); rende
 function go(next) { path = next; render(); }
 let enterAnim = false, busy = false;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+// 사업설명 시트는 다른 사업·단계로 이동하면 자동으로 닫는다
+function closeSheet() { const s = document.getElementById("sheet"); if (s) s.classList.remove("on"); }
 function drill(n, el) {
+  closeSheet();
   if (busy) return;
   // 단위사업 → 세부사업(또는 세부사업 상세)으로 갈 때는 애니메이션 없이 바로 이동
   const toDetail = n.leaf || [...n.kids.values()].some(c => c.leaf);
@@ -485,6 +488,7 @@ function drill(n, el) {
 }
 // 뒤로 버튼·경로 칸: 이력에 그 단계가 있으면 뒤로 이동, 없으면 새 단계로 쌓는다
 function jump(i) {
+  closeSheet();
   const k = path.length - i, st = history.state;
   if (k > 0 && st && st.n >= k) { pendingJump = path.slice(0, i); history.go(-k); return; }
   path = path.slice(0, i); enterAnim = true; syncUrl(true); render();
@@ -683,8 +687,7 @@ function drawDetail(n) {
     <table><thead><tr><th>연도</th><th>정부안(억)</th><th>국회 확정(억)</th><th></th></tr></thead><tbody>${rows}</tbody></table>
     ${inner}
     <section class="dcard" id="descCard"><div class="sub-h">사업설명자료</div><div class="dbody"><p class="sub">불러오는 중…</p></div></section>
-    <button class="desc-btn" id="descBtn">사업 설명 자세히 보기 ›</button>`;
-  box.querySelector("#descBtn").onclick = () => openDesc(r.ministry, n.name);
+`;
   const card = box.querySelector("#descCard");
   const goDesc = async hl => {
     const first = await fillDesc(card, r.ministry, n.name, hl);
