@@ -420,7 +420,10 @@ function drawChildren(parent) {
   }
 
   box.className = "map" + (enterAnim ? " enter" : "");
-  const W = stage.clientWidth, H = stage.clientHeight;
+  // 들어갈수록 지도 크기를 15%씩 줄여 가운데에 놓는다 (총지출/부처 = 100%)
+  const SW = stage.clientWidth, SH = stage.clientHeight, sc = Math.pow(0.85, path.length);
+  const W = SW * sc, H = SH * sc;
+  box.style.cssText = `inset:auto;left:${(SW - W) / 2}px;top:${(SH - H) / 2}px;width:${W}px;height:${H}px`;
   const rects = squarify(kids.map(k => k.v[year]), W, H);
   kids.forEach((k, i) => {
     const [x, y, w, h] = rects[i], p = change(k, year);
