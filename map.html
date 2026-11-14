@@ -22,6 +22,15 @@ button{font:inherit;color:inherit}
 .brand b{font-size:17px;font-weight:800;letter-spacing:-.04em}
 .brand b em{font-style:normal;color:var(--accent)}
 .brand span{font-size:13px;font-weight:700;background:linear-gradient(90deg,#f0527f,#b56cf0 55%,#4c8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* 검색 */
+.search{flex:none;position:relative;padding:4px 0 2px}
+.search input{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:9px 14px 9px 36px;font-size:14px;font-family:inherit;outline:none}
+.search input::placeholder{color:var(--sub)}
+.search input:focus-visible{outline:3px solid var(--accent);outline-offset:-1px}
+.search::before{content:"";position:absolute;left:14px;top:50%;width:12px;height:12px;margin-top:-5px;border:2px solid var(--sub);border-radius:50%;pointer-events:none}
+.search::after{content:"";position:absolute;left:24px;top:calc(50% + 5px);width:6px;height:2px;background:var(--sub);transform:rotate(45deg);transform-origin:left center;pointer-events:none}
+.search .clr{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:var(--line);color:var(--ink);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:14px;line-height:1}
+.rowbtn .path{display:block;font-size:11px;color:var(--sub);font-weight:400;word-break:keep-all;margin-top:1px}
 /* 상단: 연도 + 합계 */
 .top{flex:none;display:flex;align-items:center;gap:8px;padding:8px 0 6px}
 .top .t{flex:1;min-width:0}
@@ -112,6 +121,10 @@ button{font:inherit;color:inherit}
 </head>
 <body>
 <a class="brand" href="./"><img src="assets/clerk.jpg" alt="클사무관" width="30" height="30"><b>클사무관의 <em>AI예산</em></b><span>예산 지도</span></a>
+<div class="search" role="search">
+  <input id="q" type="search" placeholder="사업·부처 이름 검색 (예: 기초연금)" autocomplete="off" aria-label="예산 검색" enterkeyhint="search">
+  <button class="clr" id="qclr" aria-label="검색어 지우기" hidden>×</button>
+</div>
 <div class="top">
   <div class="t"><b id="total"></b><span id="sub"></span></div>
   <div class="years" id="years" role="group" aria-label="회계연도"></div>
@@ -190,6 +203,51 @@ function buildTree(kind) {
 }
 const ROOTS = { field: buildTree("field"), ministry: buildTree("ministry") };
 let ROOT = ROOTS.field;
+
+/* ---------- 검색: 모든 단계의 사업·부처를 한 번에 찾아 그 자리로 이동 ---------- */
+let q = "";
+const IDX = {};
+function searchIndex() {
+  if (IDX[view]) return IDX[view];
+  const out = [];
+  (function walk(n, p) {
+    for (const c of n.kids.values()) {
+      const np = [...p, c];
+      out.push({ name: c.name, sub: c.sub, path: np, v: c.v, leaf: !!c.leaf, hay: (c.name + " " + c.sub).replace(/\s+/g, "").toLowerCase() });
+      walk(c, np);
+    }
+  })(ROOT, []);
+  return (IDX[view] = out);
+}
+function searchHits(text) {
+  const key = text.replace(/\s+/g, "").toLowerCase();
+  return searchIndex()
+    .filter(r => r.v[year] > 0 && r.hay.includes(key))
+    .sort((a, b) => b.v[year] - a.v[year]);
+}
+function drawSearch() {
+  const hits = searchHits(q), total = hits.length, shown = hits.slice(0, 60);
+  const box = document.createElement("div");
+  box.className = "list";
+  if (!shown.length) {
+    box.innerHTML = `<div class="detail" style="position:static;inset:auto;margin:0"><div class="empty">"${esc(q)}" 와 맞는 사업이 없습니다. 다른 말로 찾아보세요.</div></div>`;
+  } else {
+    box.innerHTML = shown.map((r, i) => {
+      const p = change(r, year), where = r.path.slice(0, -1).map(x => esc(x.name)).join(" › ");
+      return `<button class="rowbtn" data-idx="${i}">
+        <i class="sw ${cls(p)}"></i>
+        <span class="nm">${esc(r.name)}${r.sub ? ` <span style="color:var(--sub);font-weight:400;font-size:11.5px">${esc(r.sub)}</span>` : ""}
+          ${where ? `<span class="path">${where}</span>` : ""}</span>
+        <span class="am">${money(r.v[year])}<small>${p != null ? pctTxt(p) : ""}</small></span></button>`;
+    }).join("") + (total > shown.length ? `<div class="empty" style="margin:8px 12px">${total}건 중 ${shown.length}건만 표시합니다. 검색어를 더 자세히 적어 주세요.</div>` : "");
+    box.querySelectorAll(".rowbtn").forEach(b => b.onclick = () => {
+      const r = shown[+b.dataset.idx];
+      q = ""; $("q").value = ""; $("qclr").hidden = true;
+      path = r.path; mode = "map"; enterAnim = true; render();
+    });
+  }
+  stage.appendChild(box);
+}
 
 /* ---------- 내역사업 (선택 자료: data/naeyeok.json) ---------- */
 let NAEYEOK = null;
@@ -325,7 +383,8 @@ function render() {
 
   // 본문
   stage.innerHTML = "";
-  if (node.leaf) drawDetail(node); else drawChildren(node);
+  if (q) drawSearch();
+  else if (node.leaf) drawDetail(node); else drawChildren(node);
   enterAnim = false;
 
   // 출처
@@ -410,6 +469,9 @@ function drawDetail(n) {
 }
 
 /* ---------- 이벤트 ---------- */
+$("q").oninput = e => { q = e.target.value.trim(); $("qclr").hidden = !e.target.value; render(); };
+$("q").onkeydown = e => { if (e.key === "Escape") { e.target.value = ""; q = ""; $("qclr").hidden = true; render(); } };
+$("qclr").onclick = () => { $("q").value = ""; q = ""; $("qclr").hidden = true; render(); $("q").focus(); };
 $("years").onclick = e => { const b = e.target.closest("button"); if (b) setYear(+b.dataset.y); };
 $("back").onclick = () => { if (path.length) jump(path.length - 1); };
 $("trail").onclick = e => { const b = e.target.closest("button"); if (b && b.dataset.i != null) jump(+b.dataset.i); };
