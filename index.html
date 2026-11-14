@@ -21,7 +21,7 @@ h1 em{font-style:normal;color:var(--accent)}
 .brand img{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--line)}
 @media (max-width:640px){.brand img{width:46px;height:46px}h1{font-size:20px}}
 .notice{margin:0 auto 16px;max-width:640px;color:var(--note-ink);font-size:12.5px;line-height:1.6;word-break:keep-all}
-nav{display:flex;gap:22px;align-items:center;overflow-x:auto;padding:14px 16px;border-bottom:1px solid var(--line);margin-bottom:18px;max-width:960px;margin:auto;scrollbar-width:none}
+nav{display:flex;gap:22px;align-items:center;overflow-x:auto;padding:14px 16px;border-bottom:1px solid var(--line);max-width:960px;margin:0 auto 18px;scrollbar-width:none}
 nav button{flex:none;border:0;background:none;color:var(--sub);padding:4px 0;cursor:pointer;font:inherit;font-size:17px;font-weight:600;letter-spacing:-.01em}
 nav button:hover{color:var(--ink)}
 nav a{flex:none;padding:4px 0;font-size:17px;font-weight:700;letter-spacing:-.01em;text-decoration:none;background:linear-gradient(90deg,#f0527f,#b56cf0 55%,#4c8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -36,7 +36,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}
 th,td{padding:10px 6px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
 th{color:var(--sub);font-weight:500;font-size:13px}
 th:first-child,td:first-child{text-align:left}
-input,select{width:100%;padding:11px 18px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:15px}
+input,select{width:100%;padding:11px 18px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:16px}
 input::placeholder{color:var(--sub)}
 input:focus,select:focus{outline:none;border-color:var(--accent)}
 .row{display:flex;gap:8px;flex-wrap:wrap}
@@ -44,6 +44,9 @@ input:focus,select:focus{outline:none;border-color:var(--accent)}
 button.go{padding:11px 22px;border-radius:999px;border:0;background:var(--accent);color:#04241a;cursor:pointer;font:inherit;font-size:15px;font-weight:700}
 .tag{display:inline-block;font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--accent);color:var(--ink);margin:2px 4px 2px 0}
 .warn{color:var(--warn)} .ok{color:var(--ok)} .sub{color:var(--sub);font-size:13px}
+/* 증가·감소는 경고색과 분리 (지도 팔레트와 같은 방향) */
+.up{color:#f9a8d4} .down{color:#8fd2f7}
+.card{overflow-x:auto}
 .bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent)}
 .doc{border:1px solid var(--line);padding:10px 14px;margin:8px 0;background:var(--bg);border-radius:14px;font-size:14px}
@@ -64,7 +67,8 @@ footer .lab img{display:block;height:48px;width:auto;max-width:100%}
 .sheet-bar b{font-size:16px;line-height:1.3;word-break:keep-all}
 .sheet-bar button{flex:none;border:0;background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px;font-family:inherit}
 .sheet-body{flex:1 1 auto;overflow-y:auto;padding:12px 16px 24px;font-size:13.5px;line-height:1.6}
-.sheet-body h4{margin:16px 0 6px;font-size:14px;line-height:1.4;word-break:keep-all}
+.sheet-body h3{margin:20px 0 6px;font-size:15px;line-height:1.4;word-break:keep-all;color:var(--ink)}
+.sheet-body h4{margin:14px 0 6px;font-size:14px;line-height:1.4;word-break:keep-all;color:var(--sub)}
 .sheet-body p{margin:4px 0;word-break:keep-all}
 .sheet-body .part{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)}
 .sheet-body .dtbl{overflow-x:auto;margin:8px 0}
@@ -142,7 +146,8 @@ const base = p => Y(p, PREV).na;           // 비교 기준: 전년도 국회 �
 const curGov = p => Y(p, CUR).gov;         // 올해 정부안
 const diff = p => (curGov(p) || 0) - (base(p) || 0);
 const chg = p => (base(p) > 0 && curGov(p) != null) ? curGov(p) / base(p) - 1 : NaN;
-const isNew = p => !(base(p) > 0) && curGov(p) > 0;
+const linked = p => !!(p.aka || p.prev_ministry || p.pooled_from);   // 명칭·소관 변경, 일괄계상으로 전년과 이어지는 사업
+const isNew = p => !(base(p) > 0) && curGov(p) > 0 && !linked(p);
 const isGone = p => base(p) > 0 && !(curGov(p) > 0);
 const HAS_EXEC = U.length > 0 || P.some(p => p.exec && Object.keys(p.exec).length);
 const HAS_DOCS = P.some(p => p.docs && p.docs.length);
@@ -159,11 +164,20 @@ const TABS = [["home", "홈"], ["overview", "한눈에 보기"], ["explore", "�
   ["filter", "조건으로 찾기"], ["ask", "AI에게 묻기"], ["quality", "삶의 질 지표"]];
 let cur = "home";
 function drawTabs() {
-  const items = TABS.map(([k, l]) => `<button class="${k === cur ? "on" : ""}" onclick="go('${k}')">${l}</button>`);
+  const items = TABS.map(([k, l]) => `<button class="${k === cur ? "on" : ""}"${k === cur ? ' aria-current="page"' : ""} onclick="go('${k}')">${l}</button>`);
   items.splice(1, 0, `<a href="map.html">예산 지도</a>`);   // 홈 바로 옆에 둬서 휴대폰에서도 바로 보이게
   document.getElementById("tabs").innerHTML = items.join("");
 }
-function go(k) { cur = k; drawTabs(); VIEWS[k](); window.scrollTo(0, 0); }
+function go(k, push = true) { cur = k; drawTabs(); VIEWS[k](); window.scrollTo(0, 0); if (push) setHash("#" + k); }
+// 주소(#탭 또는 #explore/세부사업ID)로 화면을 복원한다. 뒤로가기·새로고침·공유 링크 지원
+function setHash(h) { if (location.hash !== h) history.pushState(null, "", h); }
+function route() {
+  const [k, id] = decodeURIComponent(location.hash.slice(1)).split("/");
+  if (k === "explore" && id && P.some(p => p.id === id)) { cur = "explore"; drawTabs(); VIEWS.explore(); showProject(id); return; }
+  go(TABS.some(([t]) => t === k) ? k : "home", false);
+}
+window.addEventListener("popstate", route);
+document.addEventListener("keydown", e => { if (e.key === "Escape") { const s = document.getElementById("sheet"); if (s) s.classList.remove("on"); } });
 const VIEWS = {};
 const view = html => document.getElementById("view").innerHTML = html;
 
@@ -177,16 +191,21 @@ function search(q, limit = 30) {
 }
 const resultRow = p => `<div class="item">${link(p)}<br><span class="sub">${esc(p.field)} · ${CUR} 정부안 ${won(curGov(p))}억 · ${PREV} 확정 ${won(base(p))}억 · ${isNew(p) ? '<span class="warn">신규</span>' : pct(chg(p) * 100)}</span></div>`;
 
-/* 설명 본문 전체 낱말 색인 (desc/terms.json.gz): 낱말 → 세부사업 번호 */
-let TERMS = null, PID_MAP = null;
-async function loadTerms() { if (!TERMS) TERMS = await gunzipJSON("desc/terms.json.gz").catch(() => ({})); return TERMS; }
+/* 설명 본문 전체 낱말 색인: 초성별 샤드 (desc/terms/<초성>.json.gz, scripts/shard_terms.py). 검색어에 필요한 샤드만 받는다 */
+let PID_MAP = null;
+const TERM_SH = {};
+const choseong = t => { const c = t.charCodeAt(0) - 0xAC00; return c >= 0 && c < 11172 ? String(Math.floor(c / 588)) : "x"; };
+async function termShard(k) {
+  if (!(k in TERM_SH)) { const v = await gunzipJSON(`desc/terms/${k}.json.gz`).catch(() => null); if (v) TERM_SH[k] = v; else return {}; }
+  return TERM_SH[k];
+}
 const projById = id => { if (!PID_MAP) PID_MAP = new Map(P.map(p => [p.id, p])); return PID_MAP.get(id); };
 async function termHits(q) {
   const toks = (q.match(/[가-힣A-Za-z0-9]{2,}/g) || []);
   if (!toks.length) return [];
-  const T = await loadTerms();
   let ids = null;
   for (const t of toks) {
+    const T = await termShard(choseong(t));
     const list = T[t] || [];
     ids = ids === null ? list.slice() : ids.filter(x => list.includes(x));
     if (!ids.length) break;
@@ -205,8 +224,8 @@ async function descSearch(q, target) {
 /* ---------- 공통: 내역 · 사업 설명 · 심사 플래그 (필요할 때만 불러옴) ---------- */
 let NAEYEOK_VAL = null, DESC_IDX_I = null, FLAGS = null;
 const itemsOf = p => (NAEYEOK_VAL && NAEYEOK_VAL[p.ministry + "|" + p.name]) || [];
-async function loadDescIdx() { if (!DESC_IDX_I) DESC_IDX_I = await fetch("desc/index.json").then(r => r.json()).catch(() => ({})); return DESC_IDX_I; }
-async function loadFlags() { if (!FLAGS) FLAGS = await fetch("desc/flags.json").then(r => r.json()).catch(() => ({})); return FLAGS; }
+async function loadDescIdx() { if (!DESC_IDX_I) DESC_IDX_I = await fetch("desc/index.json").then(r => r.ok ? r.json() : Promise.reject()).catch(() => null); return DESC_IDX_I; }
+async function loadFlags() { if (!FLAGS) FLAGS = await fetch("desc/flags.json").then(r => r.ok ? r.json() : Promise.reject()).catch(() => null); return FLAGS || {}; }
 const gunzipJSON = async url => {
   const res = await fetch(url);
   if (!res.ok) throw new Error("http " + res.status);
@@ -222,7 +241,12 @@ function descRecText(rec) {
   return out.join("\n");
 }
 const descBlockHTML = b => {
-  if (typeof b === "string") return /^(\d+\.|\(\d+-\d+\)|\d+\)|[①-⑩])/.test(b.trim()) ? `<h4>${esc(b)}</h4>` : `<p>${esc(b)}</p>`;
+  if (typeof b === "string") {
+    const t = b.trim();
+    if (/^\d+\.\s*\S/.test(t)) return `<h3>${esc(b)}</h3>`;                      // 1. 사업 총괄 정보
+    if (/^(\(\d+-\d+\)|\(\d+\)|\d+\)|[①-⑩])/.test(t)) return `<h4>${esc(b)}</h4>`;  // 1) · (1-1)
+    return `<p>${esc(b)}</p>`;
+  }
   if (b && b.tbl) {
     const rows = b.tbl.filter(r => r.some(c => c && c.trim()));
     if (!rows.length) return "";
@@ -245,6 +269,7 @@ async function openDesc(ministry, name) {
   sheet.classList.add("on");
   try {
     const idx = await loadDescIdx();
+    if (!idx) throw new Error("index");
     const id = idx[ministry + "|" + name];
     if (!id) { body.innerHTML = `<p class="sub">이 사업의 설명 자료가 아직 없습니다.</p>`; return; }
     const rec = await gunzipJSON(`desc/${id}.json.gz`);
@@ -258,6 +283,8 @@ async function openDesc(ministry, name) {
   }
 }
 
+function openDescBtn(el) { openDesc(el.dataset.min, el.dataset.name); }
+
 /* ---------- 1. 홈 ---------- */
 VIEWS.home = () => {
   const g = total(CUR, "gov"), n = total(PREV, "na");
@@ -267,18 +294,18 @@ VIEWS.home = () => {
   <div class="card"><h2>${CUR}년 예산안 규모·증감</h2>
     <div class="kpis">
       <div class="kpi"><span>${CUR} 정부안 총지출</span><b>${jo(g)}원</b></div>
-      <div class="kpi"><span>${PREV} 국회 확정 대비</span><b class="${g > n ? "warn" : "ok"}">${pct((g / n - 1) * 100)}</b></div>
+      <div class="kpi"><span>${PREV} 국회 확정 대비</span><b class="${g > n ? "up" : "down"}">${pct((g / n - 1) * 100)}</b></div>
       <div class="kpi"><span>증감액</span><b>${jo(g - n)}원</b></div>
       <div class="kpi"><span>세부사업</span><b>${P.filter(p => curGov(p) > 0).length.toLocaleString()}개</b></div>
     </div></div>
   <div class="card"><h2>나라 살림 영수증 <span class="sub">(${CUR} 정부안, 분야별)</span></h2>${receipt()}</div>
   <div class="card"><h2>사업 검색</h2>
-    <input id="q" onfocus="naeyeokData()" placeholder="사업명·부처·내역사업 (예: 기초연금, 교육부 늘봄)" oninput="descSearch(this.value, document.getElementById('qd')); document.getElementById('qr').innerHTML = search(this.value).map(resultRow).join('') || (this.value.trim() ? '<div class=sub>결과 없음</div>' : '')">
+    <input id="q" aria-label="사업 검색" placeholder="사업명·부처·내역사업 (예: 기초연금, 교육부 늘봄)" oninput="onSearchInput(this, document.getElementById('qr'), document.getElementById('qd'), 30)">
     <div id="qr" style="margin-top:6px"></div><div id="qd" style="margin-top:10px"></div></div>
   <div class="card"><h2>가장 많이 늘어난 사업 <span class="sub">(${PREV} 확정 → ${CUR} 정부안, 억원)</span></h2>
-    ${top.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p))} (<span class="warn">+${won(diff(p))}</span>, ${pct(chg(p) * 100)})</span></div>`).join("")}</div>
+    ${top.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p))} (<span class="up">+${won(diff(p))}</span>, ${pct(chg(p) * 100)})</span></div>`).join("")}</div>
   <div class="card"><h2>가장 많이 줄어든 사업</h2>
-    ${cut.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p) || 0)} (<span class="ok">${won(diff(p))}</span>${isGone(p) ? ", 미편성" : ", " + pct(chg(p) * 100)})</span></div>`).join("")}</div>`);
+    ${cut.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p) || 0)} (<span class="down">${won(diff(p))}</span>${isGone(p) ? ", 미편성" : ", " + pct(chg(p) * 100)})</span></div>`).join("")}</div>`);
 };
 function byField(y, pick) {
   const m = {};
@@ -305,7 +332,7 @@ VIEWS.overview = () => {
   <div class="card"><h2>분야별 규모·증감 <span class="sub">(${PREV} 확정 → ${CUR} 정부안)</span></h2>
     <table><tr><th>분야</th><th>${CUR}</th><th>증감</th></tr>
     ${rows.map(([k, a, b]) => `<tr><td>${esc(k)}<div class="bar" style="margin-top:4px"><i style="width:${(a / max * 100).toFixed(0)}%"></i></div></td>
-      <td>${jo(a)}</td><td class="${a > b ? "warn" : "ok"}">${pct((a / b - 1) * 100)}</td></tr>`).join("")}
+      <td>${jo(a)}</td><td class="${a > b ? "up" : "down"}">${pct((a / b - 1) * 100)}</td></tr>`).join("")}
     </table></div>
   <div class="card"><h2>회계·기금 구성 <span class="sub">(${CUR} 정부안 상위 12)</span></h2>
     <table>${fundRows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${jo(v)}</td></tr>`).join("")}</table></div>
@@ -333,7 +360,7 @@ function execSummary() {
   const table = (label, sel) => {
     const sum = (y, k) => U.reduce((a, u) => a + (sel(u) ? ((u.years[y] || {})[k] || 0) : 0), 0);
     return `<tr><td colspan="6" style="text-align:left;padding-top:12px"><b>${label}</b></td></tr>` + ey.map(y => { const c = sum(y, "cur"), s = sum(y, "spent");
-      return `<tr><td>${y}</td><td>${jo(c)}</td><td>${jo(s)}</td><td>${jo(sum(y, "carry"))}</td><td class="warn">${jo(sum(y, "unused"))}</td><td>${(s / c * 100).toFixed(1)}%</td></tr>`; }).join("");
+      return `<tr><td>${y}</td><td>${jo(c)}</td><td>${jo(s)}</td><td>${jo(sum(y, "carry"))}</td><td class="warn">${jo(sum(y, "unused"))}</td><td>${(c ? s / c * 100 : 0).toFixed(1)}%</td></tr>`; }).join("");
   };
   const top = U.filter(u => u.years[EXEC_LAST] && !isFin(u)).sort((a, b) => b.years[EXEC_LAST].unused - a.years[EXEC_LAST].unused).slice(0, 10);
   return `<div class="card"><h2>결산 요약</h2>
@@ -350,15 +377,22 @@ function execSummary() {
 VIEWS.explore = () => {
   view(`
   <div class="card"><h2>사업 찾기</h2>
-    <input id="eq" onfocus="naeyeokData()" placeholder="사업명·부처·내역사업" oninput="descSearch(this.value, document.getElementById('ed')); document.getElementById('er').innerHTML = search(this.value, 20).map(resultRow).join('')">
+    <input id="eq" aria-label="사업 찾기" placeholder="사업명·부처·내역사업" oninput="onSearchInput(this, document.getElementById('er'), document.getElementById('ed'), 20)">
     <div id="er" style="margin-top:6px"></div><div id="ed" style="margin-top:10px"></div></div>
   <div id="detail"></div>`);
 };
 /* 내역사업: 사업설명자료에서 뽑은 자료 (data/naeyeok.json, 억원). 같은 사업은 소관|사업명 키로 찾는다 */
 let NAEYEOK_P = null;
 function naeyeokData() {
-  if (!NAEYEOK_P) NAEYEOK_P = fetch("data/naeyeok.json").then(r => r.ok ? r.json() : {}).then(v => (NAEYEOK_VAL = v)).catch(() => ({}));
+  if (!NAEYEOK_P) NAEYEOK_P = fetch("data/naeyeok.json").then(r => r.ok ? r.json() : Promise.reject()).then(v => (NAEYEOK_VAL = v)).catch(() => { NAEYEOK_P = null; return {}; });
   return NAEYEOK_P;
+}
+/* 검색 입력: 내역사업 데이터는 처음 글자를 치는 순간에만 받는다 */
+async function onSearchInput(inp, resEl, descEl, limit = 30) {
+  const v = inp.value;
+  await naeyeokData();
+  resEl.innerHTML = v.trim() ? (search(v, limit).map(resultRow).join("") || "<div class='sub'>결과 없음</div>") : "";
+  descSearch(v, descEl);
 }
 function drawNaeyeok(p) {
   naeyeokData().then(all => {
@@ -385,7 +419,8 @@ function drawNaeyeok(p) {
     addDescBtn();
   });
 }
-function openProject(id) {
+function openProject(id) { setHash("#explore/" + id); showProject(id); }
+function showProject(id) {
   if (cur !== "explore") { cur = "explore"; drawTabs(); VIEWS.explore(); }
   const p = P.find(x => x.id === id);
   if (!p) return;
@@ -412,7 +447,7 @@ function openProject(id) {
       ${YEARS.map(y => { const v = Y(p, y); return `<tr><td>${y}</td><td>${won(v.gov)}</td><td>${won(v.na)}</td>
         <td class="sub">${v.gov != null && v.na != null ? won(v.na - v.gov) : "-"}</td></tr>`; }).join("")}
     </table>
-    <div class="sub" style="margin-top:6px">${CUR} 정부안 vs ${PREV} 확정: ${isNew(p) ? '<b class="warn">신규</b>' : isGone(p) ? '<b class="ok">미편성</b>' : `${won(diff(p))}억 (${pct(chg(p) * 100)})`}</div></div>
+    <div class="sub" style="margin-top:6px">${CUR} 정부안 vs ${PREV} 확정: ${isNew(p) ? '<b class="warn">신규</b>' : (linked(p) && !(base(p) > 0) && curGov(p) > 0) ? '<span class="sub">전년 확정 없음 (명칭·소관 변경으로 연결)</span>' : isGone(p) ? '<b class="down">미편성</b>' : `${won(diff(p))}억 (${pct(chg(p) * 100)})`}</div></div>
   <div class="card"><h2>집행 이력 <span class="sub">(결산)</span></h2>
     ${u ? `<div class="sub" style="margin-bottom:6px">단위사업 <b>${esc(u.activity)}</b> 전체 기준 (${esc(u.ministry)} · ${esc(u.funds.join(", "))})</div>` : ""}
     ${ex.length ? `<table><tr><th>연도</th><th>예산현액</th><th>지출</th><th>이월</th><th>불용</th><th>집행률</th></tr>
@@ -428,9 +463,9 @@ function openProject(id) {
 
 /* ---------- 4. 심사 참고 ---------- */
 const RULES = [
-  { label: `${CUR} 신규 사업 (100억 이상)`, test: p => isNew(p) && curGov(p) >= 100 },
+  { label: `${CUR} 신규 사업 (100억 이상, 명칭·소관 변경 연결 제외)`, test: p => isNew(p) && curGov(p) >= 100 },
   { label: "전년 대비 50% 이상 증가 (100억 이상)", test: p => chg(p) >= 0.5 && curGov(p) >= 100 },
-  { label: "전년 대비 1,000억 이상 증가", test: p => diff(p) >= 1000 },
+  { label: "전년 대비 1,000억 이상 증가", test: p => base(p) > 0 && diff(p) >= 1000 },
   { label: "전년 대비 30% 이상 감소 (100억 이상)", test: p => chg(p) <= -0.3 && base(p) >= 100 },
   { label: "전년 대비 1,000억 이상 감소", test: p => diff(p) <= -1000 },
   { label: `${PREV} 국회에서 10% 이상 증액된 사업`, test: p => { const v = Y(p, PREV); return v.gov > 0 && v.na >= v.gov * 1.1 && v.na - v.gov >= 10; } },
@@ -439,6 +474,8 @@ const RULES = [
   { label: `${EXEC_LAST - 1}·${EXEC_LAST} 2년 연속 이월+불용 20% 이상`, test: p => [EXEC_LAST - 1, EXEC_LAST].every(y => { const e = Eb(p, y); return e && e.budget >= 100 && idle(e) >= 20; }) },
   { label: `${EXEC_LAST} 집행률 90% 미만인데 ${CUR} 증액`, test: p => { const e = Eb(p, EXEC_LAST); return e && e.rate != null && e.rate < 90 && e.budget >= 100 && diff(p) > 0 && chg(p) > 0.05; } },
 ];
+let REVIEW_N = 150;
+function moreReview() { REVIEW_N += 150; VIEWS.review(); }
 VIEWS.review = async () => {
   await loadFlags();
   const hits = P.map(p => ({ p, hit: RULES.filter(r => r.test(p)) })).filter(x => x.hit.length)
@@ -448,17 +485,17 @@ VIEWS.review = async () => {
   <div class="card"><h2>심사 참고: 규칙 기반 검토 대상</h2>
     <div class="sub">규칙은 참고용 예시 기준입니다. 최종 판단은 심사자가 합니다.</div>
     <div style="margin-top:8px">${counts.map(([l, c]) => `<span class="tag">${l} · ${c}</span>`).join("")}</div></div>
-  <div class="card"><h2>검토 대상 ${hits.length.toLocaleString()}건 <span class="sub">(해당 규칙 수 → 증감 규모순, 상위 150)</span></h2>
-    ${hits.slice(0, 150).map(({ p, hit }) => `<div class="item">${link(p)}<br>
+  <div class="card"><h2>검토 대상 ${hits.length.toLocaleString()}건 <span class="sub">(해당 규칙 수 → 증감 규모순, 상위 ${REVIEW_N})</span></h2>
+    ${hits.slice(0, REVIEW_N).map(({ p, hit }) => `<div class="item">${link(p)}<br>
       <span class="sub">${won(base(p))} → ${won(curGov(p))}억 (${isNew(p) ? "신규" : pct(chg(p) * 100)})</span><br>
-      ${hit.map(h => `<span class="tag warn">${h.label}</span>`).join("")}</div>`).join("") || "<div class='sub'>해당 없음</div>"}</div>`);
+      ${hit.map(h => `<span class="tag warn">${h.label}</span>`).join("")}</div>`).join("") || "<div class='sub'>해당 없음</div>"}${hits.length > REVIEW_N ? `<button class="go" style="margin-top:12px" onclick="moreReview()">더 보기 (${(hits.length - REVIEW_N).toLocaleString()}건 남음)</button>` : ""}</div>`);
 };
 
 /* ---------- 5. 조건으로 찾기 ---------- */
 VIEWS.filter = () => {
   view(`
   <div class="card"><h2>조건을 문장으로 입력</h2>
-    <div class="row"><input id="cond" placeholder="예: 교육부 집행률 80% 미만 증가율 10% 이상" onkeydown="if(event.key==='Enter')runFilter()"><button class="go" onclick="runFilter()">찾기</button></div>
+    <div class="row"><input id="cond" aria-label="조건 문장" placeholder="예: 교육부 집행률 80% 미만 증가율 10% 이상" onkeydown="if(event.key==='Enter')runFilter()"><button class="go" onclick="runFilter()">찾기</button></div>
     <div class="sub" style="margin-top:8px">인식하는 조건: 분야명·부처명, "증가율 N% 이상/이하", "집행률 N% 미만/이상"(최근 결산), "감소율 N% 이상", "N억 이상/이하"(${CUR} 정부안), "신규", "미편성", 그 밖의 단어는 사업명 검색</div>
     <div id="fres" style="margin-top:12px"></div></div>`);
 };
@@ -470,8 +507,8 @@ async function runFilter() {
   const up = num(/증가율\s*(\d+)\s*%\s*이상/), upMax = num(/증가율\s*(\d+)\s*%\s*이하/), cut = num(/감소율\s*(\d+)\s*%\s*이상/);
   const amin = num(/([\d,]+)\s*억\s*(?:원)?\s*이상/), amax = num(/([\d,]+)\s*억\s*(?:원)?\s*이하/);
   const exLow = num(/집행률\s*(\d+)\s*%\s*(?:미만|이하)/), exHigh = num(/집행률\s*(\d+)\s*%\s*이상/);
-  if (exLow != null) { conds.push(p => { const e = E(p, EXEC_LAST); return e && e.rate != null && e.rate < exLow; }); desc.push(`${EXEC_LAST} 집행률 < ${exLow}%`); }
-  if (exHigh != null) { conds.push(p => { const e = E(p, EXEC_LAST); return e && e.rate != null && e.rate >= exHigh; }); desc.push(`${EXEC_LAST} 집행률 ≥ ${exHigh}%`); }
+  if (exLow != null) { conds.push(p => { const e = Eb(p, EXEC_LAST); return e && e.rate != null && e.rate < exLow; }); desc.push(`${EXEC_LAST} 집행률 < ${exLow}% (금융·내부거래 제외)`); }
+  if (exHigh != null) { conds.push(p => { const e = Eb(p, EXEC_LAST); return e && e.rate != null && e.rate >= exHigh; }); desc.push(`${EXEC_LAST} 집행률 ≥ ${exHigh}% (금융·내부거래 제외)`); }
   if (up != null) { conds.push(p => chg(p) * 100 >= up); desc.push(`증가율 ≥ ${up}%`); }
   if (upMax != null) { conds.push(p => chg(p) * 100 <= upMax); desc.push(`증가율 ≤ ${upMax}%`); }
   if (cut != null) { conds.push(p => chg(p) * -100 >= cut); desc.push(`감소율 ≥ ${cut}%`); }
@@ -494,8 +531,8 @@ async function runFilter() {
 VIEWS.ask = () => {
   view(`
   <div class="card"><h2>국회 검토 문서 기반 질문</h2>
-    ${HAS_DOCS ? "" : '<div class="doc">국회 검토보고서·사업설명자료가 아직 연결되지 않아, 지금은 <b>예산·결산 수치</b>만 근거로 찾아 드립니다.</div>'}
-    <div class="row"><input id="aq" placeholder="예: 늘봄학교 예산은 얼마나 늘었나?" onkeydown="if(event.key==='Enter')ask()"><button class="go" onclick="ask()">질문</button></div>
+    ${HAS_DOCS ? "" : '<div class="doc">국회 검토보고서는 아직 연결되지 않아, 지금은 <b>예산·결산 수치와 사업설명자료</b>를 근거로 찾아 드립니다.</div>'}
+    <div class="row"><input id="aq" aria-label="질문" placeholder="예: 늘봄학교 예산은 얼마나 늘었나?" onkeydown="if(event.key==='Enter')ask()"><button class="go" onclick="ask()">질문</button></div>
     <details style="margin-top:10px"><summary class="sub">AI 답변 사용 (선택: Upstage API 키 입력 시 요약 생성)</summary>
       <input id="akey" type="password" placeholder="키는 저장되지 않습니다" style="margin-top:8px">
       <input id="amodel" value="solar-pro2" style="margin-top:6px"></details>
@@ -510,7 +547,7 @@ function retrieve(q) {
   }).filter(x => x.score > 0).sort((a, b) => b.score - a.score || (curGov(b.p) || 0) - (curGov(a.p) || 0)).slice(0, 5);
 }
 const fact = p => `${p.ministry} ${p.program || ""} > ${p.name}: ` + YEARS.map(y => { const v = Y(p, y); return `${y} 정부안 ${won(v.gov)}억, 확정 ${won(v.na)}억`; }).join("; ")
-  + ((D.exec_years || []).some(y => E(p, y)) ? ` / 소속 단위사업 '${unitOf(p) ? unitOf(p).activity : ""}' 결산: ` + D.exec_years.map(y => { const e = E(p, y); return e ? `${y} 집행률 ${e.rate.toFixed(1)}%, 불용 ${won(e.unused)}억` : ""; }).filter(Boolean).join("; ") : "");
+  + ((D.exec_years || []).some(y => E(p, y)) ? ` / 소속 단위사업 '${unitOf(p) ? unitOf(p).activity : ""}' 결산: ` + D.exec_years.map(y => { const e = E(p, y); return e ? `${y} 집행률 ${e.rate == null ? "-" : e.rate.toFixed(1) + "%"}, 불용 ${won(e.unused)}억` : ""; }).filter(Boolean).join("; ") : "");
 async function ask() {
   const q = document.getElementById("aq").value.trim(); if (!q) return;
   await naeyeokData();
@@ -518,14 +555,14 @@ async function ask() {
   const extra = (await termHits(q)).filter(p => !got.some(h => h.p === p)).slice(0, 3).map(p => ({ p, score: 0 }));
   const hits = [...got, ...extra].slice(0, 6);
   if (!hits.length) { box.innerHTML = "<div class='sub'>관련 사업을 찾지 못했습니다.</div>"; return; }
-  await loadDescIdx();
+  const DI = (await loadDescIdx()) || {};
   const texts = await Promise.all(hits.map(async ({ p }) => {
-    const id = DESC_IDX_I[p.ministry + "|" + p.name];
+    const id = DI[p.ministry + "|" + p.name];
     if (!id) return "";
     try { return descRecText(await gunzipJSON(`desc/${id}.json.gz`)).slice(0, 1500); } catch (e) { return ""; }
   }));
   const cite = hits.map(({ p }, i) => `<div class="doc">${link(p)}${texts[i] ? ' <span class="tag">사업설명 있음</span>' : ""}<br><span class="sub">출처: 열린재정 총지출 세부사업 · ${YEARS.map(y => `${y} ${won(amt(p, y))}`).join(" → ")}억</span>
-    ${DESC_IDX_I[p.ministry + "|" + p.name] ? `<br><button class="desc-btn" onclick="openDesc('${esc(p.ministry)}','${esc(p.name)}')">사업 설명 보기 ›</button>` : ""}</div>`).join("");
+    ${DI[p.ministry + "|" + p.name] ? `<br><button class="desc-btn" data-min="${esc(p.ministry)}" data-name="${esc(p.name)}" onclick="openDescBtn(this)">사업 설명 보기 ›</button>` : ""}</div>`).join("");
   const key = document.getElementById("akey").value.trim();
   if (!key) { box.innerHTML = `<div class="sub">관련 사업 (AI 요약 미사용)</div>${cite}`; return; }
   box.innerHTML = `<div class="sub">요약 생성 중…</div>`;
@@ -547,8 +584,7 @@ VIEWS.quality = () => {
     <div class="sub">시군구 지표는 별도 프로젝트 <a href="https://lloydknam.github.io/life-stats/">클사무관의 라이프 인덱스</a>에서 볼 수 있습니다.</div></div>`);
 };
 
-drawTabs();
-VIEWS.home();
+route();
 </script>
 </body>
 </html>
