@@ -171,7 +171,7 @@ function search(q, limit = 30) {
   const terms = q.trim().split(/\s+/).filter(Boolean);
   if (!terms.length) return [];
   return P.filter(p => {
-    const hay = `${p.name} ${p.ministry} ${p.program || ""} ${p.activity || ""} ${p.field} ${(p.aka || []).join(" ")} ${(p.prev_ministry || []).join(" ")} ${p.pooled_from || ""} ${itemsOf(p).map(i => i.name).join(" ")}`;
+    const hay = `${p.name} ${p.ministry} ${p.program || ""} ${p.activity || ""} ${p.field} ${p.sector || ""} ${(p.aka || []).join(" ")} ${(p.prev_ministry || []).join(" ")} ${p.pooled_from || ""} ${itemsOf(p).map(i => i.name).join(" ")}`;
     return terms.every(t => hay.includes(t));
   }).sort((a, b) => (curGov(b) || amt(b, PREV) || 0) - (curGov(a) || amt(a, PREV) || 0)).slice(0, limit);
 }
