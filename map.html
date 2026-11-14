@@ -109,13 +109,13 @@ button{font:inherit;color:inherit}
 .tree{cursor:grab;user-select:none;-webkit-user-select:none}
 .tree.dragging{cursor:grabbing}
 /* 트리 펼치기: 새로 나온 가지는 부모 쪽에서 오른쪽으로 미끄러지듯 나타난다 (fill backwards: 평소 강조 상태를 건드리지 않음) */
-.tree .tn.in{animation:tIn 1.8s cubic-bezier(.2,.7,.2,1) backwards}
+.tree .tn.in{animation:tFade .6s ease 1.8s backwards}
 .tree .lk.in{animation:lIn 1.8s ease backwards}
 .tree .tn.out{animation:tOut 1.2s ease forwards !important;pointer-events:none}
 .tree .lk.out{animation:lOut 1.2s ease forwards !important;pointer-events:none}
 @keyframes tOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(-26px)}}
 @keyframes lOut{from{opacity:1}to{opacity:0}}
-@keyframes tIn{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
+@keyframes tFade{from{opacity:0}to{opacity:1}}
 @keyframes lIn{from{opacity:0;stroke-dasharray:1;stroke-dashoffset:1}to{opacity:1;stroke-dasharray:1;stroke-dashoffset:0}}
 @media (prefers-reduced-motion: reduce){.tree .tn.in,.tree .lk.in{animation:none}}
 /* 트리 보기에서는 위쪽 경로(부처·분야·부문) 줄을 숨겨 공간을 확보 */
