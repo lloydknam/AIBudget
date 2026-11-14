@@ -326,7 +326,9 @@ let enterAnim = false, busy = false;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 function drill(n, el) {
   if (busy) return;
-  if (!el || reduced()) { path = [...path, n]; mode = "map"; enterAnim = true; render(); return; }
+  // 단위사업 → 세부사업(또는 세부사업 상세)으로 갈 때는 애니메이션 없이 바로 이동
+  const toDetail = n.leaf || [...n.kids.values()].some(c => c.leaf);
+  if (!el || reduced() || toDetail) { path = [...path, n]; mode = "map"; enterAnim = true; render(); return; }
   // 누른 칸이 화면 전체로 커지고, 나머지 칸은 흐려진 뒤 다음 단계로 바뀐다
   busy = true;
   const box = el.parentElement, W = stage.clientWidth, H = stage.clientHeight;
