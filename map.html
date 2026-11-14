@@ -23,6 +23,9 @@ button{font:inherit;color:inherit}
 .brand b em{font-style:normal;color:var(--accent)}
 .brand span{font-size:13px;font-weight:700;background:linear-gradient(90deg,#f0527f,#b56cf0 55%,#4c8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
 /* 검색 */
+.head{flex:none;display:flex;align-items:center;gap:10px;padding-top:2px}
+.head .brand{flex:none}
+.head .search{flex:1;min-width:0;position:relative;padding:0}
 .search{flex:none;position:relative;padding:4px 0 2px}
 .search input{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:9px 14px 9px 36px;font-size:14px;font-family:inherit;outline:none}
 .search input::placeholder{color:var(--sub)}
@@ -120,11 +123,13 @@ button{font:inherit;color:inherit}
 </style>
 </head>
 <body>
-<a class="brand" href="./"><img src="assets/clerk.jpg" alt="클사무관" width="30" height="30"><b>클사무관의 <em>AI예산</em></b><span>예산 지도</span></a>
+<div class="head"><a class="brand" href="./"><img src="assets/clerk.jpg" alt="클사무관" width="30" height="30"><b>클사무관의 <em>AI예산</em></b><span>예산 지도</span></a>
 <div class="search" role="search">
-  <input id="q" type="search" placeholder="사업·부처 이름 검색 (예: 기초연금)" autocomplete="off" aria-label="예산 검색" enterkeyhint="search">
+  <input id="q" type="search" placeholder="사업 검색" autocomplete="off" aria-label="예산 검색" enterkeyhint="search">
   <button class="clr" id="qclr" aria-label="검색어 지우기" hidden>×</button>
 </div>
+</div>
+
 <div class="top">
   <div class="t"><b id="total"></b><span id="sub"></span></div>
   <div class="years" id="years" role="group" aria-label="회계연도"></div>
