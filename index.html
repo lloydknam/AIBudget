@@ -83,6 +83,7 @@ footer .lab img{display:block;height:48px;width:auto;max-width:100%}
 .sheet-body h3{margin:20px 0 6px;font-size:15px;line-height:1.4;word-break:keep-all;color:var(--ink)}
 .sheet-body h4{margin:14px 0 6px;font-size:14px;line-height:1.4;word-break:keep-all;color:var(--sub)}
 .sheet-body p{margin:4px 0;word-break:keep-all}
+.sheet-body p.li{padding-left:12px;text-indent:-9px}
 .sheet-body .part{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)}
 .sheet-body .dtbl{overflow-x:auto;margin:8px 0}
 .sheet-body table{border-collapse:collapse;font-size:12px;width:100%}
@@ -260,12 +261,15 @@ function descRecText(rec) {
   }));
   return out.join("\n");
 }
+// 줄바꿈: ○ ● ※ 같은 항목 표지와 "/ -" 구분을 줄 시작으로 바꾼다 (긴 한 문단을 읽기 좋게)
+const splitLines = s => s.replace(/\s*\/\s*-\s*/g, "\n- ").replace(/\s*([○●◎■□※▶])\s*/g, "\n$1 ").split("\n").map(x => x.trim()).filter(Boolean);
+const linesHTML = s => splitLines(s).map(x => `<p class="${/^- /.test(x) ? "li" : ""}">${esc(x)}</p>`).join("");
 const descBlockHTML = b => {
   if (typeof b === "string") {
     const t = b.trim();
     if (/^\d+\.\s*\S/.test(t)) return `<h3>${esc(b)}</h3>`;                      // 1. 사업 총괄 정보
     if (/^(\(\d+-\d+\)|\(\d+\)|\d+\)|[①-⑩])/.test(t)) return `<h4>${esc(b)}</h4>`;  // 1) · (1-1)
-    return `<p>${esc(b)}</p>`;
+    return linesHTML(b);
   }
   if (b && b.tbl) {
     const rows = b.tbl.filter(r => r.some(c => c && c.trim()));

@@ -151,6 +151,7 @@ button{font:inherit;color:inherit}
 .detail .dbody{font-size:12.5px;line-height:1.6;margin-top:4px}
 .detail .dbody h4{margin:12px 0 4px;font-size:13px;line-height:1.4;word-break:keep-all}
 .detail .dbody p{margin:3px 0;word-break:keep-all}
+.detail .dbody p.li{padding-left:12px;text-indent:-9px}
 .detail .dbody .dtbl{overflow-x:auto;margin:6px 0}
 .detail .dbody table{border-collapse:collapse;font-size:11.5px;width:100%}
 .detail .dbody th,.detail .dbody td{border:1px solid var(--line);padding:3px 5px;text-align:left;vertical-align:top;word-break:keep-all;font-weight:400}
@@ -703,8 +704,11 @@ const gunzipJSON = async url => {
   if (!res.ok) throw new Error("http " + res.status);
   return new Response(res.body.pipeThrough(new DecompressionStream("gzip"))).json();
 };
+// 줄바꿈: ○ ● ※ 같은 항목 표지와 "/ -" 구분을 줄 시작으로 바꾼다 (긴 한 문단을 읽기 좋게)
+const splitLines = s => s.replace(/\s*\/\s*-\s*/g, "\n- ").replace(/\s*([○●◎■□※▶])\s*/g, "\n$1 ").split("\n").map(x => x.trim()).filter(Boolean);
+const linesHTML = s => splitLines(s).map(x => `<p class="${/^- /.test(x) ? "li" : ""}">${esc(x)}</p>`).join("");
 const descBlock = b => {
-  if (typeof b === "string") return /^(\d+\.|\(\d+-\d+\)|\d+\)|[①-⑩])/.test(b.trim()) ? `<h4>${esc(b)}</h4>` : `<p>${esc(b)}</p>`;
+  if (typeof b === "string") return /^(\d+\.|\(\d+-\d+\)|\d+\)|[①-⑩])/.test(b.trim()) ? `<h4>${esc(b)}</h4>` : linesHTML(b);
   if (b && b.tbl) {
     const rows = b.tbl.filter(r => r.some(c => c && c.trim()));
     if (!rows.length) return "";
