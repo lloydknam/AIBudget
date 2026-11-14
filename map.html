@@ -235,17 +235,18 @@ body.tree-mode .crumb{display:none}
 @media (max-width:640px){.foot .lab img{height:38px}}
 #back{white-space:nowrap}.bar button span{white-space:nowrap}
 @media (min-width:641px){.stage{height:max(300px,calc((100dvh - 200px) * .8))}}
-/* 모바일 하단 메뉴: 4칸 격자로 맞춘다. 윗줄 분야·회계기금·부처, 아랫줄 지도·목록·트리 + 뒤로 */
+/* 모바일 하단 메뉴: 한 줄. 분야·회계기금·부처 | [지도 목록 트리] 토글 | 뒤로 */
 @media (max-width:640px){
-  .bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"f g m ." "v1 v2 v3 b";gap:6px;margin:0;padding:6px 8px;border-top:1px solid var(--line)}
-  #tabField{grid-area:f}#tabFund{grid-area:g}#tabMin{grid-area:m}
-  .bar .vseg{display:contents}
-  #vMap{grid-area:v1}#vList{grid-area:v2}#vTree{grid-area:v3}
-  .bar .vseg button,#back{border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--sub);min-height:36px;margin:0;padding:0;justify-content:center;font-size:13px;width:100%}
-  .bar .vseg button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-  #back{grid-area:b;border-color:var(--accent);color:var(--accent);background:none}
-  #back svg{stroke:var(--accent)}
-  #back[disabled]{opacity:.35}
+  .bar{display:flex;align-items:center;gap:4px;margin:0;padding:6px 6px 6px;border-top:1px solid var(--line)}
+  .bar>button{flex:1 1 0;min-width:0;min-height:44px;gap:2px}
+  .bar>button span{font-size:10.5px;white-space:nowrap}
+  .bar>button svg{width:15px;height:15px}
+  .bar .vseg{flex:none;display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+  .bar .vseg button{flex:none;min-height:44px;padding:0 7px;border:0;border-radius:0;background:none;color:var(--sub);font-size:12px;font-weight:700;white-space:nowrap}
+  .bar .vseg button.on{background:var(--ink);color:var(--bg)}
+  #back{flex:none;margin:0;min-height:44px;padding:0 8px;border-radius:10px;font-size:12px;border:1px solid var(--accent);color:var(--accent);background:none;gap:0}
+  #back span{font-size:12px}
+  #back svg{width:13px;height:13px;stroke:var(--accent)}
 }
 </style>
 </head>
