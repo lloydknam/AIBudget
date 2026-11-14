@@ -109,10 +109,10 @@ button{font:inherit;color:inherit}
 .tree{cursor:grab;user-select:none;-webkit-user-select:none}
 .tree.dragging{cursor:grabbing}
 /* 트리 펼치기: 새로 나온 가지는 부모 쪽에서 오른쪽으로 미끄러지듯 나타난다 (fill backwards: 평소 강조 상태를 건드리지 않음) */
-.tree .tn.in{animation:tIn .9s cubic-bezier(.2,.7,.2,1) backwards}
-.tree .lk.in{animation:lIn .9s ease backwards}
-.tree .tn.out{animation:tOut .6s ease forwards !important;pointer-events:none}
-.tree .lk.out{animation:lOut .6s ease forwards !important;pointer-events:none}
+.tree .tn.in{animation:tIn 1.8s cubic-bezier(.2,.7,.2,1) backwards}
+.tree .lk.in{animation:lIn 1.8s ease backwards}
+.tree .tn.out{animation:tOut 1.2s ease forwards !important;pointer-events:none}
+.tree .lk.out{animation:lOut 1.2s ease forwards !important;pointer-events:none}
 @keyframes tOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(-26px)}}
 @keyframes lOut{from{opacity:1}to{opacity:0}}
 @keyframes tIn{from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:none}}
@@ -689,7 +689,7 @@ function drawTree(base) {
       c.classList.remove("in", "on");
       c.classList.add("out");
       (el.tagName.toLowerCase() === "path" ? svg.children[1] : svg.children[2]).appendChild(c);
-      setTimeout(() => c.remove(), 700);
+      setTimeout(() => c.remove(), 1300);
     });
   }
   box.onclick = e => {
