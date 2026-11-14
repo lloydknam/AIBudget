@@ -726,7 +726,11 @@ const gunzipJSON = async url => {
   return new Response(res.body.pipeThrough(new DecompressionStream("gzip"))).json();
 };
 // 줄바꿈: ○ ● ※ 같은 항목 표지와 "/ -" 구분을 줄 시작으로 바꾼다 (긴 한 문단을 읽기 좋게)
-const splitLines = s => s.replace(/\s*\/\s*-\s*/g, "\n- ").replace(/\s*([○●◎■□※▶])\s*/g, "\n$1 ").split("\n").map(x => x.trim()).filter(Boolean);
+const splitLines = s => s
+  .replace(/\s*\/\s*(?=-\s)/g, "\n")                                              // "/ - 항목"
+  .replace(/\s*\/\s*(?=[○●◎■□※▶①-⑩*]|제\d|\d+[.)]\s|\(\d)/g, "\n")              // "/ ○", "/ 제30조", "/ ②", "/ 2010. 12." (수식의 "/"는 그대로)
+  .replace(/\s*([○●◎■□※▶])\s*/g, "\n$1 ")
+  .split("\n").map(x => x.trim()).filter(Boolean);
 const lineClass = x => /^○/.test(x) ? "o" : /^- /.test(x) ? "li" : "";   // ○ 소소목차(굵게, 윗줄 띄움) · - 항목
 const linesHTML = s => splitLines(s).map(x => `<p class="${lineClass(x)}">${esc(x)}</p>`).join("");
 const descBlock = b => {
