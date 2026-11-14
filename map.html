@@ -686,7 +686,7 @@ function drawDetail(n) {
       <dt>위치</dt><dd>${path.slice(0, -1).map(p => esc(p.name)).join(" › ")}</dd></dl>
     <table><thead><tr><th>연도</th><th>정부안(억)</th><th>국회 확정(억)</th><th></th></tr></thead><tbody>${rows}</tbody></table>
     ${inner}
-    <section class="dcard" id="descCard"><div class="sub-h">사업설명자료</div><div class="dbody"><p class="sub">불러오는 중…</p></div></section>
+    <section class="dcard" id="descCard"><div class="sub-h">사업설명자료</div><div class="dbody"><button class="desc-btn" id="dOpen">사업설명자료 펼치기 ›</button></div></section>
 `;
   const card = box.querySelector("#descCard");
   const goDesc = async hl => {
@@ -694,11 +694,11 @@ function drawDetail(n) {
     box.scrollTo({ top: first ? first.offsetTop - 12 : card.offsetTop - 6, behavior: reduced() ? "auto" : "smooth" });
   };
   box.querySelector(".go-title").onclick = () => goDesc(null);
+  box.querySelector("#dOpen").onclick = () => goDesc(null);   // 사업설명은 눌러야 펼쳐진다 (다른 단계로 가면 자동으로 접힌다)
   box.querySelectorAll("[data-item]").forEach(el => {
     el.onclick = () => goDesc(el.dataset.item);
     el.onkeydown = e => { if (e.key === "Enter") goDesc(el.dataset.item); };
   });
-  fillDesc(card, r.ministry, n.name, null);
   stage.appendChild(box);
 }
 
