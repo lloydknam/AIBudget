@@ -641,12 +641,14 @@ function drawTree(base) {
   const placeNear = (py, k) => {
     const occ = [...treeYOf.values()];
     const lo = Math.min(...occ), hi = Math.max(...occ), dir = py < (lo + hi) / 2 ? -1 : 1;
-    const out = [];
-    for (let j = 1; out.length < k && j < 1000; j++) {
-      const y = py + dir * j * TREE_ROW;
-      if (!occ.some(o => Math.abs(o - y) < TREE_ROW * 0.6)) { out.push(y); occ.push(y); }
+    // 가지가 엇갈리지 않도록, 새 하위들은 한 덩어리(연속된 빈 자리)로만 붙는다
+    const free = y => !occ.some(o => Math.abs(o - y) < TREE_ROW * 0.6);
+    for (let j0 = 1; j0 < 2000; j0++) {
+      const ys = [];
+      for (let i = 0; i < k; i++) ys.push(py + dir * (j0 + i) * TREE_ROW);
+      if (ys.every(free)) return ys;
     }
-    return out;
+    return [];
   };
   let maxD = 0;
   function build(n, d, par, rel, col) {
