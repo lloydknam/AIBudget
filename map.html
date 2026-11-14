@@ -615,8 +615,9 @@ const TREE_ID = new WeakMap(); let treeIdSeq = 0;
 const treeIdOf = n => { if (!TREE_ID.has(n)) TREE_ID.set(n, ++treeIdSeq); return TREE_ID.get(n); };
 function isOpen(n, d) { return treeOpen.has(n) ? treeOpen.get(n) : d < TREE_OPEN; }
 // 가지가 자라는 시간(1.8초)에 맞춰 화면을 부드럽게 옮긴다. 사용자가 끌기 시작하면 멈춘다
-function treeScrollTween(box, to) {
-  const id = ++treeTween, from = box.scrollTop, t0 = performance.now(), dur = 1800;
+function treeScrollTween(box, from, to) {
+  const id = ++treeTween, t0 = performance.now(), dur = 1800;
+  box.scrollTop = from;   // 지금 보고 있는 자리에서 출발한다
   const ease = p => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
   const step = t => {
     if (id !== treeTween) return;
@@ -671,7 +672,8 @@ function drawTree(base) {
   build(base, 0, null, [], null);
   // 위로 자라서 맨 위를 넘었으면 전체를 아래로 밀어 준다
   const allY = [...treeYOf.values()], rawMin = Math.min(...allY), rawMax = Math.max(...allY);
-  if (rawMin + treeShift < TREE_TOP) { const delta = TREE_TOP - (rawMin + treeShift); treeShift += delta; flat.forEach(L => L.y += delta); }
+  let shiftDelta = 0;
+  if (rawMin + treeShift < TREE_TOP) { shiftDelta = TREE_TOP - (rawMin + treeShift); treeShift += shiftDelta; flat.forEach(L => L.y += shiftDelta); }
   const W = TREE_PADL + maxD * TREE_COL + 280, H = Math.max(rawMax + treeShift + TREE_TOP * 2, stage.clientHeight);
   const colorOf = L => L.col || "#9aa4b2";
   const keyOf = L => L.moreOf ? L.moreOf.name + "\u0001more" : L.n;
@@ -732,6 +734,7 @@ function drawTree(base) {
       if (L.moreOf) treeAll.add(L.moreOf); else treeOpen.set(L.n, !isOpen(L.n, L.d));
       treeGhost = box.querySelector("svg") ? box.querySelector("svg").cloneNode(true) : null;
       treeFollow = L.moreOf || L.n;   // 펼치기·접기 중에는 그 자리를 화면 가운데로 따라간다
+      treeKeep = { top: box.scrollTop };   // 지금 보고 있던 세로 위치 (새 칸은 0에서 시작하므로 여기서 이어 간다)
       render();
     } else { enterAnim = false; path = [...path, ...L.rel]; syncUrl(true); render(); }
   };
@@ -775,7 +778,9 @@ function drawTree(base) {
     const f = flat.find(L => L.n === treeFollow && !L.more) || flat[0];
     const ys = f.kids.map(k => k.y).concat([f.y]);
     const cy = (Math.min(...ys) + Math.max(...ys)) / 2;   // 펼쳐진 가지 전체(부모 포함)의 가운데
-    treeScrollTween(box, Math.max(0, cy - box.clientHeight / 2));
+    const from = (treeKeep ? treeKeep.top : 0) + shiftDelta;   // 자라기 전 보던 자리에서 이어서 움직인다
+    treeKeep = null;
+    treeScrollTween(box, from, Math.max(0, cy - box.clientHeight / 2));
     treeFollow = null;
   } else box.scrollTop = Math.max(0, flat[0].y - box.clientHeight / 2);   // 처음에는 루트가 화면 가운데에 오도록
 }
