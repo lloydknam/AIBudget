@@ -610,7 +610,7 @@ function render() {
 /* ---------- 트리 보기: 현재 칸 아래를 가로 계통도로 (첨부 스타일) ---------- */
 const TREE_COL = 230, TREE_ROW = 50, TREE_PADL = 170, TREE_TOP = 24, TREE_MAX = Infinity, TREE_OPEN = 1;   // TREE_MAX: 한 번에 보일 하위 수(제한 없음)   // TREE_OPEN: 처음 펼쳐 둘 단계 수
 const TREE_PAL = ["#7cc4ff", "#5fe3a1", "#c9a7ff", "#ffc27a", "#ff8fa3", "#8ef0e6"];
-let treeOpen = new Map(), treeAll = new Set(), treeSeen = new Set(), treeBase = null, treeKeep = null, treeRowOf = new Map(), treeRowNext = 0, treeSuppress = false, treeGhost = null;
+let treeOpen = new Map(), treeAll = new Set(), treeSeen = new Set(), treeBase = null, treeKeep = null, treeRowOf = new Map(), treeRowNext = 0, treeSuppress = false, treeGhost = null, treeFollow = null;
 const TREE_ID = new WeakMap(); let treeIdSeq = 0;
 const treeIdOf = n => { if (!TREE_ID.has(n)) TREE_ID.set(n, ++treeIdSeq); return TREE_ID.get(n); };
 function isOpen(n, d) { return treeOpen.has(n) ? treeOpen.get(n) : d < TREE_OPEN; }
@@ -699,7 +699,7 @@ function drawTree(base) {
     if (t.dataset.act === "toggle") {
       if (L.moreOf) treeAll.add(L.moreOf); else treeOpen.set(L.n, !isOpen(L.n, L.d));
       treeGhost = box.querySelector("svg") ? box.querySelector("svg").cloneNode(true) : null;
-      treeKeep = { top: box.scrollTop, left: box.scrollLeft };   // 펼쳐도 화면은 그대로, 보고 싶은 곳은 사용자가 스크롤
+      treeFollow = L.moreOf || L.n;   // 펼치기·접기 중에는 그 자리를 화면 가운데로 따라간다
       render();
     } else { enterAnim = false; path = [...path, ...L.rel]; syncUrl(true); render(); }
   };
@@ -738,8 +738,13 @@ function drawTree(base) {
   };
   svg.onpointerleave = () => { svg.classList.remove("hl"); svg.querySelectorAll(".on").forEach(x => x.classList.remove("on")); };
   stage.appendChild(box);
-  if (treeKeep) { box.scrollTop = treeKeep.top; box.scrollLeft = treeKeep.left; treeKeep = null; }   // 펼치기 전 보던 자리 그대로
-  else box.scrollTop = Math.max(0, flat[0].y - box.clientHeight / 2);   // 처음에는 루트가 화면 가운데에 오도록
+  if (treeFollow) {   // 펼치면 새로 열린 가지의 가운데, 접으면 접힌 노드가 화면 가운데에 오도록 부드럽게 따라간다
+    const f = flat.find(L => L.n === treeFollow && !L.more) || flat[0];
+    const kids = f.kids.length ? f.kids : [];
+    const mid = kids.length ? (f.y + kids[kids.length - 1].y) / 2 : f.y;
+    box.scrollTo({ top: Math.max(0, mid - box.clientHeight / 2), left: box.scrollLeft, behavior: "smooth" });
+    treeFollow = null;
+  } else box.scrollTop = Math.max(0, flat[0].y - box.clientHeight / 2);   // 처음에는 루트가 화면 가운데에 오도록
 }
 
 function drawChildren(parent) {
