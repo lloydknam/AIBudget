@@ -618,7 +618,7 @@ function isOpen(n, d) { return treeOpen.has(n) ? treeOpen.get(n) : d < TREE_OPEN
 function treeScrollTween(box, from, to) {
   const id = ++treeTween, t0 = performance.now(), dur = 1800;
   box.scrollTop = from;   // 지금 보고 있는 자리에서 출발한다
-  const ease = p => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+  const ease = p => 1 - Math.pow(1 - p, 3);   // 가지가 자라는 속도(빠르게 출발)와 맞춘다
   const step = t => {
     if (id !== treeTween) return;
     const p = Math.min(1, (t - t0) / dur);
@@ -783,11 +783,14 @@ function drawTree(base) {
   stage.appendChild(box);
   if (treeFollow) {   // 펼치면 새로 열린 가지의 가운데, 접으면 접힌 노드가 화면 가운데에 오도록 부드럽게 따라간다
     const f = flat.find(L => L.n === treeFollow && !L.more) || flat[0];
-    const ys = f.kids.map(k => k.y).concat([f.y]);
-    const cy = (Math.min(...ys) + Math.max(...ys)) / 2;   // 펼쳐진 가지 전체(부모 포함)의 가운데
+    const H = box.clientHeight, ys = f.kids.map(k => k.y).concat([f.y]);
+    const lo = Math.min(...ys), hi = Math.max(...ys), down = (hi - f.y) >= (f.y - lo);
+    // 가지가 화면보다 길면 자라는 끝(tip)이 화면 안에 남도록: 아래로 자라면 끝을 아래쪽에, 위로 자라면 위쪽에 둔다
+    const want = hi - lo <= H * 0.8 ? (lo + hi) / 2 - H / 2
+      : down ? hi - H * 0.7 : lo - H * 0.3;
     const from = (treeKeep ? treeKeep.top : 0) + shiftDelta;   // 자라기 전 보던 자리에서 이어서 움직인다
     treeKeep = null;
-    treeScrollTween(box, from, Math.max(0, cy - box.clientHeight / 2));
+    treeScrollTween(box, from, Math.max(0, Math.min(want, box.scrollHeight - H)));
     treeFollow = null;
   } else box.scrollTop = Math.max(0, flat[0].y - box.clientHeight / 2);   // 처음에는 루트가 화면 가운데에 오도록
 }
