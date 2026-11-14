@@ -448,7 +448,7 @@ function drawChildren(parent) {
       b.innerHTML = html;
     }
     b.onclick = () => drill(k, b);
-    b.style.animationDelay = Math.min(i * 25, 400) + "ms";
+    b.style.animationDelay = "0ms"; // 모든 칸이 한꺼번에 나타난다
     box.appendChild(b);
   });
   stage.appendChild(box);
