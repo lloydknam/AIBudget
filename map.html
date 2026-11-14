@@ -120,13 +120,17 @@ button{font:inherit;color:inherit}
 .foot .src{display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
 .foot .src i{flex:none;width:10px;height:9px;border-radius:2px;display:block}
 .foot .src .sc{display:flex;gap:2px}
-.bar{flex:none;display:grid;grid-template-columns:repeat(5,1fr);margin:0 -12px;padding:2px 6px 4px;border-top:1px solid var(--line);background:var(--bg)}
+.bar{flex:none;display:grid;grid-template-columns:1fr 1fr 1fr 1.3fr 1fr;margin:0 -12px;padding:2px 6px 4px;border-top:1px solid var(--line);background:var(--bg)}
 .bar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;border:0;background:none;color:var(--sub);font-size:10.5px;font-weight:600;cursor:pointer;border-radius:10px;-webkit-tap-highlight-color:transparent}
 .bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .bar button.on{color:var(--ink)}
 .bar button.on svg{stroke:var(--accent)}
 .bar button:disabled{opacity:.3;cursor:default}
 .bar button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.bar .vseg{display:flex;align-self:center;justify-self:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
+.bar .vseg button{flex-direction:row;min-height:34px;padding:0 7px;gap:0;border-radius:0;font-size:12px;font-weight:700;color:var(--sub);white-space:nowrap;line-height:1}
+.bar .vseg button.on{background:var(--ink);color:var(--bg)}
+.bar .vseg button.on svg{stroke:none}
 .logo{font-family:"D-DIN","DIN Alternate","Bahnschrift","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.1em;color:var(--ink);font-size:10.5px;text-decoration:none;white-space:nowrap}
 .logo sup{color:#d0342c;font-size:10px;margin-left:1px}
 .about{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 62px);line-height:1.55;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--sub);display:none;box-shadow:0 8px 24px rgba(0,0,0,.12)}
@@ -171,7 +175,7 @@ button{font:inherit;color:inherit}
   <button id="back" aria-label="한 단계 위로"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>뒤로</span></button>
   <button id="tabField"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="18" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg><span>분야별</span></button>
   <button id="tabMin"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V10M19 21V10M9.5 21V10M14.5 21V10M3 10l9-6 9 6z"/></svg><span>부처별</span></button>
-  <button id="tabList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>목록</span></button>
+  <div class="vseg" role="group" aria-label="보기 방식"><button id="vMap" aria-pressed="true">지도</button><button id="vList" aria-pressed="false">목록</button></div>
   <button id="aboutBtn" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>정보</span></button>
 </nav>
 <div class="about" id="about"><p id="aboutText" style="margin:0 0 8px"></p><a href="./" style="color:var(--accent);font-weight:700;text-decoration:none">클사무관의 AI예산 홈으로 ›</a></div>
@@ -272,7 +276,7 @@ function drawSearch() {
     box.querySelectorAll(".rowbtn").forEach(b => b.onclick = () => {
       const r = shown[+b.dataset.idx];
       q = ""; $("q").value = ""; $("qclr").hidden = true;
-      path = r.path; mode = "map"; enterAnim = true; render();
+      path = r.path; enterAnim = true; render();
     });
   }
   stage.appendChild(box);
@@ -337,12 +341,13 @@ function squarify(vals, W, H) {
 /* ---------- 상태: 한 화면에서 한 단계씩 바꿔 보기 ---------- */
 let year = YEARS[YEARS.length - 1];
 let path = [];                 // ROOT 아래로 내려간 노드들 (분야 → … → 세부사업)
-let mode = "map";              // map | list
+let mode = (() => { try { return localStorage.getItem("budgetMapMode") === "list" ? "list" : "map"; } catch (e) { return "map"; } })();   // map | list (선택은 기억)
+function setMode(m) { mode = m; try { localStorage.setItem("budgetMapMode", m); } catch (e) { /* 저장 불가 환경은 무시 */ } }
 const $ = id => document.getElementById(id);
 const stage = $("stage");
 const cur = () => path.length ? path[path.length - 1] : ROOT;
 const LV = d => { const L = LEVELS(); return L[Math.min(d, L.length - 1)]; };
-function setView(v) { view = v; ROOT = ROOTS[v]; path = []; mode = "map"; render(); }
+function setView(v) { view = v; ROOT = ROOTS[v]; path = []; render(); }
 
 function go(next) { path = next; render(); }
 let enterAnim = false, busy = false;
@@ -351,7 +356,7 @@ function drill(n, el) {
   if (busy) return;
   // 단위사업 → 세부사업(또는 세부사업 상세)으로 갈 때는 애니메이션 없이 바로 이동
   const toDetail = n.leaf || [...n.kids.values()].some(c => c.leaf);
-  if (!el || reduced() || toDetail) { path = [...path, n]; mode = "map"; enterAnim = true; render(); return; }
+  if (mode === "list" || !el || reduced() || toDetail) { path = [...path, n]; enterAnim = true; render(); return; }
   // 누른 칸이 화면 전체로 커지고, 나머지 칸은 흐려진 뒤 다음 단계로 바뀐다
   busy = true;
   const box = el.parentElement, W = stage.clientWidth, H = stage.clientHeight;
@@ -374,7 +379,7 @@ function drill(n, el) {
   clone.querySelectorAll("b,span").forEach(n => { n.style.fontSize = (+n.dataset.fs * 2.2) + "px"; });
   setTimeout(() => {
     busy = false;
-    path = [...path, n]; mode = "map"; enterAnim = true; render();
+    path = [...path, n]; enterAnim = true; render();
   }, 443);
 }
 function jump(i) { path = path.slice(0, i); enterAnim = true; render(); }
@@ -414,9 +419,10 @@ function render() {
   $("tabMin").classList.toggle("on", view === "ministry");
   $("tabField").setAttribute("aria-pressed", view === "field");
   $("tabMin").setAttribute("aria-pressed", view === "ministry");
-  $("tabList").classList.toggle("on", mode === "list" && !node.leaf);
-  $("tabList").setAttribute("aria-pressed", mode === "list");
-  $("tabList").disabled = !!node.leaf;
+  $("vMap").classList.toggle("on", mode === "map");
+  $("vMap").setAttribute("aria-pressed", mode === "map");
+  $("vList").classList.toggle("on", mode === "list");
+  $("vList").setAttribute("aria-pressed", mode === "list");
 
   // 본문
   stage.innerHTML = "";
@@ -612,7 +618,8 @@ $("back").onclick = () => { if (path.length) jump(path.length - 1); };
 $("trail").onclick = e => { const b = e.target.closest("button"); if (b && b.dataset.i != null) jump(+b.dataset.i); };
 $("tabField").onclick = () => setView("field");      // 이미 보고 있던 기준을 누르면 맨 처음으로
 $("tabMin").onclick = () => setView("ministry");
-$("tabList").onclick = () => { mode = mode === "list" ? "map" : "list"; enterAnim = true; render(); };
+$("vMap").onclick = () => { setMode("map"); enterAnim = true; render(); };
+$("vList").onclick = () => { setMode("list"); enterAnim = true; render(); };
 $("aboutBtn").onclick = () => {
   const a = $("about"), on = !a.classList.contains("on");
   a.classList.toggle("on", on); $("aboutBtn").setAttribute("aria-expanded", on);
