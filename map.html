@@ -332,13 +332,17 @@ function drill(n, el) {
   const clone = el.cloneNode(true);
   clone.classList.add("zoom");
   clone.innerHTML = "";
-  clone.style.left = el.style.left; clone.style.top = el.style.top;
-  clone.style.width = el.style.width; clone.style.height = el.style.height;
+  // 시작 위치: 누른 칸의 실제 위치(화면 기준)를 지도 칸 안에서 맞춘다
+  const sr = stage.getBoundingClientRect(), er = el.getBoundingClientRect();
+  clone.style.left = (er.left - sr.left) + "px"; clone.style.top = (er.top - sr.top) + "px";
+  clone.style.width = er.width + "px"; clone.style.height = er.height + "px";
   stage.appendChild(clone);
   box.classList.add("fade");
   void clone.offsetWidth;                       // 현재 위치를 먼저 확정
-  clone.style.left = "0px"; clone.style.top = "0px";
-  clone.style.width = W + "px"; clone.style.height = H + "px";
+  // 도착 위치: 다음 단계에서 지도가 놓일 크기(15% 작아진 영역)와 똑같이 맞춘다
+  const nsc = Math.pow(0.85, path.length + 1), TW = W * nsc, TH = H * nsc;
+  clone.style.left = ((W - TW) / 2) + "px"; clone.style.top = ((H - TH) / 2) + "px";
+  clone.style.width = TW + "px"; clone.style.height = TH + "px";
   clone.style.borderRadius = "0px";
   setTimeout(() => {
     busy = false;
