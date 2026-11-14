@@ -105,6 +105,9 @@ button{font:inherit;color:inherit}
 .tree svg.hl .tn{opacity:.3}
 .tree svg.hl .tn.on{opacity:1}
 .tree svg.hl .tn.on circle{stroke:var(--accent)}
+/* PC에서 마우스로 끌어서 옮기기 (손가락은 기본 스크롤) */
+.tree{cursor:grab;user-select:none;-webkit-user-select:none}
+.tree.dragging{cursor:grabbing}
 /* 트리 펼치기: 새로 나온 가지는 부모 쪽에서 오른쪽으로 미끄러지듯 나타난다 (fill backwards: 평소 강조 상태를 건드리지 않음) */
 .tree .tn.in{animation:tIn .9s cubic-bezier(.2,.7,.2,1) backwards}
 .tree .lk.in{animation:lIn .9s ease backwards}
@@ -603,7 +606,7 @@ function render() {
 /* ---------- 트리 보기: 현재 칸 아래를 가로 계통도로 (첨부 스타일) ---------- */
 const TREE_COL = 230, TREE_ROW = 50, TREE_PADL = 170, TREE_TOP = 24, TREE_MAX = Infinity, TREE_OPEN = 1;   // TREE_MAX: 한 번에 보일 하위 수(제한 없음)   // TREE_OPEN: 처음 펼쳐 둘 단계 수
 const TREE_PAL = ["#7cc4ff", "#5fe3a1", "#c9a7ff", "#ffc27a", "#ff8fa3", "#8ef0e6"];
-let treeOpen = new Map(), treeAll = new Set(), treeSeen = new Set(), treeBase = null, treeKeep = null, treeRowOf = new Map(), treeRowNext = 0;
+let treeOpen = new Map(), treeAll = new Set(), treeSeen = new Set(), treeBase = null, treeKeep = null, treeRowOf = new Map(), treeRowNext = 0, treeSuppress = false;
 const TREE_ID = new WeakMap(); let treeIdSeq = 0;
 const treeIdOf = n => { if (!TREE_ID.has(n)) TREE_ID.set(n, ++treeIdSeq); return TREE_ID.get(n); };
 function isOpen(n, d) { return treeOpen.has(n) ? treeOpen.get(n) : d < TREE_OPEN; }
@@ -670,6 +673,7 @@ function drawTree(base) {
     `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="예산 트리"><defs>${defs.join("")}</defs><g>${links.join("")}</g><g>${nodes.join("")}</g></svg>`;
   const svg = box.querySelector("svg");
   box.onclick = e => {
+    if (treeSuppress) { treeSuppress = false; return; }
     const t = e.target.closest("[data-act]"); if (!t) return;
     const L = flat[+t.closest(".tn").dataset.i];
     if (t.dataset.act === "toggle") {
@@ -678,6 +682,27 @@ function drawTree(base) {
       render();
     } else { enterAnim = false; path = [...path, ...L.rel]; syncUrl(true); render(); }
   };
+  // 마우스로 끌면 화면이 같이 움직인다. 살짝 끌어서 생긴 클릭은 무시한다
+  let drag = null;
+  box.onpointerdown = e => {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    drag = { x: e.clientX, y: e.clientY, l: box.scrollLeft, t: box.scrollTop, moved: false };
+    treeSuppress = false;
+    box.setPointerCapture(e.pointerId);
+  };
+  box.onpointermove = e => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.abs(dx) + Math.abs(dy) > 5) { drag.moved = true; box.classList.add("dragging"); }
+    if (drag.moved) { box.scrollLeft = drag.l - dx; box.scrollTop = drag.t - dy; }
+  };
+  const endDrag = () => {
+    if (!drag) return;
+    if (drag.moved) treeSuppress = true;
+    drag = null; box.classList.remove("dragging");
+  };
+  box.onpointerup = endDrag;
+  box.onpointercancel = endDrag;
   box.onkeydown = e => {
     if (e.key !== "Enter" && e.key !== " ") return;
     const g = e.target.closest && e.target.closest(".tn"); if (!g) return;
