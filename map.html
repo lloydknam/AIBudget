@@ -24,7 +24,7 @@ button{font:inherit;color:inherit}
 .brand span{font-size:13px;font-weight:700;background:linear-gradient(90deg,#f0527f,#b56cf0 55%,#4c8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
 /* 검색 */
 .app{flex:1 1 auto;min-height:0;width:100%;max-width:960px;margin:0 auto;padding:0 4px;display:flex;flex-direction:column}
-.ghead{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:10px 0 6px}
+.ghead{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:6px 0 2px;margin-left:-6px}
 .ghead .brand{flex:none;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
 .ghead .brand img{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--line)}
 .ghead h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.04em;line-height:1.1;white-space:nowrap}
@@ -39,7 +39,7 @@ button{font:inherit;color:inherit}
 .hsearch .clr{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:0;background:var(--line);color:var(--ink);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1}
 @media (max-width:640px){.hsearch{flex:1 1 100%;width:auto}}
 @media (min-width:641px){.ghead .brand img{width:56px;height:56px}.ghead h1{font-size:27px}}
-.gnav{flex:none;display:flex;gap:22px;align-items:center;overflow-x:auto;padding:12px 0;border-bottom:1px solid var(--line);margin-bottom:6px;scrollbar-width:none}
+.gnav{flex:none;display:flex;gap:22px;align-items:center;overflow-x:auto;padding:6px 0;border-bottom:1px solid var(--line);margin-bottom:2px;scrollbar-width:none}
 .gnav::-webkit-scrollbar{display:none}
 .gnav a{flex:none;font-size:17px;font-weight:600;letter-spacing:-.01em;color:var(--sub);text-decoration:none;padding:4px 0}
 .gnav a:hover{color:var(--ink)}
@@ -160,21 +160,21 @@ button{font:inherit;color:inherit}
 .foot .src{display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
 .foot .src i{flex:none;width:10px;height:9px;border-radius:2px;display:block}
 .foot .src .sc{display:flex;gap:2px}
-.bar{flex:none;display:grid;grid-template-columns:1fr 1fr 1.3fr 1fr;margin:0 -4px;padding:2px 6px 4px;border-top:1px solid var(--line);background:var(--bg)}
-.bar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;border:0;background:none;color:var(--sub);font-size:10.5px;font-weight:600;cursor:pointer;border-radius:10px;-webkit-tap-highlight-color:transparent}
-.bar svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bar{flex:none;display:grid;grid-template-columns:1fr 1fr 1.3fr 1fr;margin:0 -4px;padding:0 6px 2px;border-top:1px solid var(--line);background:var(--bg)}
+.bar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:36px;border:0;background:none;color:var(--sub);font-size:10px;font-weight:600;cursor:pointer;border-radius:10px;-webkit-tap-highlight-color:transparent}
+.bar svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .bar button.on{color:var(--ink)}
 .bar button.on svg{stroke:var(--accent)}
 .bar button:disabled{opacity:.3;cursor:default}
 .bar button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
-#back{flex-direction:row;gap:4px;margin:5px 4px;min-height:42px;border-radius:14px;background:var(--accent);color:#04241a;font-size:13px;font-weight:800}
-#back svg{stroke:#04241a;width:20px;height:20px}
-#back:disabled{background:var(--line);color:var(--sub)}
+#back{flex-direction:row;gap:2px;margin:3px 4px;min-height:34px;border-radius:14px;background:none;border:2px solid var(--accent);color:var(--accent);font-size:13px;font-weight:800}
+#back svg{stroke:var(--accent);width:18px;height:18px}
+#back:disabled{border-color:var(--line);color:var(--sub);background:none}
 #back:disabled svg{stroke:var(--sub)}
 #ptr{position:fixed;left:50%;top:10px;transform:translate(-50%,-180%);opacity:0;background:var(--card);border:1px solid var(--line);color:var(--ink);font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;transition:transform .2s,opacity .2s;z-index:20;pointer-events:none;white-space:nowrap}
 #ptr.on{transform:translate(-50%,0);opacity:1}
 .bar .vseg{display:flex;align-self:center;justify-self:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
-.bar .vseg button{flex-direction:row;min-height:34px;padding:0 7px;gap:0;border-radius:0;font-size:12px;font-weight:700;color:var(--sub);white-space:nowrap;line-height:1}
+.bar .vseg button{flex-direction:row;min-height:28px;padding:0 7px;gap:0;border-radius:0;font-size:12px;font-weight:700;color:var(--sub);white-space:nowrap;line-height:1}
 .bar .vseg button.on{background:var(--ink);color:var(--bg)}
 .bar .vseg button.on svg{stroke:none}
 .logo{font-family:"D-DIN","DIN Alternate","Bahnschrift","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.1em;color:var(--ink);font-size:10.5px;text-decoration:none;white-space:nowrap}
@@ -194,6 +194,7 @@ button{font:inherit;color:inherit}
 @media (prefers-reduced-motion: reduce){.map.enter .tile,.detail.enter{animation:none}.tile.zoom{transition:none}.map.fade{transition:none}}
 #trail .seg button{font-weight:600;max-width:none;color:var(--sub);padding:4px 10px;font-size:12.5px;cursor:pointer}
 #trail .seg button.on{background:var(--ink);color:var(--bg)}
+@media (max-width:640px){.ghead{flex-wrap:nowrap;gap:10px}.ghead .brand{gap:8px}.ghead .brand img{width:34px;height:34px}.ghead h1{font-size:15px}.hsearch{flex:1 1 0;width:auto;min-width:0}.hsearch input{height:36px;font-size:14px;padding:0 30px 0 32px}.hsearch::before{left:12px;width:10px;height:10px;margin-top:-6px}.hsearch::after{left:21px;top:calc(50% + 3px)}}
 </style>
 </head>
 <body>
