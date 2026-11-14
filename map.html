@@ -686,7 +686,7 @@ function drawTree(base) {
   flat.forEach(L => {
     if (!L.par) return;
     const P = L.par, c = colorOf(L), mx = (P.x + L.x) / 2;
-    const w = Math.max(1, 3 - (L.d - 1) * 0.7);      // 줄기(위)는 굵게, 잔가지(아래)는 얇게
+    const w = Math.max(0.8, Math.min(12, 12 * Math.sqrt(L.n.v[year] / total)));   // 가지 굵기 = 예산 규모 (면적에 비례하도록 제곱근)
     defs.push(`<linearGradient id="tg${posKey(L)}" gradientUnits="userSpaceOnUse" x1="${P.x}" y1="${P.y}" x2="${L.x}" y2="${L.y}"><stop offset="0" stop-color="${colorOf(P)}" stop-opacity=".5"/><stop offset="1" stop-color="${c}" stop-opacity=".95"/></linearGradient>`);
     // 3차 베지에 곡선: 양 끝에서 수평으로 휘어지는 S자
     const inC = fresh(L) ? " in" : "";
