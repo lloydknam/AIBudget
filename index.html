@@ -177,6 +177,31 @@ function search(q, limit = 30) {
 }
 const resultRow = p => `<div class="item">${link(p)}<br><span class="sub">${esc(p.field)} · ${CUR} 정부안 ${won(curGov(p))}억 · ${PREV} 확정 ${won(base(p))}억 · ${isNew(p) ? '<span class="warn">신규</span>' : pct(chg(p) * 100)}</span></div>`;
 
+/* 설명 본문 전체 낱말 색인 (desc/terms.json.gz): 낱말 → 세부사업 번호 */
+let TERMS = null, PID_MAP = null;
+async function loadTerms() { if (!TERMS) TERMS = await gunzipJSON("desc/terms.json.gz").catch(() => ({})); return TERMS; }
+const projById = id => { if (!PID_MAP) PID_MAP = new Map(P.map(p => [p.id, p])); return PID_MAP.get(id); };
+async function termHits(q) {
+  const toks = (q.match(/[가-힣A-Za-z0-9]{2,}/g) || []);
+  if (!toks.length) return [];
+  const T = await loadTerms();
+  let ids = null;
+  for (const t of toks) {
+    const list = T[t] || [];
+    ids = ids === null ? list.slice() : ids.filter(x => list.includes(x));
+    if (!ids.length) break;
+  }
+  return (ids || []).map(projById).filter(Boolean).sort((a, b) => (curGov(b) || 0) - (curGov(a) || 0));
+}
+async function descSearch(q, target) {
+  if (!q || q.trim().length < 2) { target.innerHTML = ""; return; }
+  target.innerHTML = `<div class="sub">설명 본문 검색 중…</div>`;
+  const hits = (await termHits(q)).slice(0, 30);
+  target.innerHTML = hits.length
+    ? `<div class="sub">설명 본문에서 찾은 사업 ${hits.length}건 (금액 큰 순, 상위 30)</div>` + hits.map(resultRow).join("")
+    : `<div class="sub">설명 본문에서도 찾지 못했습니다.</div>`;
+}
+
 /* ---------- 공통: 내역 · 사업 설명 · 심사 플래그 (필요할 때만 불러옴) ---------- */
 let NAEYEOK_VAL = null, DESC_IDX_I = null, FLAGS = null;
 const itemsOf = p => (NAEYEOK_VAL && NAEYEOK_VAL[p.ministry + "|" + p.name]) || [];
@@ -248,8 +273,8 @@ VIEWS.home = () => {
     </div></div>
   <div class="card"><h2>나라 살림 영수증 <span class="sub">(${CUR} 정부안, 분야별)</span></h2>${receipt()}</div>
   <div class="card"><h2>사업 검색</h2>
-    <input id="q" onfocus="naeyeokData()" placeholder="사업명·부처·내역사업 (예: 기초연금, 교육부 늘봄)" oninput="document.getElementById('qr').innerHTML = search(this.value).map(resultRow).join('') || (this.value.trim() ? '<div class=sub>결과 없음</div>' : '')">
-    <div id="qr" style="margin-top:6px"></div></div>
+    <input id="q" onfocus="naeyeokData()" placeholder="사업명·부처·내역사업 (예: 기초연금, 교육부 늘봄)" oninput="descSearch(this.value, document.getElementById('qd')); document.getElementById('qr').innerHTML = search(this.value).map(resultRow).join('') || (this.value.trim() ? '<div class=sub>결과 없음</div>' : '')">
+    <div id="qr" style="margin-top:6px"></div><div id="qd" style="margin-top:10px"></div></div>
   <div class="card"><h2>가장 많이 늘어난 사업 <span class="sub">(${PREV} 확정 → ${CUR} 정부안, 억원)</span></h2>
     ${top.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p))} (<span class="warn">+${won(diff(p))}</span>, ${pct(chg(p) * 100)})</span></div>`).join("")}</div>
   <div class="card"><h2>가장 많이 줄어든 사업</h2>
@@ -325,8 +350,8 @@ function execSummary() {
 VIEWS.explore = () => {
   view(`
   <div class="card"><h2>사업 찾기</h2>
-    <input id="eq" onfocus="naeyeokData()" placeholder="사업명·부처·내역사업" oninput="document.getElementById('er').innerHTML = search(this.value, 20).map(resultRow).join('')">
-    <div id="er" style="margin-top:6px"></div></div>
+    <input id="eq" onfocus="naeyeokData()" placeholder="사업명·부처·내역사업" oninput="descSearch(this.value, document.getElementById('ed')); document.getElementById('er').innerHTML = search(this.value, 20).map(resultRow).join('')">
+    <div id="er" style="margin-top:6px"></div><div id="ed" style="margin-top:10px"></div></div>
   <div id="detail"></div>`);
 };
 /* 내역사업: 사업설명자료에서 뽑은 자료 (data/naeyeok.json, 억원). 같은 사업은 소관|사업명 키로 찾는다 */
@@ -489,7 +514,9 @@ const fact = p => `${p.ministry} ${p.program || ""} > ${p.name}: ` + YEARS.map(y
 async function ask() {
   const q = document.getElementById("aq").value.trim(); if (!q) return;
   await naeyeokData();
-  const hits = retrieve(q), box = document.getElementById("ans");
+  const got = retrieve(q), box = document.getElementById("ans");
+  const extra = (await termHits(q)).filter(p => !got.some(h => h.p === p)).slice(0, 3).map(p => ({ p, score: 0 }));
+  const hits = [...got, ...extra].slice(0, 6);
   if (!hits.length) { box.innerHTML = "<div class='sub'>관련 사업을 찾지 못했습니다.</div>"; return; }
   await loadDescIdx();
   const texts = await Promise.all(hits.map(async ({ p }) => {
