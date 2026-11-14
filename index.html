@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<script>if (!location.hash) location.replace("map.html");</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 AI예산</title>
 <link rel="icon" href="assets/clerk.jpg">
@@ -79,7 +80,7 @@ footer .lab img{display:block;height:48px;width:auto;max-width:100%}
 </head>
 <body>
 <header>
-  <a class="brand" href="./"><img src="assets/clerk.jpg" alt="클사무관" width="56" height="56">
+  <a class="brand" href="#analysis"><img src="assets/clerk.jpg" alt="클사무관" width="56" height="56">
     <h1>클사무관의 <em>AI예산</em></h1></a>
 </header>
 <nav id="tabs"></nav>
@@ -160,21 +161,23 @@ document.getElementById("notice").innerHTML = SAMPLE
   : `출처: 열린재정 Open API · 예산 ${YEARS[0]}~${CUR} (총지출 기준, 세부사업 ${P.length.toLocaleString()}개)${HAS_EXEC ? ` · 결산 ${(D.exec_years || [])[0]}~${EXEC_LAST} (단위사업 ${U.length.toLocaleString()}개)` : ""} · 단위 ${D.unit} · 수집 ${esc((D.fetched_at || "").slice(0, 10))}<br>
      국회 검토문서는 아직 연결 전입니다. 공식 시스템과 무관한 개인 프로젝트입니다.`;
 
-const TABS = [["home", "홈"], ["overview", "한눈에 보기"], ["explore", "예산 탐색"], ["review", "심사 참고"],
+const TABS = [["analysis", "주요분석"], ["explore", "예산 탐색"], ["review", "심사 참고"],
   ["filter", "조건으로 찾기"], ["ask", "AI에게 묻기"], ["quality", "삶의 질 지표"]];
-let cur = "home";
+let cur = "analysis";
+const ALIAS = { home: "analysis", overview: "analysis" };   // 예전 주소 호환
 function drawTabs() {
   const items = TABS.map(([k, l]) => `<button class="${k === cur ? "on" : ""}"${k === cur ? ' aria-current="page"' : ""} onclick="go('${k}')">${l}</button>`);
-  items.splice(1, 0, `<a href="map.html">예산 지도</a>`);   // 홈 바로 옆에 둬서 휴대폰에서도 바로 보이게
+  items.unshift(`<a href="map.html">예산 지도</a>`);   // 가장 왼쪽: 사이트의 첫 화면
   document.getElementById("tabs").innerHTML = items.join("");
 }
 function go(k, push = true) { cur = k; drawTabs(); VIEWS[k](); window.scrollTo(0, 0); if (push) setHash("#" + k); }
 // 주소(#탭 또는 #explore/세부사업ID)로 화면을 복원한다. 뒤로가기·새로고침·공유 링크 지원
 function setHash(h) { if (location.hash !== h) history.pushState(null, "", h); }
 function route() {
-  const [k, id] = decodeURIComponent(location.hash.slice(1)).split("/");
+  let [k, id] = decodeURIComponent(location.hash.slice(1)).split("/");
   if (k === "explore" && id && P.some(p => p.id === id)) { cur = "explore"; drawTabs(); VIEWS.explore(); showProject(id); return; }
-  go(TABS.some(([t]) => t === k) ? k : "home", false);
+  k = ALIAS[k] || k;
+  go(TABS.some(([t]) => t === k) ? k : "analysis", false);
 }
 window.addEventListener("popstate", route);
 document.addEventListener("keydown", e => { if (e.key === "Escape") { const s = document.getElementById("sheet"); if (s) s.classList.remove("on"); } });
@@ -285,11 +288,23 @@ async function openDesc(ministry, name) {
 
 function openDescBtn(el) { openDesc(el.dataset.min, el.dataset.name); }
 
-/* ---------- 1. 홈 ---------- */
-VIEWS.home = () => {
+/* ---------- 1. 주요분석 (홈 + 한눈에 보기 통합) ---------- */
+function byField(y, pick) {
+  const m = {};
+  P.forEach(p => { const v = pick(p, y); if (v) m[p.field] = (m[p.field] || 0) + v; });
+  return m;
+}
+VIEWS.analysis = () => {
   const g = total(CUR, "gov"), n = total(PREV, "na");
   const top = P.filter(p => base(p) > 0 && curGov(p) > 0).sort((a, b) => diff(b) - diff(a)).slice(0, 5);
   const cut = P.filter(p => base(p) > 0).sort((a, b) => diff(a) - diff(b)).slice(0, 5);
+  const fg = byField(CUR, (p, y) => Y(p, y).gov), fn = byField(PREV, (p, y) => Y(p, y).na);
+  const sumG = Object.values(fg).reduce((a, b) => a + b, 0);
+  const frows = Object.keys({ ...fg, ...fn }).map(k => [k, fg[k] || 0, fn[k] || 0]).sort((a, b) => b[1] - a[1]);
+  const fmax = Math.max(...frows.map(r => r[1]));
+  const funds = {};
+  P.forEach(p => { const v = curGov(p); if (v && p.fund) { const k = p.fund.split("/")[0]; funds[k] = (funds[k] || 0) + v; } });
+  const fundRows = Object.entries(funds).sort((a, b) => b[1] - a[1]).slice(0, 12);
   view(`
   <div class="card"><h2>${CUR}년 예산안 규모·증감</h2>
     <div class="kpis">
@@ -298,49 +313,25 @@ VIEWS.home = () => {
       <div class="kpi"><span>증감액</span><b>${jo(g - n)}원</b></div>
       <div class="kpi"><span>세부사업</span><b>${P.filter(p => curGov(p) > 0).length.toLocaleString()}개</b></div>
     </div></div>
-  <div class="card"><h2>나라 살림 영수증 <span class="sub">(${CUR} 정부안, 분야별)</span></h2>${receipt()}</div>
   <div class="card"><h2>사업 검색</h2>
     <input id="q" aria-label="사업 검색" placeholder="사업명·부처·내역사업 (예: 기초연금, 교육부 늘봄)" oninput="onSearchInput(this, document.getElementById('qr'), document.getElementById('qd'), 30)">
     <div id="qr" style="margin-top:6px"></div><div id="qd" style="margin-top:10px"></div></div>
+  <div class="card"><h2>분야별 규모·증감 <span class="sub">(${CUR} 정부안, ${PREV} 확정 대비)</span></h2>
+    <table><tr><th>분야</th><th>${CUR}</th><th>비중</th><th>증감</th></tr>
+    ${frows.map(([k, a, b]) => `<tr><td>${esc(k)}<div class="bar" style="margin-top:4px"><i style="width:${(a / fmax * 100).toFixed(0)}%"></i></div></td>
+      <td>${jo(a)}</td><td class="sub">${(a / sumG * 100).toFixed(1)}%</td><td class="${a > b ? "up" : "down"}">${pct((a / b - 1) * 100)}</td></tr>`).join("")}
+    <tr><td><b>합계</b></td><td><b>${jo(sumG)}</b></td><td></td><td></td></tr></table></div>
   <div class="card"><h2>가장 많이 늘어난 사업 <span class="sub">(${PREV} 확정 → ${CUR} 정부안, 억원)</span></h2>
     ${top.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p))} (<span class="up">+${won(diff(p))}</span>, ${pct(chg(p) * 100)})</span></div>`).join("")}</div>
   <div class="card"><h2>가장 많이 줄어든 사업</h2>
-    ${cut.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p) || 0)} (<span class="down">${won(diff(p))}</span>${isGone(p) ? ", 미편성" : ", " + pct(chg(p) * 100)})</span></div>`).join("")}</div>`);
-};
-function byField(y, pick) {
-  const m = {};
-  P.forEach(p => { const v = pick(p, y); if (v) m[p.field] = (m[p.field] || 0) + v; });
-  return m;
-}
-function receipt() {
-  const m = byField(CUR, (p, y) => Y(p, y).gov);
-  const sum = Object.values(m).reduce((a, b) => a + b, 0);
-  const rows = Object.entries(m).sort((a, b) => b[1] - a[1]);
-  return `<table>${rows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${jo(v)}</td><td class="sub">${(v / sum * 100).toFixed(1)}%</td></tr>`).join("")}
-    <tr><td><b>합계</b></td><td><b>${jo(sum)}</b></td><td></td></tr></table>`;
-}
-
-/* ---------- 2. 한눈에 보기 ---------- */
-VIEWS.overview = () => {
-  const g = byField(CUR, (p, y) => Y(p, y).gov), n = byField(PREV, (p, y) => Y(p, y).na);
-  const rows = Object.keys({ ...g, ...n }).map(k => [k, g[k] || 0, n[k] || 0]).sort((a, b) => b[1] - a[1]);
-  const max = Math.max(...rows.map(r => r[1]));
-  const funds = {};
-  P.forEach(p => { const v = curGov(p); if (v && p.fund) { const k = p.fund.split("/")[0]; funds[k] = (funds[k] || 0) + v; } });
-  const fundRows = Object.entries(funds).sort((a, b) => b[1] - a[1]).slice(0, 12);
-  view(`
-  <div class="card"><h2>분야별 규모·증감 <span class="sub">(${PREV} 확정 → ${CUR} 정부안)</span></h2>
-    <table><tr><th>분야</th><th>${CUR}</th><th>증감</th></tr>
-    ${rows.map(([k, a, b]) => `<tr><td>${esc(k)}<div class="bar" style="margin-top:4px"><i style="width:${(a / max * 100).toFixed(0)}%"></i></div></td>
-      <td>${jo(a)}</td><td class="${a > b ? "up" : "down"}">${pct((a / b - 1) * 100)}</td></tr>`).join("")}
-    </table></div>
-  <div class="card"><h2>회계·기금 구성 <span class="sub">(${CUR} 정부안 상위 12)</span></h2>
-    <table>${fundRows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${jo(v)}</td></tr>`).join("")}</table></div>
+    ${cut.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p) || 0)} (<span class="down">${won(diff(p))}</span>${isGone(p) ? ", 미편성" : ", " + pct(chg(p) * 100)})</span></div>`).join("")}</div>
   <div class="card"><h2>연도별 총지출 <span class="sub">(국회 확정, ${CUR}은 정부안)</span></h2>
     <table><tr><th>연도</th><th>정부안</th><th>국회 확정</th><th>증감(확정 기준)</th></tr>
     ${YEARS.map((y, i) => { const gv = total(y, "gov"), nv = total(y, "na"), prev = i ? total(YEARS[i - 1], "na") : null;
       return `<tr><td>${y}</td><td>${jo(gv)}</td><td>${nv ? jo(nv) : "-"}</td><td>${prev ? pct(((nv || gv) / prev - 1) * 100) : "-"}</td></tr>`; }).join("")}
     </table></div>
+  <div class="card"><h2>회계·기금 구성 <span class="sub">(${CUR} 정부안 상위 12)</span></h2>
+    <table>${fundRows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${jo(v)}</td></tr>`).join("")}</table></div>
   <div class="card" id="topItems"><h2>${CUR} 내역사업 금액 큰 순 TOP 10 <span class="sub">(억원)</span></h2><div class="sub">불러오는 중…</div></div>
   ${execSummary()}`);
   naeyeokData().then(all => {
