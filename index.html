@@ -20,7 +20,7 @@ h1 em{font-style:normal;color:var(--accent)}
 .brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit}
 .brand img{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--line)}
 @media (max-width:640px){.brand img{width:46px;height:46px}h1{font-size:20px}}
-.notice{margin:12px 0 0;padding:10px 14px;border-radius:14px;border:1px solid var(--line);background:var(--note-bg);color:var(--note-ink);font-size:13px}
+.notice{margin:0 auto 16px;max-width:640px;color:var(--note-ink);font-size:12.5px;line-height:1.6;word-break:keep-all}
 nav{display:flex;gap:22px;align-items:center;overflow-x:auto;padding:14px 16px;border-bottom:1px solid var(--line);margin-bottom:18px;max-width:960px;margin:auto;scrollbar-width:none}
 nav button{flex:none;border:0;background:none;color:var(--sub);padding:4px 0;cursor:pointer;font:inherit;font-size:17px;font-weight:600;letter-spacing:-.01em}
 nav button:hover{color:var(--ink)}
@@ -62,11 +62,11 @@ footer .lab img{display:block;height:48px;width:auto;max-width:100%}
 <header>
   <a class="brand" href="./"><img src="assets/clerk.jpg" alt="클사무관" width="56" height="56">
     <h1>클사무관의 <em>AI예산</em></h1></a>
-  <div class="notice" id="notice"></div>
 </header>
 <nav id="tabs"></nav>
 <main id="view"></main>
 <footer>
+  <div class="notice" id="notice"></div>
   <a class="lab" href="https://github.com/lloydknam" target="_blank" rel="noopener" title="GitHub(@lloydknam)"><img src="assets/brand/lockup-dark.svg" alt="Lloyd's Balcony Lab · with claude · GitHub(@lloydknam)" height="48"></a>
   <div>*아직 실험 중</div>
 </footer>
