@@ -151,6 +151,8 @@ button{font:inherit;color:inherit}
 .detail .dbody{font-size:12.5px;line-height:1.6;margin-top:4px}
 .detail .dbody p{margin:3px 0;word-break:keep-all}
 .detail .dbody p.li{padding-left:12px;text-indent:-9px}
+.dtbl td span{display:block}
+.dtbl td span.li{padding-left:12px;text-indent:-9px}
 .detail .dbody h3{margin:18px 0 6px;font-size:15.5px;font-weight:800;color:var(--accent);line-height:1.35;word-break:keep-all}
 .detail .dbody h4{margin:12px 0 4px;font-size:13.5px;font-weight:700;color:var(--accent);line-height:1.4;word-break:keep-all}
 .detail .dbody h5{margin:10px 0 4px;font-size:13px;font-weight:700;color:var(--ink);line-height:1.4;word-break:keep-all}
@@ -730,7 +732,8 @@ const descBlock = b => {
   if (b && b.tbl) {
     const rows = b.tbl.filter(r => r.some(c => c && c.trim()));
     if (!rows.length) return "";
-    return `<div class="dtbl"><table>${rows.map((r, i) => `<tr>${r.map(c => i === 0 ? `<th>${esc(c)}</th>` : `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</table></div>`;
+    const cellHTML = c => splitLines(c || "").map(x => `<span class="${/^- /.test(x) ? "li" : ""}">${esc(x)}</span>`).join("");   // 표 칸 안도 "/ -" 와 ○● 기준으로 줄바꿈
+    return `<div class="dtbl"><table>${rows.map((r, i) => `<tr>${r.map(c => i === 0 ? `<th>${esc(c)}</th>` : `<td>${cellHTML(c)}</td>`).join("")}</tr>`).join("")}</table></div>`;
   }
   return "";
 };
