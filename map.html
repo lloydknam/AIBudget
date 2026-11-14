@@ -481,7 +481,6 @@ function drill(n, el) {
   stage.appendChild(clone);
   // 예산명·금액·증가율이 칸과 함께 커지도록, 현재 글자 크기부터 시작
   clone.querySelectorAll("b,span").forEach(n => { const fs = parseFloat(getComputedStyle(n).fontSize); n.dataset.fs = fs; n.style.fontSize = fs + "px"; });
-  box.classList.add("fade");
   void clone.offsetWidth;                       // 현재 위치를 먼저 확정
   // 도착 위치: 다음 단계에서 지도가 놓일 크기(15% 작아진 영역)와 똑같이 맞춘다
   const nsc = Math.pow(0.85, path.length + 1), TW = W * nsc, TH = H * nsc;
@@ -489,9 +488,12 @@ function drill(n, el) {
   clone.style.width = TW + "px"; clone.style.height = TH + "px";
   clone.style.borderRadius = "14px";
   clone.querySelectorAll("b,span").forEach(n => { n.style.fontSize = (+n.dataset.fs * 2.2) + "px"; });
+  // 확대 중에 다음 지도를 깔아 칸이 서서히 나타나고, 확대가 끝나면 복제 칸이 페이드 아웃된다
+  setTimeout(() => { path = [...path, n]; enterAnim = true; syncUrl(true); render(); }, 200);
   setTimeout(() => {
     busy = false;
-    path = [...path, n]; enterAnim = true; syncUrl(true); render();
+    clone.style.transition = "opacity .3s ease"; clone.style.opacity = "0";
+    setTimeout(() => clone.remove(), 320);
   }, 443);
 }
 // 뒤로 버튼·경로 칸: 이력에 그 단계가 있으면 뒤로 이동, 없으면 새 단계로 쌓는다
@@ -549,7 +551,7 @@ function render() {
   $("vList").setAttribute("aria-pressed", mode === "list");
 
   // 본문
-  stage.innerHTML = "";
+  [...stage.children].forEach(c => { if (!c.classList.contains("zoom")) c.remove(); });   // 확대 중인 칸은 남겨 둔다
   if (q) drawSearch();
   else if (node.leaf) drawDetail(node); else drawChildren(node);
   enterAnim = false;
