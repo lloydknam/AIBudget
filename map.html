@@ -512,8 +512,7 @@ function render() {
   $("total").textContent = path.length === 0
     ? `${num(total / 10000)}조원`
     : `${money(total)}원`;
-  $("sub").textContent = (path.length ? `총지출의 ${(total / rootTot * 100).toFixed(1)}%` : `${year}년 ${conf} 총지출`) +
-    (ch != null ? ` · 전년 대비 ${pctTxt(ch)}` : "");
+  $("sub").textContent = [path.length ? "" : `${year}년 ${conf} 총지출`, ch != null ? `전년 대비 ${pctTxt(ch)}` : ""].filter(Boolean).join(" · ");
 
   // 연도
   $("years").innerHTML = YEARS.map(y =>
