@@ -696,7 +696,7 @@ function drawTree(base) {
   });
   flat.forEach(L => {
     const c = colorOf(L), internal = L.hasKids || L.more > 0, moreNode = L.more > 0;
-    const r = moreNode ? 4 : Math.min(10, Math.max(3.5, 3.5 + 7 * Math.sqrt(L.n.v[year] / total)));
+    const r = moreNode ? 4 : Math.min(16, Math.max(3.5, 3.5 + 12.5 * Math.pow(L.n.v[year] / total, 0.9)));   // 원 크기 = 예산 규모 (지수 0.9, 가지 굵기와 같은 기준)
     const fill = internal || moreNode ? "var(--card)" : c;   // 빈 원도 채워서 가운데를 눌러도 잡히게
     const dash = moreNode ? ' stroke-dasharray="3 3"' : "";
     // 중간 노드: 점의 왼쪽 위 / 끝단: 점의 오른쪽 (글자가 가지와 겹치지 않게)
