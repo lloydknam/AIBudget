@@ -247,6 +247,29 @@ VIEWS.explore = () => {
     <div id="er" style="margin-top:6px"></div></div>
   <div id="detail"></div>`);
 };
+/* 내역사업: 사업설명자료에서 뽑은 자료 (data/naeyeok.json, 억원). 같은 사업은 소관|사업명 키로 찾는다 */
+let NAEYEOK_P = null;
+function naeyeokData() {
+  if (!NAEYEOK_P) NAEYEOK_P = fetch("data/naeyeok.json").then(r => r.ok ? r.json() : {}).catch(() => ({}));
+  return NAEYEOK_P;
+}
+function drawNaeyeok(p) {
+  naeyeokData().then(all => {
+    const card = document.getElementById("naeyeok-card");
+    if (!card) return;
+    const items = all[`${p.ministry}|${p.name}`];
+    if (!items || !items.length) {
+      card.innerHTML = `<h2>내역사업</h2><div class="sub">아직 내역사업 자료가 없습니다. 사업설명자료에서 모으는 중입니다.</div>`;
+      return;
+    }
+    const tot = items.reduce((a, b) => a + (b.amt || 0), 0), top = Math.max(...items.map(i => i.amt || 0));
+    const rows = [...items].sort((a, b) => (b.amt || 0) - (a.amt || 0)).map(i => `
+      <tr><td>${esc(i.name)}<div class="bar" style="margin-top:3px"><i style="width:${top > 0 ? Math.max(1, (i.amt || 0) / top * 100) : 0}%"></i></div></td>
+      <td>${won(i.amt)}</td><td class="sub">${tot > 0 ? ((i.amt || 0) / tot * 100).toFixed(1) : "-"}%</td></tr>`).join("");
+    card.innerHTML = `<h2>내역사업 <span class="sub">(${CUR} 정부안, 억원 · ${items.length}개)</span></h2>
+      <table>${rows}<tr><td><b>합계</b></td><td><b>${won(tot)}</b></td><td></td></tr></table>`;
+  });
+}
 function openProject(id) {
   if (cur !== "explore") { cur = "explore"; drawTabs(); VIEWS.explore(); }
   const p = P.find(x => x.id === id);
@@ -281,8 +304,10 @@ function openProject(id) {
       ${ex.map(([y, e]) => `<tr><td>${y}</td><td>${won(e.budget)}</td><td>${won(e.spent)}</td><td>${won(e.carry)}</td><td>${won(e.unused)}</td>
         <td class="${e.rate != null && e.rate < 80 ? "warn" : ""}">${e.rate == null ? "-" : e.rate.toFixed(1) + "%"}</td></tr>`).join("")}</table>`
       : `<div class="sub">${HAS_EXEC ? "연결된 결산 자료가 없습니다 (신규 사업이거나 단위사업명이 바뀐 경우)." : "결산 데이터 연결 전"}</div>`}</div>
+  <div class="card" id="naeyeok-card"><h2>내역사업 <span class="sub">(${CUR} 정부안, 억원)</span></h2><div class="sub">불러오는 중…</div></div>
   <div class="card"><h2>국회 검토 문서</h2>
     ${(p.docs || []).length ? p.docs.map(d => `<div class="doc"><b>${esc(d.title)}</b> · ${d.page}쪽<br>${esc(d.text)}</div>`).join("") : '<div class="sub">검토보고서 연결 전</div>'}</div>`;
+  drawNaeyeok(p);
   document.getElementById("detail").scrollIntoView({ behavior: "smooth" });
 }
 
