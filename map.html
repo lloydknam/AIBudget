@@ -481,6 +481,7 @@ function drill(n, el) {
   stage.appendChild(clone);
   // 예산명·금액·증가율이 칸과 함께 커지도록, 현재 글자 크기부터 시작
   clone.querySelectorAll("b,span").forEach(n => { const fs = parseFloat(getComputedStyle(n).fontSize); n.dataset.fs = fs; n.style.fontSize = fs + "px"; });
+  box.classList.add("fade");                    // 이전 지도는 먼저 서서히 사라진다
   void clone.offsetWidth;                       // 현재 위치를 먼저 확정
   // 도착 위치: 다음 단계에서 지도가 놓일 크기(15% 작아진 영역)와 똑같이 맞춘다
   const nsc = Math.pow(0.85, path.length + 1), TW = W * nsc, TH = H * nsc;
@@ -489,7 +490,7 @@ function drill(n, el) {
   clone.style.borderRadius = "14px";
   clone.querySelectorAll("b,span").forEach(n => { n.style.fontSize = (+n.dataset.fs * 2.2) + "px"; });
   // 확대 중에 다음 지도를 깔아 칸이 서서히 나타나고, 확대가 끝나면 복제 칸이 페이드 아웃된다
-  setTimeout(() => { path = [...path, n]; enterAnim = true; syncUrl(true); render(); }, 200);
+  setTimeout(() => { path = [...path, n]; enterAnim = true; syncUrl(true); render(); }, 300);
   setTimeout(() => {
     busy = false;
     clone.style.transition = "opacity .3s ease"; clone.style.opacity = "0";
