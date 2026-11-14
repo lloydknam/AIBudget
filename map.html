@@ -601,7 +601,7 @@ function render() {
 }
 
 /* ---------- 트리 보기: 현재 칸 아래를 가로 계통도로 (첨부 스타일) ---------- */
-const TREE_COL = 230, TREE_ROW = 50, TREE_PADL = 170, TREE_TOP = 24, TREE_MAX = 8, TREE_OPEN = 1;   // TREE_OPEN: 처음 펼쳐 둘 단계 수
+const TREE_COL = 230, TREE_ROW = 50, TREE_PADL = 170, TREE_TOP = 24, TREE_MAX = Infinity, TREE_OPEN = 1;   // TREE_MAX: 한 번에 보일 하위 수(제한 없음)   // TREE_OPEN: 처음 펼쳐 둘 단계 수
 const TREE_PAL = ["#7cc4ff", "#5fe3a1", "#c9a7ff", "#ffc27a", "#ff8fa3", "#8ef0e6"];
 let treeOpen = new Map(), treeAll = new Set(), treeSeen = new Set(), treeBase = null, treeKeep = null, treeRowOf = new Map(), treeRowNext = 0;
 const TREE_ID = new WeakMap(); let treeIdSeq = 0;
@@ -611,7 +611,10 @@ function drawTree(base) {
   const total = base.v[year] || 1, flat = [];
   const animate = treeBase === base;      // 같은 칸에서 펼치거나 접을 때만 애니메이션
   treeBase = base;
-  if (!animate) { treeRowOf = new Map(); treeRowNext = 0; }   // 칸이 바뀌면 자리 배치를 새로
+  if (!animate) {   // 칸이 바뀌면 자리 배치를 새로: 하위 노드는 위에서부터, 루트는 그 한가운데에 둔다
+    treeRowOf = new Map(); treeRowNext = 0;
+    treeRowOf.set("n" + treeIdOf(base), Math.max(0, (children(base, year).length - 1) / 2));
+  }
   let maxD = 0;
   // 자리(행)는 처음 보일 때 한 번 정하고 바꾸지 않는다: 펼쳐도 기존 노드는 제자리, 새 가지는 아래에 붙는다
   const rowY = key => { if (!treeRowOf.has(key)) treeRowOf.set(key, treeRowNext++); return TREE_TOP + treeRowOf.get(key) * TREE_ROW; };
@@ -691,7 +694,7 @@ function drawTree(base) {
   svg.onpointerleave = () => { svg.classList.remove("hl"); svg.querySelectorAll(".on").forEach(x => x.classList.remove("on")); };
   stage.appendChild(box);
   if (treeKeep) { box.scrollTop = treeKeep.top; box.scrollLeft = treeKeep.left; treeKeep = null; }   // 펼치기 전 보던 자리 그대로
-  else box.scrollTop = 0;   // 처음에는 루트(맨 위)부터
+  else box.scrollTop = Math.max(0, flat[0].y - box.clientHeight / 2);   // 처음에는 루트가 화면 가운데에 오도록
 }
 
 function drawChildren(parent) {
