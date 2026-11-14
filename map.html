@@ -94,7 +94,6 @@ button{font:inherit;color:inherit}
 .c-u2{background:var(--u2);color:var(--u2f)}.c-u1{background:var(--u1);color:var(--u1f)}.c-u0{background:var(--u0);color:var(--u0f)}
 /* 트리 보기: 가로 스크롤, 베지에 곡선, 가지 굵기·그라데이션, 경로 강조 */
 .tree{position:absolute;inset:0;background:var(--card);border-radius:14px;overflow:auto;-webkit-overflow-scrolling:touch}
-.tree .thint{position:sticky;left:0;top:0;z-index:1;padding:8px 12px;font-size:12px;color:var(--sub);background:var(--card)}
 .tree svg{display:block}
 .tree .lk{fill:none;stroke-linecap:round;transition:opacity .2s,stroke .2s}
 .tree .tn circle{transition:fill .2s,stroke .2s}
@@ -228,6 +227,18 @@ button{font:inherit;color:inherit}
 @media (max-width:640px){.foot .lab img{height:38px}}
 #back{white-space:nowrap}.bar button span{white-space:nowrap}
 @media (min-width:641px){.stage{height:max(300px,calc((100dvh - 200px) * .8))}}
+/* 모바일 하단 메뉴: 4칸 격자로 맞춘다. 윗줄 분야·회계기금·부처, 아랫줄 지도·목록·트리 + 뒤로 */
+@media (max-width:640px){
+  .bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-areas:"f g m ." "v1 v2 v3 b";gap:6px;margin:0;padding:6px 8px;border-top:1px solid var(--line)}
+  #tabField{grid-area:f}#tabFund{grid-area:g}#tabMin{grid-area:m}
+  .bar .vseg{display:contents}
+  #vMap{grid-area:v1}#vList{grid-area:v2}#vTree{grid-area:v3}
+  .bar .vseg button,#back{border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--sub);min-height:36px;margin:0;padding:0;justify-content:center;font-size:13px;width:100%}
+  .bar .vseg button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  #back{grid-area:b;border-color:var(--accent);color:var(--accent);background:none}
+  #back svg{stroke:var(--accent)}
+  #back[disabled]{opacity:.35}
+}
 </style>
 </head>
 <body>
@@ -633,7 +644,7 @@ function drawTree(base) {
   });
   const box = document.createElement("div");
   box.className = "tree";
-  box.innerHTML = `<div class="thint">노드 클릭: 펼치기·접기 · 금액(↗): 그 단계 지도로 이동 · 가지에 올리면 경로 강조</div>` +
+  box.innerHTML = 
     `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="예산 트리"><defs>${defs.join("")}</defs><g>${links.join("")}</g><g>${nodes.join("")}</g></svg>`;
   const svg = box.querySelector("svg");
   box.onclick = e => {
