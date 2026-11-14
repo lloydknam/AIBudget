@@ -17,6 +17,11 @@
 html,body{height:100%;margin:0;overflow:hidden}
 body{background:var(--bg);color:var(--ink);font:14px/1.45 "Pretendard Variable",Pretendard,system-ui,-apple-system,"Malgun Gothic",sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom)}
 button{font:inherit;color:inherit}
+.brand{flex:none;display:flex;align-items:center;gap:9px;padding:8px 0 0;text-decoration:none;color:inherit}
+.brand img{width:30px;height:30px;border-radius:50%;object-fit:cover;border:1.5px solid var(--line)}
+.brand b{font-size:17px;font-weight:800;letter-spacing:-.04em}
+.brand b em{font-style:normal;color:var(--accent)}
+.brand span{font-size:13px;font-weight:700;background:linear-gradient(90deg,#f0527f,#b56cf0 55%,#4c8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
 /* 상단: 연도 + 합계 */
 .top{flex:none;display:flex;align-items:center;gap:8px;padding:8px 0 6px}
 .top .t{flex:1;min-width:0}
@@ -75,8 +80,9 @@ button{font:inherit;color:inherit}
 .detail .items{flex:1 1 auto;min-height:0;overflow-y:auto;border-top:1px solid var(--line)}
 .detail .empty{font-size:12.5px;color:var(--sub);background:var(--bg);border-radius:8px;padding:8px 10px}
 /* 하단 */
-.foot{flex:none;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--sub);padding:0 2px 6px;min-height:22px}
-.foot .src{flex:1;min-width:0;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden}
+.foot{flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;color:var(--sub);padding:0 2px 6px}
+.foot .lab img{display:block;height:26px;width:auto}
+.foot .src{display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
 .foot .src i{flex:none;width:10px;height:9px;border-radius:2px;display:block}
 .foot .src .sc{display:flex;gap:2px}
 .bar{flex:none;display:grid;grid-template-columns:repeat(5,1fr);margin:0 -12px;padding:2px 6px 4px;border-top:1px solid var(--line);background:var(--bg)}
@@ -105,6 +111,7 @@ button{font:inherit;color:inherit}
 </style>
 </head>
 <body>
+<a class="brand" href="./"><img src="assets/clerk.jpg" alt="클사무관" width="30" height="30"><b>클사무관의 <em>AI예산</em></b><span>예산 지도</span></a>
 <div class="top">
   <div class="t"><b id="total"></b><span id="sub"></span></div>
   <div class="years" id="years" role="group" aria-label="회계연도"></div>
@@ -116,7 +123,7 @@ button{font:inherit;color:inherit}
 <div class="stage" id="stage"></div>
 <div class="foot">
   <span class="src" id="src"></span>
-  <a class="logo" href="https://github.com/lloydknam">LLOYD'S BALCONY LAB<sup>*</sup></a>
+  <a class="lab" href="https://github.com/lloydknam" target="_blank" rel="noopener" title="GitHub(@lloydknam)"><img src="assets/brand/lockup-dark.svg" alt="Lloyd's Balcony Lab · with claude · GitHub(@lloydknam)" height="26"></a>
 </div>
 <nav class="bar" aria-label="메뉴">
   <button id="back" aria-label="한 단계 위로"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>뒤로</span></button>

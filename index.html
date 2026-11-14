@@ -51,7 +51,9 @@ button.go{padding:11px 22px;border-radius:999px;border:0;background:var(--accent
 .item a{color:var(--ink);text-decoration:none;font-weight:600}
 .item a:hover{color:var(--accent)}
 svg text{fill:var(--sub);font-size:11px}
-footer{max-width:960px;margin:auto;padding:8px 16px 40px;color:var(--sub);font-size:12px}
+footer{max-width:960px;margin:auto;padding:22px 16px 40px;color:var(--sub);font-size:12px;text-align:center;border-top:1px solid var(--line)}
+footer .lab{display:inline-block;padding:6px 10px;border-radius:10px}
+footer .lab img{display:block;height:48px;width:auto;max-width:100%}
 .logo{font-family:"D-DIN","DIN Alternate","Bahnschrift","Arial Narrow",sans-serif;font-weight:700;letter-spacing:.18em;color:var(--ink);font-size:13px;text-decoration:none}
 .logo sup{color:#d0342c;font-size:12px;margin-left:1px}
 </style>
@@ -65,9 +67,8 @@ footer{max-width:960px;margin:auto;padding:8px 16px 40px;color:var(--sub);font-s
 <nav id="tabs"></nav>
 <main id="view"></main>
 <footer>
-  <a class="logo" href="https://github.com/lloydknam">LLOYD'S BALCONY LAB<sup>*</sup></a>
-  <span> · with claude · <a href="https://github.com/lloydknam" style="color:inherit">GitHub(@lloydknam)</a></span>
-  <div style="margin-top:2px">*아직 실험 중</div>
+  <a class="lab" href="https://github.com/lloydknam" target="_blank" rel="noopener" title="GitHub(@lloydknam)"><img src="assets/brand/lockup-dark.svg" alt="Lloyd's Balcony Lab · with claude · GitHub(@lloydknam)" height="48"></a>
+  <div>*아직 실험 중</div>
 </footer>
 
 <script src="data/budget.js"></script>
