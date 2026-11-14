@@ -702,7 +702,7 @@ function drawTree(base) {
     const tx = internal ? L.x - 12 : L.x + 12, anchor = internal ? "end" : "start";
     const ny = internal ? L.y - 9 : L.y - 2, ay = internal ? L.y + 5 : L.y + 13;
     const name = moreNode ? `외 ${L.more}개 더 보기` : L.n.name;
-    nodes.push(`<g class="tn${fresh(L) ? " in" : ""}" data-k="${posKey(L)}" data-i="${L.id}" role="button" tabindex="0">` +
+    nodes.push(`<g class="tn${fresh(L) ? " in" : ""}" data-k="${posKey(L)}" data-d="${L.d}" data-i="${L.id}" role="button" tabindex="0">` +
       `<circle data-act="toggle" cx="${L.x}" cy="${L.y}" r="${r}" fill="${fill}" stroke="${c}" stroke-width="2"${dash}/>` +
       `<text data-act="${moreNode || internal ? "toggle" : "go"}" class="${moreNode ? "more" : ""}" x="${tx}" y="${ny}" text-anchor="${anchor}">${esc(name)}</text>` +
       (moreNode ? "" : `<text class="am" data-act="${internal ? "toggle" : "go"}" x="${tx}" y="${ay}" text-anchor="${anchor}">${money(L.n.v[year])}</text>`) +
