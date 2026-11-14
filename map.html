@@ -610,10 +610,22 @@ function render() {
 /* ---------- 트리 보기: 현재 칸 아래를 가로 계통도로 (첨부 스타일) ---------- */
 const TREE_COL = 230, TREE_ROW = 50, TREE_PADL = 170, TREE_TOP = 24, TREE_MAX = Infinity, TREE_OPEN = 1;   // TREE_MAX: 한 번에 보일 하위 수(제한 없음)   // TREE_OPEN: 처음 펼쳐 둘 단계 수
 const TREE_PAL = ["#7cc4ff", "#5fe3a1", "#c9a7ff", "#ffc27a", "#ff8fa3", "#8ef0e6"];
-let treeOpen = new Map(), treeAll = new Set(), treeSeen = new Set(), treeBase = null, treeKeep = null, treeYOf = new Map(), treeShift = 0, treeSeqNext = 0, treeSuppress = false, treeGhost = null, treeFollow = null;
+let treeOpen = new Map(), treeAll = new Set(), treeSeen = new Set(), treeBase = null, treeKeep = null, treeYOf = new Map(), treeShift = 0, treeSeqNext = 0, treeSuppress = false, treeGhost = null, treeFollow = null, treeTween = 0;
 const TREE_ID = new WeakMap(); let treeIdSeq = 0;
 const treeIdOf = n => { if (!TREE_ID.has(n)) TREE_ID.set(n, ++treeIdSeq); return TREE_ID.get(n); };
 function isOpen(n, d) { return treeOpen.has(n) ? treeOpen.get(n) : d < TREE_OPEN; }
+// 가지가 자라는 시간(1.8초)에 맞춰 화면을 부드럽게 옮긴다. 사용자가 끌기 시작하면 멈춘다
+function treeScrollTween(box, to) {
+  const id = ++treeTween, from = box.scrollTop, t0 = performance.now(), dur = 1800;
+  const ease = p => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+  const step = t => {
+    if (id !== treeTween) return;
+    const p = Math.min(1, (t - t0) / dur);
+    box.scrollTop = from + (to - from) * ease(p);
+    if (p < 1) requestAnimationFrame(step);
+  };
+  if (reduced()) box.scrollTop = to; else requestAnimationFrame(step);
+}
 function drawTree(base) {
   const total = base.v[year] || 1, flat = [];
   const animate = treeBase === base;      // 같은 칸에서 펼치거나 접을 때만 애니메이션
@@ -726,6 +738,7 @@ function drawTree(base) {
   // 마우스로 끌면 화면이 같이 움직인다. 살짝 끌어서 생긴 클릭은 무시한다
   let drag = null;
   box.onpointerdown = e => {
+    treeTween++;   // 진행 중인 화면 이동은 멈춘다
     if (e.pointerType !== "mouse" || e.button !== 0) return;
     drag = { x: e.clientX, y: e.clientY, l: box.scrollLeft, t: box.scrollTop, moved: false };
     treeSuppress = false;
@@ -760,9 +773,9 @@ function drawTree(base) {
   stage.appendChild(box);
   if (treeFollow) {   // 펼치면 새로 열린 가지의 가운데, 접으면 접힌 노드가 화면 가운데에 오도록 부드럽게 따라간다
     const f = flat.find(L => L.n === treeFollow && !L.more) || flat[0];
-    const kids = f.kids.length ? f.kids : [];
-    const mid = kids.length ? (f.y + kids[kids.length - 1].y) / 2 : f.y;
-    box.scrollTo({ top: Math.max(0, mid - box.clientHeight / 2), left: box.scrollLeft, behavior: "smooth" });
+    const ys = f.kids.map(k => k.y).concat([f.y]);
+    const cy = (Math.min(...ys) + Math.max(...ys)) / 2;   // 펼쳐진 가지 전체(부모 포함)의 가운데
+    treeScrollTween(box, Math.max(0, cy - box.clientHeight / 2));
     treeFollow = null;
   } else box.scrollTop = Math.max(0, flat[0].y - box.clientHeight / 2);   // 처음에는 루트가 화면 가운데에 오도록
 }
