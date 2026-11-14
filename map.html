@@ -405,7 +405,7 @@ function render() {
 
   // 연도
   $("years").innerHTML = YEARS.map(y =>
-    `<button class="${y === year ? "on" : ""}" aria-pressed="${y === year}" data-y="${y}">${y}${CONFIRMED[y] ? "" : "·정부안"}</button>`).join("");
+    `<button class="${y === year ? "on" : ""}" aria-pressed="${y === year}" data-y="${y}" aria-label="${y}년${CONFIRMED[y] ? "" : " 정부안"}">'${String(y).slice(2)}${CONFIRMED[y] ? "" : "안"}</button>`).join("");
 
   // 경로
   const crumbs = [{ i: 0, name: "총지출" }].concat(path.map((n, i) => ({ i: i + 1, name: n.name })));
