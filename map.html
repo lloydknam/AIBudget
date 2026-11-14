@@ -503,7 +503,12 @@ function render() {
 
   // 경로
   // 경로: 1줄 단계명(작은 초록) · 2줄 사업명(흰색) · 3줄 금액(작은 회색). 말줄임 없이 칸을 벌려 전부 보여준다
-  const cols = (path.length ? [] : [{ i: 0, label: "총지출", name: "", v: rootTot }]).concat(path.map((n, i) => ({ i: i + 1, label: LEVELS()[i], name: n.name, v: n.v[year] })));   // 상위 단계로 들어간 뒤에는 "총지출" 칸을 뺀다
+  // 맨 왼쪽 칸: 처음에는 총지출, 들어가면 부처(분야별 경로의 프로그램 칸이 소관 부처를 갖고 있다)
+  const mName = view === "field" && path.length >= 3 ? path[2].sub : "";
+  const mNode = mName ? [...ROOTS.ministry.kids.values()].find(k => k.name === mName) : null;
+  const head = path.length === 0 ? [{ i: 0, label: "총지출", name: "", v: rootTot }]
+    : view === "field" ? [{ i: 0, label: "부처", name: mName || "-", v: mNode ? mNode.v[year] : null }] : [];
+  const cols = head.concat(path.map((n, i) => ({ i: i + 1, label: LEVELS()[i], name: n.name, v: n.v[year] })));
   $("trail").innerHTML = cols.map(c => `<li><button data-i="${c.i}" title="${esc(c.name || c.label)}"><span class="cl">${esc(c.label)}</span><span class="cn">${esc(c.name) || "&nbsp;"}</span><span class="ca">${money(c.v)}</span></button></li>`).join("");
   $("lvname").textContent = node.leaf ? LV(path.length - 1) : LV(path.length);   // 지금 화면에 펼쳐진 단계
 
