@@ -107,7 +107,7 @@ button{font:inherit;color:inherit}
 .rowbtn .bar i{display:block;height:100%;background:var(--sub)}
 /* 작은 칸 라벨 (오른쪽 여백) · 말풍선 */
 .map svg.lead{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-.map svg.lead polyline{fill:none;stroke:var(--sub);stroke-width:1}
+.map svg.lead polyline{fill:none;stroke:var(--ink);stroke-width:1.3;opacity:.7}
 .callout{position:absolute;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:var(--ink);font-size:10px;line-height:1.3;word-break:keep-all}
 .callout b{display:block;font-size:10.5px;font-weight:700;word-break:keep-all;overflow-wrap:anywhere}
 .callout span{display:block;white-space:nowrap;font-size:9.5px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -620,24 +620,31 @@ function drawChildren(parent) {
       const shown = new Set(top);
       small.forEach(s => { if (!shown.has(s) && s.w >= 26 && s.h >= 14) { s.el.classList.add("mini"); s.el.innerHTML = `<b>${esc(s.k.name)}</b>`; } });
     }
-    const n = top.length, NS = "http://www.w3.org/2000/svg";
+    const NS = "http://www.w3.org/2000/svg";
     const svg = document.createElementNS(NS, "svg");
     svg.setAttribute("class", "lead");
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    top.forEach((c, j) => {
-      const ly = n === 1 ? H / 2 : 14 + j * (H - 40) / (n - 1);
-      const cx = c.x + c.w / 2, cy = c.y + c.h / 2;
-      const line = document.createElementNS(NS, "polyline");
-      line.setAttribute("points", `${cx},${cy} ${MW + 6},${ly + 7}`);
-      svg.appendChild(line);
+    const avail = SW - ((SW - W) / 2 + MW + 12) - 4;   // 오른쪽 여백이 남으면 이름을 두 줄로 쓴다
+    // 라벨은 해당 칸의 높이에 맞춰 놓고, 겹치면 아래로 밀어낸다 (가운데 정렬 X)
+    const items = top.map(c => {
+      const cx = c.x + c.w / 2, cy = c.y + c.h / 2, p = change(c.k, year);
       const dot = document.createElement("button");
-      const p = change(c.k, year);
       dot.className = "callout";
-      const avail = SW - ((SW - W) / 2 + MW + 12) - 4;   // 오른쪽 여백이 남으면 이름을 두 줄로 쓴다
-      dot.style.cssText = `left:${MW + 12}px;top:${ly}px;width:${Math.max(G - 16, avail)}px`;
+      dot.style.cssText = `left:${MW + 12}px;top:0px;width:${Math.max(G - 16, avail)}px`;
       dot.innerHTML = `<b>${esc(c.k.name)}</b><span>${money(c.k.v[year])}${p != null ? " · " + pctTxt(p) : ""}</span>`;
       dot.onclick = () => drill(c.k);
       box.appendChild(dot);
+      return { cx, cy, dot, h: Math.max(30, dot.getBoundingClientRect().height), y: 0 };
+    }).sort((p, q) => p.cy - q.cy);
+    let y = 0;
+    items.forEach(it => { it.y = Math.max(it.cy - it.h / 2, y); y = it.y + it.h + 4; });
+    let limit = H;   // 아래로 넘치면 위에서부터 다시 올린다
+    for (let i = items.length - 1; i >= 0; i--) { const it = items[i]; it.y = Math.min(it.y, limit - it.h); limit = it.y - 4; }
+    items.forEach(it => {
+      it.dot.style.top = it.y + "px";
+      const line = document.createElementNS(NS, "polyline");
+      line.setAttribute("points", `${it.cx},${it.cy} ${MW + 8},${it.y + it.h / 2}`);
+      svg.appendChild(line);
     });
     box.insertBefore(svg, box.firstChild);
   }
