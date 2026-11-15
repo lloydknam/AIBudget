@@ -821,13 +821,20 @@ function drawTree(base) {
     // 가지가 화면보다 길면 자라는 끝(tip)이 화면 안에 남도록: 아래로 자라면 끝을 아래쪽에, 위로 자라면 위쪽에 둔다
     const want = khi - klo <= H * 0.8 ? (klo + khi) / 2 - H / 2
       : down ? khi - H * 0.7 : klo - H * 0.3;
-    // 가로: 하위 노드 열의 가운데가 화면 가운데에 오도록
-    const W = box.clientWidth, kidX = ks[0].x;
-    // 하위 노드를 가운데에 두되, 부모 노드(왼쪽 라벨 포함)와 새 노드가 모두 화면 안에 남도록 가로 범위를 제한한다
-    let wantX = kidX - W / 2;   // 카메라는 오른쪽으로 수평 이동해 새 하위 노드 열의 가운데가 화면 가운데에 오도록 한다
-    wantX = Math.max(wantX, kidX + 40 - W);
+    // 가로: 새로 열린 하위 노드(원과 사업명)가 화면 안에 모두 보이면 카메라를 움직이지 않는다.
+    // 잘리는 경우에만 그 쪽 가장자리가 보이도록 최소한으로 옮긴다
+    const W = box.clientWidth;
+    const fromX = treeKeep ? treeKeep.left : 0;
+    let wantX = fromX;
+    const els = ks.map(k => svg.querySelector('.tn[data-i="' + flat.indexOf(k) + '"]')).filter(Boolean);
+    if (els.length) {
+      const bb = els.map(g => g.getBBox());
+      const bL = Math.min(...bb.map(b => b.x)), bR = Math.max(...bb.map(b => b.x + b.width)), pad = 12;
+      if (bL - pad < fromX) wantX = bL - pad;
+      else if (bR + pad > fromX + W) wantX = bR + pad - W;
+    }
     wantX = Math.max(0, Math.min(wantX, box.scrollWidth - W));
-    const from = (treeKeep ? treeKeep.top : 0) + shiftDelta, fromX = treeKeep ? treeKeep.left : 0;   // 자라기 전 보던 자리에서 이어서 움직인다
+    const from = (treeKeep ? treeKeep.top : 0) + shiftDelta;   // 자라기 전 보던 자리에서 이어서 움직인다
     treeKeep = null;
     treeScrollTween(box, from, Math.max(0, Math.min(want, box.scrollHeight - H)), fromX, wantX);
     treeFollow = null;
