@@ -798,7 +798,7 @@ function drawTree(base) {
   // 우측 하단 리셋: 펼친 가지를 모두 접고 처음 모습(총지출 한 줄)으로 되돌린다
   const rb = document.createElement("button");
   rb.className = "tree-reset"; rb.type = "button"; rb.textContent = "리셋"; rb.setAttribute("aria-label", "트리 처음으로 되돌리기");
-  rb.onclick = () => { treeOpen.clear(); treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null; render(); };
+  rb.onclick = () => { treeOpen.clear(); treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null; jump(0); };   // 깊이 내려간 상태에서도 최상위(총지출)로 되돌린다
   stage.appendChild(rb);
   if (treeFollow) {   // 펼치면 새로 열린 가지의 가운데, 접으면 접힌 노드가 화면 가운데에 오도록 부드럽게 따라간다
     const f = flat.find(L => L.n === treeFollow && !L.more) || flat[0];
