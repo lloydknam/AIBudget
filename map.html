@@ -608,7 +608,7 @@ function render() {
 }
 
 /* ---------- 트리 보기: 현재 칸 아래를 가로 계통도로 (첨부 스타일) ---------- */
-const TREE_COL = 230, TREE_ROW = 50, TREE_PADL = 170, TREE_TOP = 24, TREE_MAX = Infinity, TREE_OPEN = 1;   // TREE_MAX: 한 번에 보일 하위 수(제한 없음)   // TREE_OPEN: 처음 펼쳐 둘 단계 수
+const TREE_COL = 230, TREE_ROW = 50, TREE_PADL = 62, TREE_TOP = 24, TREE_MAX = Infinity, TREE_OPEN = 1;   // TREE_MAX: 한 번에 보일 하위 수(제한 없음)   // TREE_OPEN: 처음 펼쳐 둘 단계 수
 const TREE_PAL = ["#7cc4ff", "#5fe3a1", "#c9a7ff", "#ffc27a", "#ff8fa3", "#8ef0e6"];
 let treeOpen = new Map(), treeAll = new Set(), treeSeen = new Set(), treeBase = null, treeKeep = null, treeYOf = new Map(), treeDepthOf = new Map(), treeShift = 0, treeSeqNext = 0, treeSuppress = false, treeGhost = null, treeFollow = null, treeTween = 0;
 const TREE_ID = new WeakMap(); let treeIdSeq = 0;
@@ -796,11 +796,7 @@ function drawTree(base) {
     treeKeep = null;
     treeScrollTween(box, from, Math.max(0, Math.min(want, box.scrollHeight - H)), fromX, wantX);
     treeFollow = null;
-  } else {
-    box.scrollTop = Math.max(0, flat[0].y - box.clientHeight / 2);   // 처음에는 루트가 화면 가운데에 오도록
-    // 모바일은 루트를 왼쪽 가장자리에 두어 첫 분야 가지가 바로 보이게 한다 (글자는 점의 왼쪽에 오므로 여백을 둔다)
-    box.scrollLeft = matchMedia("(max-width: 640px)").matches ? Math.max(0, flat[0].x - 62) : 0;
-  }
+  } else box.scrollTop = Math.max(0, flat[0].y - box.clientHeight / 2);   // 처음에는 루트가 화면 가운데에 오도록
 }
 
 function drawChildren(parent) {
