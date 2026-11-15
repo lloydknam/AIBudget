@@ -417,6 +417,12 @@ function drawSearch() {
     box.querySelectorAll(".rowbtn").forEach(b => b.onclick = () => {
       const r = shown[+b.dataset.idx];
       q = ""; $("q").value = ""; $("qclr").hidden = true;
+      if (mode === "tree" && r.path.length) {   // 트리에서는 트리를 그대로 두고, 찾은 사업이 화면 가운데에 오도록 펼친다
+        treeFocus = r.path[r.path.length - 1];   // 그릴 때 이 사업을 화면 가운데에 둔다
+        for (const a of r.path.slice(0, -1)) treeOpen.set(a, true);   // 찾은 사업까지 가지를 연다
+        treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null; treeKeep = null;
+        path = r.path.slice(0, -1); enterAnim = false; syncUrl(true); render(); return;
+      }
       path = r.path; enterAnim = true; syncUrl(true); render();
     });
   }
@@ -654,7 +660,7 @@ function treeScrollTween(box, from, to, fromX = 0, toX = 0) {
   if (reduced()) { box.scrollTop = to; box.scrollLeft = toX; } else requestAnimationFrame(step);
 }
 // 처음 열 때 트리 전체를 화면 세로 가운데에 두기 위한 위쪽 여백 (펼쳐도 같은 값을 유지해 노드 위치가 튀지 않게 한다)
-let treeMargin = 0;
+let treeMargin = 0, treeFocus = null;
 function drawTree(base) {
   path.forEach(p => { if (!treeOpen.has(p)) treeOpen.set(p, true); });   // 현재 경로에 있는 노드들은 펼친 상태로 시작한다
   const total = base.v[year] || 1, flat = [];
@@ -857,6 +863,14 @@ function drawTree(base) {
     treeMargin = Math.max(0, Math.round(H0 / 2 - cc));
     svg.style.marginTop = treeMargin + "px";
     box.scrollTop = Math.max(0, cc + treeMargin - H0 / 2);
+  }
+  if (treeFocus) {   // 검색에서 고른 사업을 화면 가운데에 둔다 (세로·가로 모두)
+    const f = flat.find(L => L.n === treeFocus && !L.more);
+    treeFocus = null;
+    if (f) {
+      box.scrollTop = Math.max(0, Math.min(f.y + treeMargin - box.clientHeight / 2, box.scrollHeight - box.clientHeight));
+      box.scrollLeft = Math.max(0, Math.min(f.x + TREE_COL / 2 - box.clientWidth / 2, box.scrollWidth - box.clientWidth));
+    }
   }
 }
 
