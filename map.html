@@ -637,6 +637,8 @@ function treeScrollTween(box, from, to, fromX = 0, toX = 0) {
   };
   if (reduced()) { box.scrollTop = to; box.scrollLeft = toX; } else requestAnimationFrame(step);
 }
+// 처음 열 때 트리 전체를 화면 세로 가운데에 두기 위한 위쪽 여백 (펼쳐도 같은 값을 유지해 노드 위치가 튀지 않게 한다)
+let treeMargin = 0;
 function drawTree(base) {
   const total = base.v[year] || 1, flat = [];
   const animate = treeBase === base;      // 같은 칸에서 펼치거나 접을 때만 애니메이션
@@ -724,6 +726,7 @@ function drawTree(base) {
   box.innerHTML = 
     `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="예산 트리"><defs>${defs.join("")}</defs><g>${links.join("")}</g><g>${nodes.join("")}</g></svg>`;
   const svg = box.querySelector("svg");
+  svg.style.marginTop = treeMargin + "px";
   // 접힐 때: 사라지는 가지는 제자리에서 뒤로 물러나며 사라진다 (직전 그림을 잠시 겹쳐 둔다)
   if (animate && treeGhost) {
     const ghost = treeGhost; treeGhost = null;
@@ -813,7 +816,12 @@ function drawTree(base) {
     treeKeep = null;
     treeScrollTween(box, from, Math.max(0, Math.min(want, box.scrollHeight - H)), fromX, wantX);
     treeFollow = null;
-  } else box.scrollTop = Math.max(0, flat[0].y - box.clientHeight / 2);   // 처음에는 루트가 화면 가운데에 오도록
+  } else {   // 처음에는 트리 전체의 세로 가운데가 화면 가운데에 오도록 (트리가 화면보다 짧으면 위쪽 여백으로 맞춘다)
+    const ysAll = flat.map(L => L.y), cc = (Math.min(...ysAll) + Math.max(...ysAll)) / 2, H0 = box.clientHeight;
+    treeMargin = Math.max(0, Math.round(H0 / 2 - cc));
+    svg.style.marginTop = treeMargin + "px";
+    box.scrollTop = Math.max(0, cc + treeMargin - H0 / 2);
+  }
 }
 
 function drawChildren(parent) {
