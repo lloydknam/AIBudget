@@ -616,7 +616,7 @@ function render() {
   // 본문
   [...stage.children].forEach(c => { if (!c.classList.contains("zoom")) c.remove(); });   // 확대 중인 칸은 남겨 둔다
   if (q) drawSearch();
-  else if (node.leaf) drawDetail(node); else if (mode === "tree") drawTree(ROOT);   // 트리는 항상 최상위에서 그리고, 현재 경로를 펼쳐 둔다 (상위 노드가 사라지지 않게) else drawChildren(node);
+  else if (node.leaf) drawDetail(node); else if (mode === "tree") drawTree(ROOT); else drawChildren(node);   // 트리는 항상 최상위에서 그리고, 현재 경로를 펼쳐 둔다 (상위 노드가 사라지지 않게)
   enterAnim = false;
 
   // 출처
