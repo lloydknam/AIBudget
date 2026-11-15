@@ -752,7 +752,8 @@ function drawTree(base) {
     if (treeSuppress) { treeSuppress = false; return; }
     const t = e.target.closest("[data-act]"); if (!t) return;
     const L = flat[+t.closest(".tn").dataset.i];
-    if (L.d === 0) {   // 맨 위 노드(총지출 등)를 누르면 펼친 가지를 모두 접고 처음 모습으로 되돌린다
+    if (L.d === 0) {   // 맨 위 노드를 누르면: 최상위(총지출)면 펼친 가지를 모두 접고 처음 모습으로, 하위 단계에 있으면 한 단계 위로 올라간다
+      if (path.length > 0) { treeOpen.clear(); treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null; jump(path.length - 1); return; }
       treeOpen.clear(); treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null;
       render(); return;
     }
