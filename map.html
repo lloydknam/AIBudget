@@ -832,8 +832,7 @@ function drawTree(base) {
     const ks = f.kids.length ? f.kids : [f];
     const klo = Math.min(...ks.map(k => k.y)), khi = Math.max(...ks.map(k => k.y));
     // 가지가 화면보다 길면 자라는 끝(tip)이 화면 안에 남도록: 아래로 자라면 끝을 아래쪽에, 위로 자라면 위쪽에 둔다
-    const want = khi - klo <= H * 0.8 ? (klo + khi) / 2 - H / 2
-      : down ? khi - H * 0.7 : klo - H * 0.3;
+    const want = (klo + khi) / 2 - H / 2;   // 새로 열린 아들 노드들의 세로 가운데가 화면 가운데에 오도록
     // 가로: 새로 열린 하위 노드(원과 사업명)가 화면 안에 모두 보이면 카메라를 움직이지 않는다.
     // 잘리는 경우에만 그 쪽 가장자리가 보이도록 최소한으로 옮긴다
     const W = box.clientWidth;
