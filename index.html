@@ -38,11 +38,13 @@ h1 em{font-style:normal;color:var(--accent)}
 .brand img{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--line)}
 @media (max-width:640px){.brand img{width:46px;height:46px}h1{font-size:20px}}
 .notice{margin:0 auto 16px;max-width:640px;color:var(--note-ink);font-size:12.5px;line-height:1.6;word-break:keep-all}
-nav{display:flex;gap:22px;align-items:center;overflow-x:auto;padding:14px 16px;border-bottom:1px solid var(--line);max-width:960px;margin:0 auto 18px;scrollbar-width:none}
-nav button{flex:none;border:0;background:none;color:var(--sub);padding:4px 0;cursor:pointer;font:inherit;font-size:17px;font-weight:600;letter-spacing:-.01em}
-nav button:hover{color:var(--ink)}
-nav a{flex:none;padding:4px 0;font-size:17px;font-weight:700;letter-spacing:-.01em;text-decoration:none;background:linear-gradient(90deg,#f0527f,#b56cf0 55%,#4c8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
-nav button.on{color:var(--ink);font-weight:700}
+nav{flex:none;display:flex;gap:22px;align-items:center;overflow-x:auto;padding:6px 0;border-bottom:1px solid var(--line);max-width:960px;margin:0 auto 2px;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button,nav a{flex:none;border:0;background:none;color:var(--sub);padding:4px 0;cursor:pointer;font:inherit;font-size:17px;font-weight:600;letter-spacing:-.01em;text-decoration:none}
+nav button:hover,nav a:hover{color:var(--ink)}
+nav button.on,nav a.here{font-weight:700;background:linear-gradient(90deg,#f0527f,#b56cf0 55%,#4c8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* 모바일: 메뉴 전체 폭에 고르게 나눈다 (예산 지도 페이지 메뉴와 같은 규칙) */
+@media (max-width:640px){nav{justify-content:space-between;gap:3px;overflow:hidden;padding:0 0 2px;margin-bottom:0;max-width:none}nav button,nav a{font-size:clamp(12px,4.6vw,18px);padding:1px 0;white-space:nowrap}}
 main{max-width:960px;margin:auto;padding:0 16px 24px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px}
 .card h2{font-size:21px;font-weight:800;letter-spacing:-.035em;margin:0 0 12px}
@@ -109,7 +111,7 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 #seriesModal svg{width:100%;height:auto;display:block}
 #seriesModal table{margin-top:10px}
 /* 모바일 표: 좌우 여백을 줄이고 금액·비중·증감은 한 줄로 고정, 분야명만 단어 단위로 줄바꿈 */
-@media (max-width:640px){main{padding:0 5px 24px}header,nav,footer{padding-left:5px;padding-right:5px}.card{padding:16px 12px}.card h2{font-size:19px}table{font-size:13px}th,td{padding:9px 3px}th:not(:first-child),td:not(:first-child){white-space:nowrap}td:first-child{word-break:keep-all}}
+@media (max-width:640px){main{padding:0 5px 24px}header,footer{padding-left:5px;padding-right:5px}.card{padding:16px 12px}.card h2{font-size:19px}table{font-size:13px}th,td{padding:9px 3px}th:not(:first-child),td:not(:first-child){white-space:nowrap}td:first-child{word-break:keep-all}}
 /* 실험 중 표시(위첨자 플라스크) */
 .flask{display:inline-block;vertical-align:super;line-height:0;margin-left:1px;font-size:0}.flask svg{display:inline-block;vertical-align:baseline}
 </style>
