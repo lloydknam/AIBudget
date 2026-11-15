@@ -1114,7 +1114,12 @@ applyUrl(); syncUrl(false);
   const ptr = document.createElement("div"); ptr.id = "ptr"; ptr.textContent = "↓ 당겨서 새로고침"; document.body.appendChild(ptr);
   const listTop = () => { if (document.querySelector("#stage .tree")) return false; const l = document.querySelector("#stage .list, #stage .detail .items"); return !l || l.scrollTop <= 0; };   // 트리에서는 끌기·스크롤이 새로고침으로 이어지지 않게
   let y0 = null, armed = false;
-  addEventListener("touchstart", e => { y0 = e.touches.length === 1 && listTop() ? e.touches[0].clientY : null; armed = false; }, { passive: true });
+  // 트리 보기에서도 맨 위 머리글(제목·탭) 영역에서 시작한 스와이프만 새로고침으로 쓴다 (트리를 끄는 동작은 제외)
+  addEventListener("touchstart", e => {
+    const inHead = !!(e.target && e.target.closest && e.target.closest(".ghead, .top"));
+    const ok = listTop() || (inHead && !!document.querySelector("#stage .tree"));
+    y0 = e.touches.length === 1 && ok ? e.touches[0].clientY : null; armed = false;
+  }, { passive: true });
   addEventListener("touchmove", e => {
     if (y0 == null) return;
     const dy = e.touches[0].clientY - y0;
