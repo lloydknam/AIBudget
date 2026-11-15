@@ -796,7 +796,11 @@ function drawTree(base) {
     treeKeep = null;
     treeScrollTween(box, from, Math.max(0, Math.min(want, box.scrollHeight - H)), fromX, wantX);
     treeFollow = null;
-  } else box.scrollTop = Math.max(0, flat[0].y - box.clientHeight / 2);   // 처음에는 루트가 화면 가운데에 오도록
+  } else {
+    box.scrollTop = Math.max(0, flat[0].y - box.clientHeight / 2);   // 처음에는 루트가 화면 가운데에 오도록
+    // 모바일은 루트를 왼쪽 가장자리에 두어 첫 분야 가지가 바로 보이게 한다 (글자는 점의 왼쪽에 오므로 여백을 둔다)
+    box.scrollLeft = matchMedia("(max-width: 640px)").matches ? Math.max(0, flat[0].x - 62) : 0;
+  }
 }
 
 function drawChildren(parent) {
