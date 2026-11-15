@@ -694,7 +694,7 @@ function drawTree(base) {
   flat.forEach(L => {
     if (!L.par) return;
     const P = L.par, c = colorOf(L), mx = (P.x + L.x) / 2;
-    const w = Math.max(0.6, Math.min(18, 0.6 + 40 * Math.pow(L.n.v[year] / total, 0.9)));   // 가지 굵기 = 예산 규모 (지수 0.9, 차이를 크게: 큰 사업은 굵게, 작은 사업은 가늘게)
+    const w = Math.max(0.6, Math.min(18, 0.6 + 40 * Math.pow(L.n.v[year] / (L.par ? L.par.n.v[year] || 1 : total), 0.9)));   // 가지 굵기 = 부모 대비 예산 비중 (모든 단계 동일 기준, 지수 0.9)
     defs.push(`<linearGradient id="tg${posKey(L)}" gradientUnits="userSpaceOnUse" x1="${P.x}" y1="${P.y}" x2="${L.x}" y2="${L.y}"><stop offset="0" stop-color="${colorOf(P)}" stop-opacity=".5"/><stop offset="1" stop-color="${c}" stop-opacity=".95"/></linearGradient>`);
     // 3차 베지에 곡선: 양 끝에서 수평으로 휘어지는 S자
     const inC = fresh(L) ? " in" : "";
@@ -703,7 +703,7 @@ function drawTree(base) {
   });
   flat.forEach(L => {
     const c = colorOf(L), internal = L.hasKids || L.more > 0, moreNode = L.more > 0;
-    const r = moreNode ? 4 : Math.min(16, Math.max(3.5, 3.5 + 12.5 * Math.pow(L.n.v[year] / total, 0.9)));   // 원 크기 = 예산 규모 (지수 0.9, 가지 굵기와 같은 기준)
+    const r = moreNode ? 4 : Math.min(16, Math.max(3.5, 3.5 + 12.5 * Math.pow(L.n.v[year] / (L.par ? L.par.n.v[year] || 1 : total), 0.9)));   // 원 크기 = 부모 대비 예산 비중 (가지 굵기와 같은 기준)
     const fill = internal || moreNode ? "var(--card)" : c;   // 빈 원도 채워서 가운데를 눌러도 잡히게
     const dash = moreNode ? ' stroke-dasharray="3 3"' : "";
     // 중간 노드: 점의 왼쪽 위 / 끝단: 점의 오른쪽 (글자가 가지와 겹치지 않게)
