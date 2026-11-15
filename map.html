@@ -631,8 +631,9 @@ function render() {
 
   // 출처
   const avg = change(ROOT, year);
+  const TOPS = children(ROOT, year);
   $("src").innerHTML = avg == null ? `${year}년은 비교할 전년 자료가 없습니다`
-    : `<span>덜</span><span class="sc">${["d0", "d1", "d2", "m", "u2", "u1", "u0"].map(c => `<i class="c-${c}"></i>`).join("")}</span><span>더 증가</span>`;
+    : `<span class="sc">${(path.length ? [path[0]] : TOPS).map(t => `<i style="background:${TREE_PAL[Math.max(0, TOPS.indexOf(t)) % TREE_PAL.length]}"></i>`).join("")}</span><span>${path.length ? esc(path[0].name) : "부처별 색"}</span>`;
 }
 
 /* ---------- 트리 보기: 현재 칸 아래를 가로 계통도로 (첨부 스타일) ---------- */
@@ -915,12 +916,15 @@ function drawChildren(parent) {
   const G = hasSmall ? Math.min(112, Math.round(W * 0.28)) : 0, MW = W - G;
   const rects = G ? squarify(kids.map(k => k.v[year]), MW, H) : probe;
   const small = [];
+  // 색은 트리와 같다: 맨 위 부처(첫 단계)마다 트리의 가지 색을 쓰고, 그 아래 칸은 같은 가지 색을 이어받는다
+  const TOPS = children(ROOT, year);   // 맨 위 부처 목록 (트리의 가지 순서와 같다)
+  const branchOf = k => { const top = path.length ? path[0] : k; const i = TOPS.indexOf(top); return TREE_PAL[(i < 0 ? 0 : i) % TREE_PAL.length]; };
   kids.forEach((k, i) => {
     const [x, y, w, h] = rects[i], p = change(k, year);
     const b = document.createElement("button");
     const big = w > 150 && h > 100;
-    b.className = "tile " + cls(p) + (big ? " big" : "") + (w < 22 || h < 18 ? " tiny" : w < 70 || h < 46 ? " mid" : "");
-    b.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
+    b.className = "tile" + (big ? " big" : "") + (w < 22 || h < 18 ? " tiny" : w < 70 || h < 46 ? " mid" : "");
+    b.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;background:${branchOf(k)};color:#0a0c10`;
     b.setAttribute("aria-label", `${k.name}${k.sub ? " " + k.sub : ""} ${money(k.v[year])}원 ${pctTxt(p)}`);
     if (w >= 44 && h >= 22) {
       let html = `<b>${esc(k.name)}</b>`;
