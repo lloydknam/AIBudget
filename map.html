@@ -283,6 +283,8 @@ body.tree-mode .crumb{display:none}
 /* 헤더 위 여백 절반 */
 .ghead{padding-top:0}.ghead .brand{padding-top:7px}
 @media (max-width:640px){.ghead .brand{padding-top:5px}}
+/* 실험 중 표시(위첨자 플라스크) */
+.flask{display:inline-block;vertical-align:super;line-height:0;margin-left:1px;font-size:0}.flask svg{display:inline-block;vertical-align:baseline}
 </style>
 </head>
 <body>
@@ -296,7 +298,7 @@ body.tree-mode .crumb{display:none}
 <nav class="gnav" aria-label="사이트 메뉴">
   <a class="here" href="map.html" aria-current="page">예산지도</a>
   <a href="index.html#analysis">주요분석</a>
-  <a href="index.html#review">심사참고</a>
+  <a href="index.html#review">심사참고<sup class="flask" role="img" aria-label="실험 중"><svg viewBox="0 0 24 24" width="9" height="10" aria-hidden="true"><path d="M9 2h6M10 2v6L4.6 18.2A2 2 0 0 0 6.3 21h11.4a2 2 0 0 0 1.7-2.8L14 8V2" fill="none" stroke="#facc15" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></sup></a>
   <a href="index.html#filter">조건검색</a>
   <a href="index.html#ask">AI분석</a>
 </nav>
