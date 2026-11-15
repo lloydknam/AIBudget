@@ -1014,7 +1014,7 @@ function drawDetail(n) {
     inner = [...items].sort((a, b) => (b.amt || 0) - (a.amt || 0)).map(i =>
       `<div class="rowbtn go" data-item="${esc(i.name)}" role="button" tabindex="0"><i class="sw c-m"></i><span class="nm">${esc(i.name)}</span>
        <span class="am">${money(i.amt)}<small>${tot > 0 ? (i.amt / tot * 100).toFixed(1) : "-"}%</small></span>
-       <span class="bar"><i style="width:${top > 0 ? Math.max(0.5, i.amt / top * 100) : 0}%"></i></span></div>`).join("");
+       <span class="rbar"><i style="width:${tot > 0 ? Math.max(0.5, (i.amt || 0) / tot * 100) : 0}%"></i></span></div>`).join("");
     inner = `<div class="sub-h">내역사업 ${items.length}개</div><div class="items">${inner}</div>`;
   } else {
     inner = `<div class="sub-h">내역사업</div>${inner}`;
