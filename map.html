@@ -105,7 +105,7 @@ button{font:inherit;color:inherit}
 .tree .tn text.am{font-size:12px;font-weight:600;fill:#facc15;font-variant-numeric:tabular-nums}
 .tree .tn text.more{fill:var(--sub);font-weight:500}
 /* 글자 뒤의 어두운 바탕 상자: 테두리(stroke)에 기대지 않아 모든 브라우저에서 글자가 흐려지지 않는다 */
-.tree .tn rect.lb{fill:#0a0c10;fill-opacity:.72;pointer-events:none}
+.tree .tn rect.lb{fill:#0a0c10;fill-opacity:.55;pointer-events:none}
 .tree svg.hl .lk{opacity:.16}
 .tree svg.hl .lk.on{opacity:1;stroke:var(--accent)}
 .tree svg.hl .tn{opacity:.3}
@@ -802,6 +802,7 @@ function drawTree(base) {
     e.preventDefault(); g.querySelector("[data-act]").dispatchEvent(new MouseEvent("click", { bubbles: true }));
   };
   box.onpointerover = e => {                          // 말단에 올리면 루트까지의 계통선만 강조
+    if (e.pointerType && e.pointerType !== 'mouse') return;   // 터치에서는 강조가 남아 글자가 흐려지므로 마우스에서만
     const g = e.target.closest && e.target.closest(".tn"); if (!g) return;
     const ids = new Set();
     for (let c = flat[+g.dataset.i]; c; c = c.par) ids.add(c.id);
@@ -815,7 +816,7 @@ function drawTree(base) {
     let bb; try { bb = t.getBBox(); } catch (e) { return; }
     if (!bb || !bb.width) return;
     const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    r.setAttribute('x', bb.x - 3); r.setAttribute('y', bb.y - 1); r.setAttribute('width', bb.width + 6); r.setAttribute('height', bb.height + 2); r.setAttribute('rx', 3); r.setAttribute('class', 'lb');
+    r.setAttribute('x', bb.x - 2); r.setAttribute('y', bb.y); r.setAttribute('width', bb.width + 4); r.setAttribute('height', bb.height); r.setAttribute('rx', 2); r.setAttribute('class', 'lb');
     t.parentNode.insertBefore(r, t);
   });
   // 우측 하단 리셋: 펼친 가지를 모두 접고 처음 모습(총지출 한 줄)으로 되돌린다
