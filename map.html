@@ -699,7 +699,7 @@ function drawTree(base) {
   const allY = [...treeYOf.values()], rawMin = Math.min(...allY), rawMax = Math.max(...allY);
   let shiftDelta = 0;
   if (rawMin + treeShift < TREE_TOP) { shiftDelta = TREE_TOP - (rawMin + treeShift); treeShift += shiftDelta; flat.forEach(L => L.y += shiftDelta); }
-  const W = TREE_PADL + maxD * TREE_COL + 280, H = Math.max(rawMax + treeShift + TREE_TOP * 2, stage.clientHeight);
+  const W = TREE_PADL + maxD * TREE_COL + 280 + Math.ceil(stage.clientWidth / 2), H = Math.max(rawMax + treeShift + TREE_TOP * 2, stage.clientHeight);
   const colorOf = L => L.col || "#9aa4b2";
   const keyOf = L => L.moreOf ? L.moreOf.name + "\u0001more" : L.n;
   const posKey = L => L.moreOf ? "m" + treeIdOf(L.moreOf) : "n" + treeIdOf(L.n);   // 칸 안에서 변하지 않는 이름표
@@ -824,7 +824,7 @@ function drawTree(base) {
     // 가로: 하위 노드 열의 가운데가 화면 가운데에 오도록
     const W = box.clientWidth, kidX = ks[0].x;
     // 하위 노드를 가운데에 두되, 부모 노드(왼쪽 라벨 포함)와 새 노드가 모두 화면 안에 남도록 가로 범위를 제한한다
-    let wantX = Math.min(kidX - W / 2, f.x - 60);
+    let wantX = kidX - W / 2;   // 카메라는 오른쪽으로 수평 이동해 새 하위 노드 열의 가운데가 화면 가운데에 오도록 한다
     wantX = Math.max(wantX, kidX + 40 - W);
     wantX = Math.max(0, Math.min(wantX, box.scrollWidth - W));
     const from = (treeKeep ? treeKeep.top : 0) + shiftDelta, fromX = treeKeep ? treeKeep.left : 0;   // 자라기 전 보던 자리에서 이어서 움직인다
