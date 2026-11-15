@@ -52,9 +52,9 @@
     e.preventDefault(); deferred = e;
     setTimeout(function () {
       if (!deferred || seen()) return;
-      card("홈 화면에 설치하면 앱처럼 바로 열 수 있어요.", [
+      card("홈 화면에 바로가기를 추가하면 바로 열 수 있어요.", [
         { label: "나중에", fn: close },
-        { label: "설치", primary: true, fn: function () {
+        { label: "홈 화면에 추가", primary: true, fn: function () {
           var p = deferred; deferred = null;
           p.prompt();
           p.userChoice.then(function () { close(); }, function () { close(); });
