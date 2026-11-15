@@ -137,8 +137,8 @@ body.tree-mode .crumb{display:none}
 .rowbtn .nm{font-size:13.5px;font-weight:600;word-break:keep-all;line-height:1.3}
 .rowbtn .am{font-size:12.5px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .rowbtn .am small{display:inline;color:var(--sub);font-size:11px;margin-left:4px}
-.rowbtn .bar{grid-column:2 / 4;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
-.rowbtn .bar i{display:block;height:100%;background:var(--sub)}
+.rowbtn .rbar{grid-column:2 / 4;height:3px;background:var(--line);border-radius:2px;overflow:hidden;position:static;margin:0;padding:0;border:0;display:block}
+.rowbtn .rbar i{display:block;height:100%;background:var(--sub)}
 /* 작은 칸 라벨 (오른쪽 여백) · 말풍선 */
 .map svg.lead{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
 .map svg.lead polyline{fill:none;stroke:var(--ink);stroke-width:1.3;opacity:.7}
@@ -897,7 +897,7 @@ function drawChildren(parent) {
         <i class="sw ${cls(p)}"></i>
         <span class="nm">${esc(k.name)}${k.sub ? ` <span style="color:var(--sub);font-weight:400;font-size:11.5px">${esc(k.sub)}</span>` : ""}</span>
         <span class="am">${money(k.v[year])}<small>${sh >= 0.1 ? sh.toFixed(1) : "0.1 미만"}%${p != null ? " · " + pctTxt(p) : ""}</small></span>
-        <span class="bar"><i style="width:${Math.max(0.5, k.v[year] / kids[0].v[year] * 100)}%"></i></span></button>`;
+        <span class="rbar"><i style="width:${Math.max(0.5, sh)}%"></i></span></button>`;
     }).join("");
     box.querySelectorAll(".rowbtn").forEach(b => b.onclick = () => drill(kids[+b.dataset.idx]));
     stage.appendChild(box);
