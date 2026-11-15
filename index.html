@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<script>if (!location.hash) location.replace("map.html");</script>
+<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=9"+location.hash);return;}if(!location.hash)location.replace("map.html?v=9");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=9를 붙이고 예산 지도로 보낸다 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 예산 네비</title>
 <link rel="icon" type="image/png" href="assets/icon-192.png">
