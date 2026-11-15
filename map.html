@@ -101,9 +101,11 @@ button{font:inherit;color:inherit}
 .tree svg{display:block}
 .tree .lk{fill:none;stroke-linecap:round;transition:opacity .2s,stroke .2s}
 .tree .tn circle{transition:fill .2s,stroke .2s}
-.tree .tn text{font-size:13px;font-weight:600;fill:var(--ink);paint-order:stroke;stroke:#0a0c10;stroke-width:3px;stroke-linejoin:round;cursor:pointer;font-family:inherit}
+.tree .tn text{font-size:13px;font-weight:600;fill:var(--ink);cursor:pointer;font-family:inherit}
 .tree .tn text.am{font-size:12px;font-weight:600;fill:#facc15;font-variant-numeric:tabular-nums}
 .tree .tn text.more{fill:var(--sub);font-weight:500}
+/* 글자 뒤의 어두운 테두리는 별도의 복사본으로 그린다 (paint-order를 지원하지 않는 브라우저에서도 글자가 흐려지지 않게) */
+.tree .tn text.hl{fill:none;stroke:#0a0c10;stroke-width:3px;stroke-linejoin:round;pointer-events:none}
 .tree svg.hl .lk{opacity:.16}
 .tree svg.hl .lk.on{opacity:1;stroke:var(--accent)}
 .tree svg.hl .tn{opacity:.3}
@@ -731,8 +733,9 @@ function drawTree(base) {
     const name = moreNode ? `외 ${L.more}개 더 보기` : L.n.name;
     nodes.push(`<g class="tn${fresh(L) ? " in" : ""}" data-k="${posKey(L)}" data-d="${L.d}" data-i="${L.id}" role="button" tabindex="0">` +
       `<circle data-act="toggle" cx="${L.x}" cy="${L.y}" r="${r}" fill="${fill}" stroke="${c}" stroke-width="2"${dash}/>` +
+      `<text class="hl" aria-hidden="true" x="${tx}" y="${ny}" text-anchor="${anchor}">${esc(name)}</text>` +
       `<text data-act="${moreNode || internal ? "toggle" : "go"}" class="${moreNode ? "more" : ""}" x="${tx}" y="${ny}" text-anchor="${anchor}">${esc(name)}</text>` +
-      (moreNode ? "" : `<text class="am" data-act="${internal ? "toggle" : "go"}" x="${tx}" y="${ay}" text-anchor="${anchor}">${money(L.n.v[year])}</text>`) +
+      (moreNode ? "" : `<text class="hl am" aria-hidden="true" x="${tx}" y="${ay}" text-anchor="${anchor}">${money(L.n.v[year])}</text>` + `<text class="am" data-act="${internal ? "toggle" : "go"}" x="${tx}" y="${ay}" text-anchor="${anchor}">${money(L.n.v[year])}</text>`) +
       `</g>`);
   });
   const box = document.createElement("div");
