@@ -616,7 +616,7 @@ function render() {
   // 본문
   [...stage.children].forEach(c => { if (!c.classList.contains("zoom")) c.remove(); });   // 확대 중인 칸은 남겨 둔다
   if (q) drawSearch();
-  else if (node.leaf) drawDetail(node); else if (mode === "tree") drawTree(node); else drawChildren(node);
+  else if (node.leaf) drawDetail(node); else if (mode === "tree") drawTree(ROOT);   // 트리는 항상 최상위에서 그리고, 현재 경로를 펼쳐 둔다 (상위 노드가 사라지지 않게) else drawChildren(node);
   enterAnim = false;
 
   // 출처
@@ -649,6 +649,7 @@ function treeScrollTween(box, from, to, fromX = 0, toX = 0) {
 // 처음 열 때 트리 전체를 화면 세로 가운데에 두기 위한 위쪽 여백 (펼쳐도 같은 값을 유지해 노드 위치가 튀지 않게 한다)
 let treeMargin = 0;
 function drawTree(base) {
+  path.forEach(p => { if (!treeOpen.has(p)) treeOpen.set(p, true); });   // 현재 경로에 있는 노드들은 펼친 상태로 시작한다
   const total = base.v[year] || 1, flat = [];
   const animate = treeBase === base;      // 같은 칸에서 펼치거나 접을 때만 애니메이션
   treeBase = base;
@@ -757,7 +758,7 @@ function drawTree(base) {
     const t = e.target.closest("[data-act]"); if (!t) return;
     const L = flat[+t.closest(".tn").dataset.i];
     if (L.d === 0) {   // 맨 위 노드를 누르면: 최상위(총지출)면 펼친 가지를 모두 접고 처음 모습으로, 하위 단계에 있으면 한 단계 위로 올라간다
-      if (path.length > 0) { treeOpen.clear(); treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null; jump(path.length - 1); return; }
+      if (path.length > 0) { treeOpen.clear(); treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null; jump(0); return; }
       treeOpen.clear(); treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null;
       render(); return;
     }
@@ -767,7 +768,7 @@ function drawTree(base) {
       treeFollow = L.moreOf || L.n;   // 펼치기·접기 중에는 그 자리를 화면 가운데로 따라간다
       treeKeep = { top: box.scrollTop, left: box.scrollLeft };   // 지금 보고 있던 세로 위치 (새 칸은 0에서 시작하므로 여기서 이어 간다)
       render();
-    } else { enterAnim = false; path = [...path, ...L.rel]; syncUrl(true); render(); }
+    } else { enterAnim = false; path = [...L.rel]; syncUrl(true); render(); }
   };
   // 마우스로 끌면 화면이 같이 움직인다. 살짝 끌어서 생긴 클릭은 무시한다
   let drag = null;
