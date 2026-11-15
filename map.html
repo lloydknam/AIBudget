@@ -628,7 +628,6 @@ function render() {
 /* ---------- 트리 보기: 현재 칸 아래를 가로 계통도로 (첨부 스타일) ---------- */
 const TREE_COL = 230, TREE_ROW = 40, TREE_PADL = 62, TREE_TOP = 24, TREE_MAX = Infinity, TREE_OPEN = 1;   // TREE_MAX: 한 번에 보일 하위 수(제한 없음)   // TREE_OPEN: 처음 펼쳐 둘 단계 수
 const TREE_PAL = ["#7cc4ff", "#5fe3a1", "#c9a7ff", "#ffc27a", "#ff8fa3", "#8ef0e6"];
-let treeCloseFocus = null;   // 세부사업 카드를 닫을 때 방금 닫은 노드를 기억해, 다시 그릴 때 그 노드와 상위 단위사업이 보이도록 한다
 let treeOpen = new Map(), treeAll = new Set(), treeSeen = new Set(), treeBase = null, treeKeep = null, treeYOf = new Map(), treeDepthOf = new Map(), treeShift = 0, treeSeqNext = 0, treeSuppress = false, treeGhost = null, treeFollow = null, treeTween = 0;
 const TREE_ID = new WeakMap(); let treeIdSeq = 0;
 const treeIdOf = n => { if (!TREE_ID.has(n)) TREE_ID.set(n, ++treeIdSeq); return TREE_ID.get(n); };
@@ -837,14 +836,6 @@ function drawTree(base) {
     treeMargin = Math.max(0, Math.round(H0 / 2 - cc));
     svg.style.marginTop = treeMargin + "px";
     box.scrollTop = Math.max(0, cc + treeMargin - H0 / 2);
-    const cfz = treeCloseFocus && treeCloseFocus.until > Date.now() ? flat.find(L => L.n === treeCloseFocus.n && !L.more) : null;   // 닫은 직후 몇 번 다시 그려져도 같은 자리를 유지한다
-    const cf = cfz;
-    if (cf) {   // 세부사업 카드를 닫은 뒤: 방금 닫은 노드와 그 상위 단위사업 노드가 화면 가운데에 오도록 한다
-      const xs = [cf.x, cf.par ? cf.par.x : cf.x], W = box.clientWidth;
-      const wantX = (Math.min(...xs) + Math.max(...xs)) / 2 - W / 2;
-      box.scrollLeft = Math.max(0, Math.min(wantX, box.scrollWidth - W));
-      box.scrollTop = Math.max(0, Math.min(cf.y + treeMargin - H0 / 2, box.scrollHeight - H0));
-    }
   }
 }
 
@@ -996,7 +987,7 @@ function drawDetail(n) {
     box.scrollTo({ top: first ? first.offsetTop - 12 : card.offsetTop - 6, behavior: reduced() ? "auto" : "smooth" });
   };
   box.querySelector(".go-title").onclick = () => goDesc(null);
-  box.querySelector(".dclose").onclick = () => { treeCloseFocus = { n: path[path.length - 1], until: Date.now() + 1500 }; jump(path.length - 1); };   // 닫기: 한 단계 위(상위 목록)로 돌아가며, 방금 닫은 노드와 상위 노드가 보이도록 한다
+  box.querySelector(".dclose").onclick = () => jump(path.length - 1);   // 닫기: 한 단계 위(상위 목록)로 돌아간다
   box.querySelectorAll("[data-item]").forEach(el => {
     el.onclick = () => goDesc(el.dataset.item);
     el.onkeydown = e => { if (e.key === "Enter") goDesc(el.dataset.item); };
