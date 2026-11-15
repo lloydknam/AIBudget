@@ -109,8 +109,8 @@ button{font:inherit;color:inherit}
 .tree{cursor:grab;user-select:none;-webkit-user-select:none}
 .tree.dragging{cursor:grabbing}
 /* 트리 펼치기: 새로 나온 가지는 부모 쪽에서 오른쪽으로 미끄러지듯 나타난다 (fill backwards: 평소 강조 상태를 건드리지 않음) */
-.tree .tn.in{animation:tFade .46s ease 1.38s backwards}
-.tree .lk.in{animation:lIn 1.38s ease backwards}
+.tree .tn.in{animation:tFade .35s ease 1.06s backwards}
+.tree .lk.in{animation:lIn 1.06s ease backwards}
 .tree .tn.out{animation:tOut 1.2s ease forwards !important;pointer-events:none}
 .tree .lk.out{animation:lOut 1.2s ease forwards !important;pointer-events:none}
 @keyframes tOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(-26px)}}
@@ -625,7 +625,7 @@ const treeIdOf = n => { if (!TREE_ID.has(n)) TREE_ID.set(n, ++treeIdSeq); return
 function isOpen(n, d) { return treeOpen.has(n) ? treeOpen.get(n) : d < TREE_OPEN; }
 // 가지가 자라는 시간(1.8초)에 맞춰 화면을 부드럽게 옮긴다. 사용자가 끌기 시작하면 멈춘다
 function treeScrollTween(box, from, to, fromX = 0, toX = 0) {
-  const id = ++treeTween, t0 = performance.now(), dur = 1385;
+  const id = ++treeTween, t0 = performance.now(), dur = 1065;
   box.scrollTop = from; box.scrollLeft = fromX;   // 지금 보고 있는 자리에서 출발한다
   const ease = p => 1 - Math.pow(1 - p, 3);   // 가지가 자라는 속도(빠르게 출발)와 맞춘다
   const step = t => {
