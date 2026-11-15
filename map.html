@@ -812,7 +812,10 @@ function drawTree(base) {
       : down ? khi - H * 0.7 : klo - H * 0.3;
     // 가로: 하위 노드 열의 가운데가 화면 가운데에 오도록
     const W = box.clientWidth, kidX = ks[0].x;
-    const wantX = Math.max(0, Math.min(kidX - W / 2, box.scrollWidth - W));
+    // 하위 노드를 가운데에 두되, 부모 노드(왼쪽 라벨 포함)와 새 노드가 모두 화면 안에 남도록 가로 범위를 제한한다
+    let wantX = Math.min(kidX - W / 2, f.x - 60);
+    wantX = Math.max(wantX, kidX + 40 - W);
+    wantX = Math.max(0, Math.min(wantX, box.scrollWidth - W));
     const from = (treeKeep ? treeKeep.top : 0) + shiftDelta, fromX = treeKeep ? treeKeep.left : 0;   // 자라기 전 보던 자리에서 이어서 움직인다
     treeKeep = null;
     treeScrollTween(box, from, Math.max(0, Math.min(want, box.scrollHeight - H)), fromX, wantX);
