@@ -19,8 +19,17 @@
 :root{color-scheme:dark;--bg:#0a0c10;--card:#0e1217;--ink:#fff;--sub:#8a909c;--line:#20252d;--accent:#28cc95;--warn:#ff8a3d;--ok:#28cc95;--note-bg:#11161c;--note-ink:#9aa1ad}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Pretendard Variable",Pretendard,system-ui,-apple-system,"Malgun Gothic",sans-serif}
-header{padding:16px 16px 8px;max-width:960px;margin:auto;display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px}
-header .brand{flex:none}
+/* 헤더: 예산 지도 페이지와 같은 모양 (제목·아이콘·검색창) */
+.brand{flex:none;display:flex;align-items:center;gap:9px;padding:8px 0 0;text-decoration:none;color:inherit}
+.brand img{width:30px;height:30px;border-radius:50%;object-fit:cover;border:1.5px solid var(--line)}
+.brand b{font-size:17px;font-weight:800;letter-spacing:-.04em}
+.brand b em{font-style:normal;color:var(--accent)}
+.brand span{font-size:13px;font-weight:700;background:linear-gradient(90deg,#f0527f,#b56cf0 55%,#4c8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ghead{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:6px 0 2px;margin-left:-6px}
+.ghead .brand{flex:none;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
+.ghead .brand img{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--line)}
+.ghead h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.04em;line-height:1.1;white-space:nowrap}
+.ghead h1 em{font-style:normal;color:var(--accent)}
 .hsearch{position:relative;flex:0 1 340px;width:340px;max-width:100%;min-width:0}
 .hsearch::before{content:"";position:absolute;left:15px;top:50%;width:12px;height:12px;margin-top:-7px;border:2px solid var(--accent);border-radius:50%;pointer-events:none;z-index:1}
 .hsearch::after{content:"";position:absolute;left:25px;top:calc(50% + 4px);width:6px;height:2px;background:var(--accent);transform:rotate(45deg);transform-origin:left center;pointer-events:none;z-index:1}
@@ -30,13 +39,19 @@ header .brand{flex:none}
 .hsearch input::-webkit-search-cancel-button{display:none}
 .hsearch .clr{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:0;background:var(--line);color:var(--ink);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1}
 @media (max-width:640px){.hsearch{flex:1 1 100%;width:auto}}
+@media (min-width:641px){.ghead .brand img{width:45px;height:45px}.ghead h1{font-size:27px}}
+.head .brand{flex:none}
+@media (max-width:640px){.ghead{flex-wrap:nowrap;gap:10px}.ghead .brand{gap:4px}.ghead .brand img{width:42px;height:42px}.ghead h1{font-size:18px}.hsearch{flex:0 1 160px;width:160px;min-width:0}.hsearch input{height:20px;font-size:12.5px;font-weight:800;letter-spacing:-.04em;padding:0 20px 0 22px}.hsearch::before{left:7px;width:6px;height:6px;margin-top:-3px;border-width:1.5px}.hsearch::after{left:12px;top:calc(50% + 2px);width:3px}}
+@media (max-width:640px){.ghead{padding:3px 0 0}}
+@media (max-width:640px){.ghead h1{font-size:22px}.ghead .brand img{width:50px;height:50px}.hsearch{flex:0 1 118px;width:118px}}
+@media (max-width:640px){.ghead .brand img{width:32px;height:32px}.ghead h1{font-size:18px}.ghead{width:100%;box-sizing:border-box;margin-left:0}.hsearch{flex:1 1 0;width:auto;min-width:0;max-width:none;margin-top:8px}.hsearch input{height:20px;font-size:13px;font-weight:700;letter-spacing:-.02em;padding:0 20px 0 26px}.hsearch::before{left:7px;top:50%;margin-top:-5px;width:8px;height:8px}.hsearch::after{left:14px;top:calc(50% + 2px)}}
+.ghead{padding-top:0}
+.ghead .brand{padding-top:7px}
+@media (max-width:640px){.ghead .brand{padding-top:5px}}
+header.ghead{padding:6px 16px 2px;max-width:960px;margin:auto}
+@media (max-width:640px){header.ghead{padding:0 5px;max-width:none}}
 #gres{position:absolute;top:calc(100% + 6px);left:0;width:min(520px,calc(100vw - 32px));max-height:60vh;overflow:auto;z-index:50;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 14px;box-shadow:0 12px 32px rgba(0,0,0,.35)}
 #gres:empty{display:none}
-h1{font-size:27px;font-weight:800;letter-spacing:-.04em;line-height:1.1;margin:0}
-h1 em{font-style:normal;color:var(--accent)}
-.brand{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit}
-.brand img{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--line)}
-@media (max-width:640px){.brand img{width:46px;height:46px}h1{font-size:20px}}
 .notice{margin:0 auto 16px;max-width:640px;color:var(--note-ink);font-size:12.5px;line-height:1.6;word-break:keep-all}
 nav{flex:none;display:flex;gap:22px;align-items:center;overflow-x:auto;padding:6px 0;border-bottom:1px solid var(--line);max-width:960px;margin:0 auto 2px;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
@@ -117,7 +132,7 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 </style>
 </head>
 <body>
-<header>
+<header class="ghead">
   <a class="brand" href="map.html"><img src="assets/clerk.jpg" alt="클사무관" width="56" height="56">
     <h1>클사무관의 <em>예산 네비</em></h1></a>
   <div class="hsearch" role="search">
