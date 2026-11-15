@@ -631,9 +631,7 @@ function render() {
 
   // 출처
   const avg = change(ROOT, year);
-  const TOPS = children(ROOT, year);
-  $("src").innerHTML = avg == null ? `${year}년은 비교할 전년 자료가 없습니다`
-    : `<span class="sc">${(path.length ? [path[0]] : TOPS).map(t => `<i style="background:${TREE_PAL[Math.max(0, TOPS.indexOf(t)) % TREE_PAL.length]}"></i>`).join("")}</span><span>${path.length ? esc(path[0].name) : "부처별 색"}</span>`;
+  $("src").innerHTML = avg == null ? `${year}년은 비교할 전년 자료가 없습니다` : "";   // 색 범례는 두지 않는다
 }
 
 /* ---------- 트리 보기: 현재 칸 아래를 가로 계통도로 (첨부 스타일) ---------- */
