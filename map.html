@@ -660,7 +660,7 @@ function treeScrollTween(box, from, to, fromX = 0, toX = 0) {
   if (reduced()) { box.scrollTop = to; box.scrollLeft = toX; } else requestAnimationFrame(step);
 }
 // 처음 열 때 트리 전체를 화면 세로 가운데에 두기 위한 위쪽 여백 (펼쳐도 같은 값을 유지해 노드 위치가 튀지 않게 한다)
-let treeMargin = 0, treeFocus = null;
+let treeMargin = 0, treeFocus = null, treeSnap = null, restoreTree = null;
 function drawTree(base) {
   path.forEach(p => { if (!treeOpen.has(p)) treeOpen.set(p, true); });   // 현재 경로에 있는 노드들은 펼친 상태로 시작한다
   const total = base.v[year] || 1, flat = [];
@@ -781,7 +781,11 @@ function drawTree(base) {
       treeFollow = L.moreOf || L.n;   // 펼치기·접기 중에는 그 자리를 화면 가운데로 따라간다
       treeKeep = { top: box.scrollTop, left: box.scrollLeft };   // 지금 보고 있던 세로 위치 (새 칸은 0에서 시작하므로 여기서 이어 간다)
       render();
-    } else { enterAnim = false; path = [...L.rel]; syncUrl(true); render(); }
+    } else {
+      // 트리에서 세부사업을 열 때 지금 트리의 경로·세로/가로 위치·위쪽 여백을 기억해 두고, 닫으면 그대로 되돌린다
+      treeSnap = { path: [...path], top: box.scrollTop, left: box.scrollLeft, margin: treeMargin };
+      enterAnim = false; path = [...L.rel]; syncUrl(true); render();
+    }
   };
   // 마우스로 끌면 화면이 같이 움직인다. 살짝 끌어서 생긴 클릭은 무시한다
   let drag = null;
@@ -858,6 +862,11 @@ function drawTree(base) {
     treeKeep = null;
     treeScrollTween(box, from, Math.max(0, Math.min(want, box.scrollHeight - H)), fromX, wantX);
     treeFollow = null;
+  } else if (restoreTree && restoreTree.path.length === path.length && restoreTree.path.every((x, i) => x === path[i])) {
+    // 세부사업을 닫으면: 열기 전과 같은 자리(세로·가로)로 돌아간다
+    const s = restoreTree; restoreTree = null;
+    treeMargin = s.margin; svg.style.marginTop = treeMargin + "px";
+    box.scrollTop = s.top; box.scrollLeft = s.left;
   } else {   // 처음에는 트리 전체의 세로 가운데가 화면 가운데에 오도록 (트리가 화면보다 짧으면 위쪽 여백으로 맞춘다)
     const ysAll = flat.map(L => L.y), cc = (Math.min(...ysAll) + Math.max(...ysAll)) / 2, H0 = box.clientHeight;
     treeMargin = Math.max(0, Math.round(H0 / 2 - cc));
@@ -1022,7 +1031,10 @@ function drawDetail(n) {
     box.scrollTo({ top: first ? first.offsetTop - 12 : card.offsetTop - 6, behavior: reduced() ? "auto" : "smooth" });
   };
   box.querySelector(".go-title").onclick = () => goDesc(null);
-  box.querySelector(".dclose").onclick = () => jump(path.length - 1);   // 닫기: 한 단계 위(상위 목록)로 돌아간다
+  box.querySelector(".dclose").onclick = () => {
+    if (treeSnap && mode === "tree") { restoreTree = treeSnap; treeSnap = null; }   // 트리에서 열었던 세부사업이면 트리를 열기 전 모습으로
+    jump(path.length - 1);
+  };   // 닫기: 한 단계 위(상위 목록)로 돌아간다
   box.querySelectorAll("[data-item]").forEach(el => {
     el.onclick = () => goDesc(el.dataset.item);
     el.onkeydown = e => { if (e.key === "Enter") goDesc(el.dataset.item); };
