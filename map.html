@@ -98,7 +98,7 @@ button{font:inherit;color:inherit}
 .tree .lk{fill:none;stroke-linecap:round;transition:opacity .2s,stroke .2s}
 .tree .tn circle{transition:fill .2s,stroke .2s}
 .tree .tn text{font-size:13px;font-weight:600;fill:var(--ink);paint-order:stroke;stroke:var(--card);stroke-width:4px;stroke-linejoin:round;cursor:pointer;font-family:inherit}
-.tree .tn text.am{font-size:12px;font-weight:400;fill:var(--sub);font-variant-numeric:tabular-nums}
+.tree .tn text.am{font-size:12px;font-weight:600;fill:#facc15;font-variant-numeric:tabular-nums}
 .tree .tn text.more{fill:var(--sub);font-weight:500}
 .tree svg.hl .lk{opacity:.16}
 .tree svg.hl .lk.on{opacity:1;stroke:var(--accent)}
@@ -708,7 +708,7 @@ function drawTree(base) {
     const dash = moreNode ? ' stroke-dasharray="3 3"' : "";
     // 중간 노드: 점의 왼쪽 위 / 끝단: 점의 오른쪽 (글자가 가지와 겹치지 않게)
     const tx = internal ? L.x - 12 : L.x + 12, anchor = internal ? "end" : "start";
-    const ny = internal ? L.y - 9 : L.y - 2, ay = internal ? L.y + 5 : L.y + 13;
+    const ny = internal ? L.y - 4 : L.y - 2, ay = internal ? L.y + 5 : L.y + 13;
     const name = moreNode ? `외 ${L.more}개 더 보기` : L.n.name;
     nodes.push(`<g class="tn${fresh(L) ? " in" : ""}" data-k="${posKey(L)}" data-d="${L.d}" data-i="${L.id}" role="button" tabindex="0">` +
       `<circle data-act="toggle" cx="${L.x}" cy="${L.y}" r="${r}" fill="${fill}" stroke="${c}" stroke-width="2"${dash}/>` +
