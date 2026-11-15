@@ -104,6 +104,8 @@ footer .lab img{display:block;height:48px;width:auto;max-width:100%}
 #seriesModal .pop-h button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer;font-weight:700}
 #seriesModal svg{width:100%;height:auto;display:block}
 #seriesModal table{margin-top:10px}
+/* 모바일 표: 좌우 여백을 줄이고 금액·비중·증감은 한 줄로 고정, 분야명만 단어 단위로 줄바꿈 */
+@media (max-width:640px){main{padding:0 8px 24px}.card{padding:16px 12px}.card h2{font-size:19px}table{font-size:13px}th,td{padding:9px 3px}th:not(:first-child),td:not(:first-child){white-space:nowrap}td:first-child{word-break:keep-all}}
 </style>
 </head>
 <body>
