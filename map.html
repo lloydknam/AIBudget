@@ -792,12 +792,15 @@ function drawTree(base) {
     const f = flat.find(L => L.n === treeFollow && !L.more) || flat[0];
     const H = box.clientHeight, ys = f.kids.map(k => k.y).concat([f.y]);
     const lo = Math.min(...ys), hi = Math.max(...ys), down = (hi - f.y) >= (f.y - lo);
+    // 카메라는 새로 펼쳐진 하위 노드들의 가운데에 맞춘다 (접을 때는 접힌 노드 자체가 가운데)
+    const ks = f.kids.length ? f.kids : [f];
+    const klo = Math.min(...ks.map(k => k.y)), khi = Math.max(...ks.map(k => k.y));
     // 가지가 화면보다 길면 자라는 끝(tip)이 화면 안에 남도록: 아래로 자라면 끝을 아래쪽에, 위로 자라면 위쪽에 둔다
-    const want = hi - lo <= H * 0.8 ? (lo + hi) / 2 - H / 2
-      : down ? hi - H * 0.7 : lo - H * 0.3;
-    // 가로: 새 가지는 오른쪽 열에 자라므로, 부모와 새 가지의 가운데가 보이도록 옆으로도 따라간다
-    const W = box.clientWidth, kidX = f.kids.length ? Math.max(...f.kids.map(k => k.x)) : f.x;
-    const wantX = Math.max(0, Math.min((f.x + kidX) / 2 - W / 2, box.scrollWidth - W));
+    const want = khi - klo <= H * 0.8 ? (klo + khi) / 2 - H / 2
+      : down ? khi - H * 0.7 : klo - H * 0.3;
+    // 가로: 하위 노드 열의 가운데가 화면 가운데에 오도록
+    const W = box.clientWidth, kidX = ks[0].x;
+    const wantX = Math.max(0, Math.min(kidX - W / 2, box.scrollWidth - W));
     const from = (treeKeep ? treeKeep.top : 0) + shiftDelta, fromX = treeKeep ? treeKeep.left : 0;   // 자라기 전 보던 자리에서 이어서 움직인다
     treeKeep = null;
     treeScrollTween(box, from, Math.max(0, Math.min(want, box.scrollHeight - H)), fromX, wantX);
