@@ -941,8 +941,14 @@ function drawChildren(parent) {
   box.style.cssText = `inset:auto;left:${(SW - W) / 2}px;top:${(SH - H) / 2}px;width:${W}px;height:${H}px`;
   // 글자가 안 들어가는 작은 칸이 있으면, 오른쪽 여백에 꺾은선으로 라벨을 붙인다
   const probe = squarify(kids.map(k => k.v[year]), W, H);
-  const fits = (w, h) => w >= 44 && h >= 22;
-  const hasSmall = probe.some(([, , w, h]) => !fits(w, h));
+  // 이름이 칸 안에 두 줄 안으로 들어가는지 추정한다 (한 글자 약 13px). 안 들어가면 꺾은선 라벨로 뺀다
+  const fitsText = (k, w, h) => {
+    if (!(w >= 44 && h >= 22)) return false;
+    const perLine = Math.max(1, Math.floor((w - 8) / 13));
+    const lines = Math.ceil([...k.name].length / perLine);
+    return lines <= 2 && lines * 16 + 6 <= h - 4;
+  };
+  const hasSmall = probe.some(([, , w, h], i) => !fitsText(kids[i], w, h));
   const G = hasSmall ? Math.min(112, Math.round(W * 0.28)) : 0, MW = W - G;
   const rects = G ? squarify(kids.map(k => k.v[year]), MW, H) : probe;
   const small = [];
@@ -954,14 +960,14 @@ function drawChildren(parent) {
     b.className = "tile" + (big ? " big" : "") + (w < 22 || h < 18 ? " tiny" : w < 70 || h < 46 ? " mid" : "");
     b.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;background:${colorOfPath([...path, k])};color:#0a0c10`;
     b.setAttribute("aria-label", `${k.name}${k.sub ? " " + k.sub : ""} ${money(k.v[year])}원 ${pctTxt(p)}`);
-    if (w >= 44 && h >= 22) {
+    if (fitsText(k, w, h)) {
       let html = `<b>${esc(k.name)}</b>`;
       if (h >= 40 && w >= 60) html += `<span>${money(k.v[year])}${w >= 110 && p != null ? " " + pctTxt(p) : ""}</span>`;
       if (h >= 62 && w >= 110 && k.sub) html += `<span>${esc(k.sub)}</span>`;
       b.innerHTML = html;
     }
     // 글자가 없는 작은 칸: 누르면 말풍선, 말풍선을 다시 누르면 들어간다
-    if (!fits(w, h)) {
+    if (!fitsText(k, w, h)) {
       b.onclick = () => showBubble(k, b, box, W, H);
       small.push({ k, x, y, w, h, el: b });
     } else {
@@ -996,7 +1002,7 @@ function drawChildren(parent) {
       dot.innerHTML = `<b>${esc(c.k.name)}</b><span>${money(c.k.v[year])}${p != null ? " · " + pctTxt(p) : ""}</span>`;
       dot.onclick = () => drill(c.k);
       box.appendChild(dot);
-      return { cx, cy, sx: c.x + c.w, dot, h: Math.max(30, dot.getBoundingClientRect().height), y: 0 };
+      return { cx, cy, dot, h: Math.max(30, dot.getBoundingClientRect().height), y: 0 };
     }).sort((p, q) => p.cy - q.cy);
     let y = 0;
     items.forEach(it => { it.y = Math.max(it.cy - it.h / 2, y); y = it.y + it.h + 4; });
@@ -1004,14 +1010,14 @@ function drawChildren(parent) {
     for (let i = items.length - 1; i >= 0; i--) { const it = items[i]; it.y = Math.min(it.y, limit - it.h); limit = it.y - 4; }
     items.forEach(it => {
       it.dot.style.top = it.y + "px";
-      // 선은 칸의 오른쪽 가장자리에서 시작해 라벨까지 간다. 칸 위에 그려서 어느 칸의 라벨인지 보이게 하고, 어두운 바탕선을 깔아 대비를 준다
-      const pts = `${it.sx},${it.cy} ${MW + 8},${it.y + it.h / 2}`;
+      // 선은 칸의 안쪽 중심에서 시작해 라벨까지 간다. 칸 위에 그려서 어느 칸의 라벨인지 보이게 하고, 어두운 바탕선을 깔아 대비를 준다
+      const pts = `${it.cx},${it.cy} ${MW + 8},${it.y + it.h / 2}`;
       const halo = document.createElementNS(NS, "polyline");
       halo.setAttribute("points", pts); halo.setAttribute("class", "halo");
       const line = document.createElementNS(NS, "polyline");
       line.setAttribute("points", pts);
       const dotc = document.createElementNS(NS, "circle");
-      dotc.setAttribute("cx", it.sx); dotc.setAttribute("cy", it.cy); dotc.setAttribute("r", "2.6"); dotc.setAttribute("class", "ldot");
+      dotc.setAttribute("cx", it.cx); dotc.setAttribute("cy", it.cy); dotc.setAttribute("r", "2.6"); dotc.setAttribute("class", "ldot");
       svg.appendChild(halo); svg.appendChild(line); svg.appendChild(dotc);
     });
     box.appendChild(svg);
