@@ -656,7 +656,14 @@ function render() {
 const TREE_COL = 230, TREE_ROW = 40, TREE_PADL = 62, TREE_TOP = 24, TREE_MAX = Infinity, TREE_OPEN = 1;
 const TREE_SUB_GAP = 0.7;   // 단위사업→세부사업(d=5) 가지 길이 비율: 나머지보다 30% 짧게
 // 열의 가로 위치: 세부사업 열(d=5)로 들어가는 가지만 짧게 한다
-const treeColX = d => { let x = TREE_PADL; for (let k = 1; k <= d; k++) x += (k === 5 ? TREE_SUB_GAP : 1) * TREE_COL; return x; };   // TREE_MAX: 한 번에 보일 하위 수(제한 없음)   // TREE_OPEN: 처음 펼쳐 둘 단계 수
+// 가지 길이(단계 사이 간격)를 단계 이름으로 정한다. PC: 단위사업→세부사업 가지를 20% 줄임 / 모바일: 프로그램→단위사업 가지를 20% 줄임
+const treeStep = k => {
+  const nm = LEVELS()[k - 1], narrow = matchMedia("(max-width:640px)").matches;
+  if (nm === "세부사업") return narrow ? TREE_SUB_GAP : TREE_SUB_GAP * 0.8;
+  if (nm === "단위사업" && narrow) return 0.8;
+  return 1;
+};
+const treeColX = d => { let x = TREE_PADL; for (let k = 1; k <= d; k++) x += treeStep(k) * TREE_COL; return x; };   // TREE_MAX: 한 번에 보일 하위 수(제한 없음)   // TREE_OPEN: 처음 펼쳐 둘 단계 수
 const TREE_PAL = ["#7cc4ff", "#5fe3a1", "#c9a7ff", "#ffc27a", "#ff8fa3", "#8ef0e6"];
 // 같은 가지 안에서는 색조(부처 색)를 유지하고, 형제마다 명도만 달리한다 (흰색/검정 섞기 4단계, 순서대로 돌려 쓴다)
 const TREE_TONES = [0, 0.3, -0.25, 0.55];
