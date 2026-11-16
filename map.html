@@ -210,7 +210,7 @@ body.tree-mode .crumb{display:none}
 .detail .dbody .part{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
 .detail .dbody .hit{background:rgba(40,204,149,.12);box-shadow:inset 3px 0 0 var(--accent);padding:2px 6px;margin:4px -6px;border-radius:6px}
 /* 하단 */
-.foot{flex:none;display:flex;flex-direction:column;align-items:center;gap:12px;font-size:12px;color:var(--sub);padding:28px 2px 48px}
+.foot{flex:none;display:flex;flex-direction:column;align-items:center;gap:12px;font-size:12px;color:var(--sub);padding:6px 2px 48px}
 .foot .lab img{display:block;height:34px;width:auto}
 .foot .hits{display:inline-block;line-height:0}.foot .hits img{height:15px;width:auto}
 .foot .src{display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
@@ -255,7 +255,7 @@ body.tree-mode .crumb{display:none}
 @media (max-width:640px){.top{padding:3px 0 4px}}
 @media (max-width:640px){.foot .lab img{height:27px}}
 #back{white-space:nowrap}.bar button span{white-space:nowrap}
-@media (min-width:641px){.stage{height:max(300px,calc((100dvh - 200px) * .8))}}
+@media (min-width:641px){.stage{height:max(300px,calc((100dvh - 200px) * .8 + 22px))}}   /* PC: 로고 위 여백 22px를 줄인 만큼 박스를 키운다 */
 /* 모바일 하단 메뉴: 한 줄. 분야·회계기금·부처 | [지도 목록 트리] 토글 | 뒤로 */
 @media (max-width:640px){
   .bar{display:flex;align-items:center;gap:4px;margin:0;padding:6px 6px 6px;border-top:1px solid var(--line)}
