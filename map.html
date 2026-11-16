@@ -690,7 +690,7 @@ function treeScrollTween(box, from, to, fromX = 0, toX = 0) {
   if (reduced()) { box.scrollTop = to; box.scrollLeft = toX; } else requestAnimationFrame(step);
 }
 // 처음 열 때 트리 전체를 화면 세로 가운데에 두기 위한 위쪽 여백 (펼쳐도 같은 값을 유지해 노드 위치가 튀지 않게 한다)
-let treeMargin = 0, treeFocus = null, treeSnap = null, restoreTree = null;
+let treeMargin = 0, treeFocus = null, treeSnap = null, restoreTree = null, treeLastRel = null;   // treeLastRel: 트리에서 마지막으로 펼친(또는 접은) 사업의 경로 — 다른 뷰로 바꿀 때 그 레벨을 잇는다
 function drawTree(base) {
   path.forEach(p => { if (!treeOpen.has(p)) treeOpen.set(p, true); });   // 현재 경로에 있는 노드들은 펼친 상태로 시작한다
   const total = base.v[year] || 1, flat = [];
@@ -807,7 +807,12 @@ function drawTree(base) {
       render(); return;
     }
     if (t.dataset.act === "toggle") {
-      if (L.moreOf) treeAll.add(L.moreOf); else treeOpen.set(L.n, !isOpen(L.n, L.d));
+      if (L.moreOf) treeAll.add(L.moreOf);
+      else {
+        const opened = !isOpen(L.n, L.d);
+        treeOpen.set(L.n, opened);
+        treeLastRel = opened ? [...L.rel] : L.rel.slice(0, -1);   // 펼치면 그 사업, 접으면 한 단계 위
+      }
       treeGhost = box.querySelector("svg") ? box.querySelector("svg").cloneNode(true) : null;
       treeFollow = L.moreOf || L.n;   // 펼치기·접기 중에는 그 자리를 화면 가운데로 따라간다
       treeKeep = { top: box.scrollTop, left: box.scrollLeft };   // 지금 보고 있던 세로 위치 (새 칸은 0에서 시작하므로 여기서 이어 간다)
@@ -1193,13 +1198,15 @@ addEventListener("popstate", () => {
   if (want && !(path.length === want.length && path.every((n, i) => n === want[i]))) { path = want; syncUrl(true); }
   enterAnim = true; render();
 });
-$("vMap").onclick = () => { setMode("map"); enterAnim = true; render(); };
+// 트리에서 다른 뷰로 바꿀 때: 트리에서 마지막으로 펼친 사업의 레벨을 그대로 이어 간다
+function leaveTree() { if (mode === "tree" && treeLastRel) { path = treeLastRel; syncUrl(true); } treeLastRel = null; }
+$("vMap").onclick = () => { leaveTree(); setMode("map"); enterAnim = true; render(); };
 $("vTree").onclick = () => {   // 트리로 바꾸면 지금 보던 사업을 검색 결과처럼 화면 가운데에 둔다 (엄마 노드는 이미 펼쳐진다)
   setMode("tree"); enterAnim = false;
   if (path.length && !cur().leaf) { treeFocus = cur(); treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null; treeKeep = null; }
   render();
 };
-$("vList").onclick = () => { setMode("list"); enterAnim = true; render(); };
+$("vList").onclick = () => { leaveTree(); setMode("list"); enterAnim = true; render(); };
 
 // 화면 크기가 바뀌면 지도를 다시 짠다
 let rt = null, lastW = innerWidth, lastH = innerHeight;
