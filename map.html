@@ -141,7 +141,9 @@ body.tree-mode .crumb{display:none}
 .rowbtn .rbar i{display:block;height:100%;background:var(--sub)}
 /* 작은 칸 라벨 (오른쪽 여백) · 말풍선 */
 .map svg.lead{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-.map svg.lead polyline{fill:none;stroke:var(--ink);stroke-width:1.3;opacity:.7}
+.map svg.lead polyline{fill:none;stroke:var(--ink);stroke-width:1.3;opacity:.85}
+.map svg.lead polyline.halo{stroke:#0a0c10;stroke-width:3.4;opacity:.55}
+.map svg.lead circle.ldot{fill:var(--ink);stroke:#0a0c10;stroke-width:1}
 .callout{position:absolute;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:var(--ink);font-size:10px;line-height:1.3;word-break:keep-all}
 .callout b{display:block;font-size:10.5px;font-weight:700;word-break:keep-all;overflow-wrap:anywhere}
 .callout span{display:block;white-space:nowrap;font-size:9.5px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -285,10 +287,11 @@ body.tree-mode .crumb{display:none}
 @media (max-width:640px){.ghead .brand{padding-top:5px}}
 /* 실험 중 표시(위첨자 플라스크) */
 .flask{display:inline-block;vertical-align:super;line-height:0;margin-left:1px;font-size:0}.flask svg{display:inline-block;vertical-align:baseline}
-/* 지도 칸의 사업명: 트리와 같은 흰색·굵기, 글자 뒤에 어두운 배경 상자 (삼성 번짐 방지) */
-.tile b{display:inline;color:#fff;line-height:1.5;font-weight:600;background:rgba(10,12,16,.55);border-radius:2px;padding:0 3px;margin-left:-3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
-/* 지도 칸의 금액: 트리와 같은 노란색 글자 + 어두운 배경 상자 */
-.tile span{display:inline-block;max-width:100%;vertical-align:top;color:#facc15;font-weight:600;background:rgba(10,12,16,.55);border-radius:2px;padding:0 3px;margin-left:-3px;opacity:1}
+/* 지도 칸의 사업명: 흰색 글자 + 글자 그림자 (배경 상자 없음) */
+.tile b{display:inline;color:#fff;font-weight:600;line-height:1.35;background:none;padding:0;margin-left:0;text-shadow:0 1px 2px rgba(0,0,0,.85),0 0 4px rgba(0,0,0,.6)}
+/* 지도 칸의 금액: 노란색 글자 + 글자 그림자 (회색 상자 없음), 이름과 같은 줄이면 간격을 둔다 */
+.tile span{display:inline-block;max-width:100%;vertical-align:top;color:#facc15;font-weight:600;background:none;padding:0;margin-left:0;text-shadow:0 1px 2px rgba(0,0,0,.85),0 0 4px rgba(0,0,0,.6)}
+.tile b + span{margin-left:6px}
 </style>
 </head>
 <body>
@@ -993,7 +996,7 @@ function drawChildren(parent) {
       dot.innerHTML = `<b>${esc(c.k.name)}</b><span>${money(c.k.v[year])}${p != null ? " · " + pctTxt(p) : ""}</span>`;
       dot.onclick = () => drill(c.k);
       box.appendChild(dot);
-      return { cx, cy, dot, h: Math.max(30, dot.getBoundingClientRect().height), y: 0 };
+      return { cx, cy, sx: c.x + c.w, dot, h: Math.max(30, dot.getBoundingClientRect().height), y: 0 };
     }).sort((p, q) => p.cy - q.cy);
     let y = 0;
     items.forEach(it => { it.y = Math.max(it.cy - it.h / 2, y); y = it.y + it.h + 4; });
@@ -1001,11 +1004,17 @@ function drawChildren(parent) {
     for (let i = items.length - 1; i >= 0; i--) { const it = items[i]; it.y = Math.min(it.y, limit - it.h); limit = it.y - 4; }
     items.forEach(it => {
       it.dot.style.top = it.y + "px";
+      // 선은 칸의 오른쪽 가장자리에서 시작해 라벨까지 간다. 칸 위에 그려서 어느 칸의 라벨인지 보이게 하고, 어두운 바탕선을 깔아 대비를 준다
+      const pts = `${it.sx},${it.cy} ${MW + 8},${it.y + it.h / 2}`;
+      const halo = document.createElementNS(NS, "polyline");
+      halo.setAttribute("points", pts); halo.setAttribute("class", "halo");
       const line = document.createElementNS(NS, "polyline");
-      line.setAttribute("points", `${it.cx},${it.cy} ${MW + 8},${it.y + it.h / 2}`);
-      svg.appendChild(line);
+      line.setAttribute("points", pts);
+      const dotc = document.createElementNS(NS, "circle");
+      dotc.setAttribute("cx", it.sx); dotc.setAttribute("cy", it.cy); dotc.setAttribute("r", "2.6"); dotc.setAttribute("class", "ldot");
+      svg.appendChild(halo); svg.appendChild(line); svg.appendChild(dotc);
     });
-    box.insertBefore(svg, box.firstChild);
+    box.appendChild(svg);
   }
   stage.appendChild(box);
 }
