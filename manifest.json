@@ -1,6 +1,6 @@
 {
-  "name": "클사무관의 예산 네비",
-  "short_name": "예산 네비",
+  "name": "클사무관의 예산 프리즘",
+  "short_name": "예산 프리즘",
   "lang": "ko",
   "start_url": "./index.html",
   "scope": "./",
