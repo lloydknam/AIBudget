@@ -256,6 +256,8 @@ body.tree-mode .crumb{display:none}
 @media (max-width:640px){.foot .lab img{height:27px}}
 #back{white-space:nowrap}.bar button span{white-space:nowrap}
 @media (min-width:641px){.stage{height:max(300px,calc((100dvh - 200px) * .8 + 22px))}}   /* PC: 로고 위 여백 22px를 줄인 만큼 박스를 키운다 */
+/* PC 트리 보기: 박스 높이를 15% 키운다 */
+@media (min-width:641px){body.tree-mode .stage{height:max(345px,calc(((100dvh - 200px) * .8 + 22px) * 1.15))}}
 /* 모바일 하단 메뉴: 한 줄. 분야·회계기금·부처 | [지도 목록 트리] 토글 | 뒤로 */
 @media (max-width:640px){
   .bar{display:flex;align-items:center;gap:4px;margin:0;padding:6px 6px 6px;border-top:1px solid var(--line)}
