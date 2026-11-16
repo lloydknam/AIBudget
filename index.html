@@ -307,7 +307,7 @@ function descRecText(rec) {
   return out.join("\n");
 }
 // 줄바꿈: ○ ● ※ 같은 항목 표지와 "/ -" 구분을 줄 시작으로 바꾼다 (긴 한 문단을 읽기 좋게)
-const splitLines = s => s.replace(/\s+\/\s+/g, "\n").replace(/\s*\/\s*-\s*/g, "\n- ").replace(/\s*([○●◎■□※▶])\s*/g, "\n$1 ").split("\n").map(x => x.trim()).filter(Boolean);
+const splitLines = s => s.replace(/\s+\/\s+/g, "\n").replace(/\s*\/\s*-\s*/g, "\n- ").replace(/\s*([\u2460-\u2473])\s*/g, "\n$1 ").replace(/\s*([○●◎■□※▶])\s*/g, "\n$1 ").split("\n").map(x => x.trim()).filter(Boolean);
 const linesHTML = s => splitLines(s).map(x => `<p class="${/^- /.test(x) ? "li" : ""}">${esc(x)}</p>`).join("");
 const descBlockHTML = b => {
   if (typeof b === "string") {
@@ -319,8 +319,7 @@ const descBlockHTML = b => {
   if (b && b.tbl) {
     const rows = b.tbl.filter(r => r.some(c => c && c.trim()));
     if (!rows.length) return "";
-    // 표 칸 안의 " / " 는 줄바꿈으로 바꾼다 (항목을 한 줄씩 나눠 읽게)
-    const cellHTML = c => String(c).split(/\s+\/\s+/).map(esc).join("<br>");
+    const cellHTML = c => splitLines(String(c)).map(esc).join("<br>");   // 표 칸도 본문과 같은 줄바꿈 규칙 (/, ○, 번호 항목)
     return `<div class="dtbl"><table>${rows.map((r, i) => `<tr>${r.map(c => i === 0 ? `<th>${esc(c)}</th>` : `<td>${cellHTML(c)}</td>`).join("")}</tr>`).join("")}</table></div>`;
   }
   return "";
