@@ -1194,7 +1194,11 @@ addEventListener("popstate", () => {
   enterAnim = true; render();
 });
 $("vMap").onclick = () => { setMode("map"); enterAnim = true; render(); };
-$("vTree").onclick = () => { setMode("tree"); enterAnim = false; render(); };
+$("vTree").onclick = () => {   // 트리로 바꾸면 지금 보던 사업을 검색 결과처럼 화면 가운데에 둔다 (엄마 노드는 이미 펼쳐진다)
+  setMode("tree"); enterAnim = false;
+  if (path.length && !cur().leaf) { treeFocus = cur(); treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null; treeKeep = null; }
+  render();
+};
 $("vList").onclick = () => { setMode("list"); enterAnim = true; render(); };
 
 // 화면 크기가 바뀌면 지도를 다시 짠다
