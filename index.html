@@ -315,7 +315,9 @@ const descBlockHTML = b => {
   if (b && b.tbl) {
     const rows = b.tbl.filter(r => r.some(c => c && c.trim()));
     if (!rows.length) return "";
-    return `<div class="dtbl"><table>${rows.map((r, i) => `<tr>${r.map(c => i === 0 ? `<th>${esc(c)}</th>` : `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</table></div>`;
+    // 표 칸 안의 " / " 는 줄바꿈으로 바꾼다 (항목을 한 줄씩 나눠 읽게)
+    const cellHTML = c => String(c).split(/\s+\/\s+/).map(esc).join("<br>");
+    return `<div class="dtbl"><table>${rows.map((r, i) => `<tr>${r.map(c => i === 0 ? `<th>${esc(c)}</th>` : `<td>${cellHTML(c)}</td>`).join("")}</tr>`).join("")}</table></div>`;
   }
   return "";
 };
