@@ -194,6 +194,7 @@ body.tree-mode .crumb{display:none}
 .dclose{flex:none;border:2px solid var(--accent);background:transparent;color:var(--accent);font:inherit;font-size:14px;font-weight:800;line-height:1;padding:8px 16px;border-radius:999px;cursor:pointer;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
 .dclose:hover,.dclose:focus-visible{background:var(--accent);color:#04241a;outline:none}
 .rowbtn.go:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.rowbtn.hl{background:var(--card);box-shadow:inset 3px 0 0 var(--accent)}
 .detail .dcard{border-top:1px solid var(--line);padding-top:10px}
 .detail .dbody{font-size:12.5px;line-height:1.6;margin-top:4px}
 .detail .dbody p{margin:3px 0;word-break:keep-all}
@@ -418,6 +419,11 @@ function searchIndex() {
     for (const c of n.kids.values()) {
       const np = [...p, c];
       out.push({ name: c.name, sub: c.sub, path: np, v: c.v, leaf: !!c.leaf, hay: (c.name + " " + c.sub).replace(/\s+/g, "").toLowerCase() });
+      // 내역사업: 세부사업에 딸린 항목. 검색은 내역사업명으로 하고, 결과는 "세부사업명 — 내역사업명"으로 보여준다
+      if (c.leaf && c.raw && NAEYEOK) for (const it of (NAEYEOK[c.raw.ministry + "|" + c.name] || [])) {
+        // 금액은 내역사업 자체 예산(자료는 최신 연도 기준)을 쓴다
+        out.push({ name: it.name, parent: c.name, na: true, sub: "", path: np, v: { [YEARS[YEARS.length - 1]]: it.amt || 0 }, leaf: true, hay: it.name.replace(/\s+/g, "").toLowerCase() });
+      }
       walk(c, np);
     }
   })(ROOT, []);
@@ -427,7 +433,7 @@ function searchHits(text) {
   const key = text.replace(/\s+/g, "").toLowerCase();
   return searchIndex()
     .filter(r => r.v[year] > 0 && r.hay.includes(key))
-    .sort((a, b) => b.v[year] - a.v[year]);
+    .sort((a, b) => (a.na ? 1 : 0) - (b.na ? 1 : 0) || b.v[year] - a.v[year]);   // 세부사업을 먼저, 내역사업은 아래에
 }
 function drawSearch() {
   const hits = searchHits(q), total = hits.length, shown = hits.slice(0, 60);
@@ -440,9 +446,9 @@ function drawSearch() {
       const p = change(r, year), where = r.path.slice(0, -1).map(x => esc(x.name)).join(" › ");
       return `<button class="rowbtn" data-idx="${i}">
         <i class="sw" style="background:${colorOfPath(r.path)}"></i>
-        <span class="nm">${esc(r.name)}${r.sub ? ` <span style="color:var(--sub);font-weight:400;font-size:11.5px">${esc(r.sub)}</span>` : ""}
+        <span class="nm">${r.na ? `<span style="color:var(--sub);font-weight:400">${esc(r.parent)} — </span><b style="font-weight:800">${esc(r.name)}</b>` : `${esc(r.name)}${r.sub ? ` <span style="color:var(--sub);font-weight:400;font-size:11.5px">${esc(r.sub)}</span>` : ""}`}
           ${where ? `<span class="path">${where}</span>` : ""}</span>
-        <span class="am">${money(r.v[year])}<small>${p != null ? pctTxt(p) : ""}</small></span></button>`;
+        <span class="am">${money(r.v[year])}<small>${p != null && !r.na ? pctTxt(p) : ""}</small></span></button>`;
     }).join("") + (total > shown.length ? `<div class="empty" style="margin:8px 12px">${total}건 중 ${shown.length}건만 표시합니다. 검색어를 더 자세히 적어 주세요.</div>` : "");
     box.querySelectorAll(".rowbtn").forEach(b => b.onclick = () => {
       const r = shown[+b.dataset.idx];
@@ -453,6 +459,7 @@ function drawSearch() {
         treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null; treeKeep = null;
         path = r.path.slice(0, -1); enterAnim = false; syncUrl(true); render(); return;
       }
+      if (r.na) HL_ITEM = r.name;   // 내역사업이면 소속 세부사업을 열고 그 내역을 강조한다
       path = r.path; enterAnim = true; syncUrl(true); render();
     });
   }
@@ -461,7 +468,8 @@ function drawSearch() {
 
 /* ---------- 내역사업 (선택 자료: data/naeyeok.json) ---------- */
 let NAEYEOK = null;
-fetch("data/naeyeok.json").then(r => r.ok ? r.json() : null).then(j => { NAEYEOK = j; if (j) render(); }).catch(() => {});
+let HL_ITEM = null;   // 검색에서 고른 내역사업명 (세부사업 화면에서 한 번 강조한다)
+fetch("data/naeyeok.json").then(r => r.ok ? r.json() : null).then(j => { NAEYEOK = j; for (const k in IDX) delete IDX[k]; if (j) render(); }).catch(() => {});
 
 /* ---------- 표시 형식 ---------- */
 const num = (n, f = 1) => n.toLocaleString("ko-KR", { maximumFractionDigits: f, minimumFractionDigits: 0 });
@@ -1073,12 +1081,13 @@ function drawDetail(n) {
     return `<tr><td>${y}</td><td>${r.gov[y] ? num(r.gov[y]) : "-"}</td><td>${CONFIRMED[y] ? (r.na[y] ? num(r.na[y]) : "-") : "심의 중"}</td>
       <td class="b"><i style="width:${rep > 0 ? Math.max(1, rep / mx * 100) : 0}%"></i></td></tr>`;
   }).join("");
+  const hlName = HL_ITEM; HL_ITEM = null;   // 검색에서 고른 내역은 이번 한 번만 강조한다
   const key = r.ministry + "|" + n.name, items = NAEYEOK && NAEYEOK[key];
   let inner = `<div class="empty">내역사업 자료는 아직 없습니다. 열린재정 공개 자료는 세부사업까지만 나옵니다. 부처 사업설명자료의 내역사업을 <code>data/naeyeok.json</code>에 넣으면 여기에 펼쳐집니다.</div>`;
   if (items && items.length) {
     const tot = items.reduce((a, b) => a + (b.amt || 0), 0), top = Math.max(...items.map(i => i.amt || 0));
     inner = [...items].sort((a, b) => (b.amt || 0) - (a.amt || 0)).map(i =>
-      `<div class="rowbtn go" data-item="${esc(i.name)}" role="button" tabindex="0"><i class="sw c-m"></i><span class="nm">${esc(i.name)}</span>
+      `<div class="rowbtn go${hlName === i.name ? " hl" : ""}" data-item="${esc(i.name)}" role="button" tabindex="0"><i class="sw c-m"></i><span class="nm">${esc(i.name)}</span>
        <span class="am">${money(i.amt)}<small>${tot > 0 ? (i.amt / tot * 100).toFixed(1) : "-"}%</small></span>
        <span class="rbar"><i style="width:${tot > 0 ? Math.max(0.5, (i.amt || 0) / tot * 100) : 0}%"></i></span></div>`).join("");
     inner = `<div class="sub-h">내역사업 ${items.length}개</div><div class="items">${inner}</div>`;
@@ -1110,7 +1119,8 @@ function drawDetail(n) {
     el.onkeydown = e => { if (e.key === "Enter") goDesc(el.dataset.item); };
   });
   stage.appendChild(box);
-  fillDesc(card, r.ministry, n.name, null);   // 세부사업에 들어오면 설명자료를 바로 펼친다
+  const hlEl = box.querySelector(".rowbtn.hl"); if (hlEl) hlEl.scrollIntoView({ block: "nearest" });   // 검색에서 고른 내역이 보이게
+  fillDesc(card, r.ministry, n.name, hlName);   // 세부사업에 들어오면 설명자료를 바로 펼친다 (내역을 골랐으면 그 항목을 강조)
 }
 
 /* ---------- 사업 설명 (아래에서 올라오는 시트) ---------- */
