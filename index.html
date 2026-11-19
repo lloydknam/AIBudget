@@ -110,7 +110,7 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .sheet-body p{margin:4px 0;word-break:keep-all}
 .sheet-body p.li{padding-left:12px;text-indent:-9px}
 .sheet-body h3{margin:18px 0 6px;font-size:16px;font-weight:800;color:var(--accent);line-height:1.35;word-break:keep-all}
-.sheet-body h3 .tno,.dbody h3 .tno{display:inline-block;min-width:1.7em;text-align:center;padding:1px 7px;margin-right:6px;border-radius:999px;background:#e07a63;color:#fff;font-size:.92em;line-height:1.5;vertical-align:1px}
+.sheet-body h3{display:inline-block;max-width:100%;margin:20px 0 8px;padding:3px 12px;border-radius:999px;background:#e07a63;color:#fff;font-size:14px;font-weight:800;line-height:1.4;word-break:keep-all}
 .sheet-body h4{margin:14px 0 4px;font-size:14px;font-weight:700;color:var(--accent);line-height:1.4;word-break:keep-all}
 .sheet-body .part{margin-top:16px;padding-top:12px;border-top:1px dashed var(--line)}
 .sheet-body .dtbl{overflow-x:auto;margin:8px 0}
@@ -313,7 +313,7 @@ const linesHTML = s => splitLines(s).map(x => `<p class="${/^- /.test(x) ? "li" 
 const descBlockHTML = b => {
   if (typeof b === "string") {
     const t = b.trim();
-    if (/^\d+\.\s*\S/.test(t)) { const m = t.match(/^(\d+)\.\s*(.*)$/s); return `<h3><span class="tno">${m[1]}</span>${esc(m[2])}</h3>`; }                      // 1. 사업 총괄 정보
+    if (/^\d+\.\s*\S/.test(t)) return `<h3>${esc(b)}</h3>`;                      // 1. 사업 총괄 정보
     if (/^(\(\d+-\d+\)|\(\d+\)|\d+\)|[①-⑩])/.test(t)) return `<h4>${esc(b)}</h4>`;  // 1) · (1-1)
     return linesHTML(b);
   }
