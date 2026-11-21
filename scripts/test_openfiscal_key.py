@@ -18,4 +18,8 @@ for svc in ["BudgetDetail", "ExpBudgetDetail", "ExpBudgetSum"]:
     except Exception as e:
         body = f"요청 실패: {type(e).__name__} {e}"
     print(f"--- {svc} ---")
-    print(body[:400])
+    import re
+    text = re.sub(r"<style.*?</style>|<script.*?</script>|<[^>]+>", " ", body, flags=re.S)
+    text = re.sub(r"\s+", " ", text).strip()
+    print("본문 텍스트:", text[:400])
+    print("응답 길이:", len(body), "| 첫 바이트:", body[:60].replace("\n"," "))
