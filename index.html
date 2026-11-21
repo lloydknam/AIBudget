@@ -254,8 +254,15 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .tchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
 @media (max-width:900px){.tflow{flex-direction:column}.tarrow{transform:rotate(90deg)}.tpair{flex-direction:row}.tpair .tnode{flex:1 1 0;min-width:0}}
 @media (max-width:640px){
-  .tflow,.tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-  .tflow .tarrow{display:none}.tpair{display:contents}
+  .tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  /* 흐름: 1줄 왼쪽→오른쪽, 아래로 꺾여 3줄 오른쪽→왼쪽 (중기계획→편성→세입·세출 ↓ 집행→결산) */
+  .tflow{display:grid;grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr) 14px minmax(0,1fr);gap:4px 3px;align-items:stretch}
+  .tflow>:nth-child(1){grid-area:1/1}.tflow>:nth-child(2){grid-area:1/2}.tflow>:nth-child(3){grid-area:1/3}.tflow>:nth-child(4){grid-area:1/4}
+  .tflow>:nth-child(5){grid-area:1/5}.tflow>:nth-child(6){grid-area:2/5}.tflow>:nth-child(7){grid-area:3/5}.tflow>:nth-child(8){grid-area:3/4}.tflow>:nth-child(9){grid-area:3/3}
+  .tflow .tarrow{font-size:15px;text-align:center;align-self:center;justify-self:center;transform:none}
+  .tflow>.tarrow:nth-child(6){transform:rotate(90deg);line-height:1}
+  .tflow>.tarrow:nth-child(8){transform:rotate(180deg)}
+  .tpair{display:flex;flex-direction:column;gap:6px}
   .tnode{grid-template-columns:1fr;gap:2px;padding:9px 8px;border-radius:12px}
   .tn-t{font-size:13px;line-height:1.3;word-break:keep-all}.tn-n{font-size:13px}
   .tn-d,.tn-s{display:none}
