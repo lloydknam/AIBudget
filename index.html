@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=12"+location.hash);return;}if(!location.hash)location.replace("map.html?v=12");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=12를 붙이고 예산 지도로 보낸다 -->
+<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=13"+location.hash);return;}if(!location.hash)location.replace("map.html?v=13");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=13를 붙이고 예산 지도로 보낸다 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 예산 프리즘</title>
 <link rel="icon" type="image/png" href="assets/icon-192.png">
@@ -137,6 +137,7 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .bsum{font-size:13.5px;margin-top:4px;color:#c9ced6}
 .bbud{display:flex;gap:6px;align-items:flex-start;font-size:13px;margin-top:6px;color:var(--sub)}.bbud .bic{stroke:var(--gold);width:16px;height:16px;margin-top:2px}.bbud a{color:var(--ink)}
 .bnote{margin:4px 4px 0;line-height:1.7}
+.bhero{display:block;width:100%;max-width:560px;height:auto;margin:0 auto 16px;border-radius:16px}
 .bsheet{position:fixed;inset:0;z-index:50;display:none}.bsheet.on{display:block}
 .bsbg{position:absolute;inset:0;background:rgba(0,0,0,.6)}
 .bsbox{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(720px,calc(100% - 32px));max-height:86vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 22px 18px;--gold:#d8c28e;--ico:#7fb8e6}
@@ -751,6 +752,7 @@ function drawBenefit() {
   view(`
   <div class="bn">
   <div class="card">
+    <img class="bhero" src="assets/${person ? "benefit-family" : "benefit-shop"}.svg" alt="" width="640" height="300">
     <h2>${person ? "나이로 보는 내 정부 혜택" : "사업 단계에서 찾는 지원"}</h2>
     <div class="sub">${person ? "나이와 가구 조건을 고르면 지금 받을 수 있는 것과 곧 열리는 것을 나눠 보여줍니다." : "사업 단계와 업종을 고르면 해당 지원을 모아 보여줍니다."} 선택한 정보는 이 화면에서만 쓰이며 저장·전송되지 않습니다.</div>
     <div class="bmode">
