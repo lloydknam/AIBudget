@@ -41,8 +41,8 @@ export default {
     const user = `[자료]\n${ctx || "(관련 자료 없음)"}\n\n[질문] ${q}`;
 
     try {
-      const answer = body.llm === "groq" ? await groq(env, user) : body.llm === "exaone" ? await exaone(env, user) : await gemini(env, user);
-      return json({ answer }, 200, cors);
+      const { text, model } = body.llm === "groq" ? await groq(env, user) : body.llm === "exaone" ? await exaone(env, user) : await gemini(env, user);
+      return json({ answer: text, model }, 200, cors);
     } catch (e) {
       return json({ error: String(e.message || e).slice(0, 200) }, 502, cors);
     }
@@ -63,7 +63,7 @@ async function gemini(env, user) {
   });
   const j = await r.json();
   if (!r.ok) throw new Error(j.error?.message || "Gemini 호출 실패");
-  return (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
+  return { text: (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join(""), model: j.modelVersion || model };
 }
 
 async function groq(env, user) {
@@ -80,7 +80,7 @@ async function groq(env, user) {
   });
   const j = await r.json();
   if (!r.ok) throw new Error(j.error?.message || "Groq 호출 실패");
-  return j.choices?.[0]?.message?.content || "";
+  return { text: j.choices?.[0]?.message?.content || "", model: j.model || env.GROQ_MODEL || "openai/gpt-oss-120b" };
 }
 
 async function exaone(env, user) {
@@ -99,7 +99,7 @@ async function exaone(env, user) {
   const raw = await r.text();
   let j; try { j = JSON.parse(raw); } catch (e) { throw new Error(`EXAONE 응답 오류(${r.status})`); }
   if (!r.ok) throw new Error(j.error?.message || j.message || `EXAONE 호출 실패(${r.status})`);
-  return (j.choices?.[0]?.message?.content || "").replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+  return { text: (j.choices?.[0]?.message?.content || "").replace(/<think>[\s\S]*?<\/think>/g, "").trim(), model: j.model || env.EXAONE_MODEL || "k-exaone_v2.5" };
 }
 
 function json(obj, status, headers) {
