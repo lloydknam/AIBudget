@@ -1160,7 +1160,7 @@ VIEWS.ask = () => {
   <div class="askwrap">
     <div class="card askcard">
       <h2>AI분석</h2>
-      ${HAS_DOCS ? "" : '<div class="doc asknote">국회 검토보고서는 아직 연결되지 않아, 지금은 <b>예산·결산 수치와 사업설명자료</b>를 근거로 찾아 드립니다.</div>'}
+      ${HAS_DOCS ? "" : '<div class="doc asknote">LLM 모델로 검색하고 분석한 결과를 보여 드립니다. 지금 근거는 <b>예산·결산 수치와 사업설명자료</b>이며, 국회 검토보고서는 아직 연결되지 않았습니다.</div>'}
       <form class="askbox" onsubmit="event.preventDefault();ask()">
         <input id="aq" type="search" enterkeyhint="send" aria-label="질문" placeholder="예: 늘봄학교 예산은 얼마나 늘었나?">
         <button class="plane" type="submit" aria-label="질문 보내기">${PLANE}</button>
