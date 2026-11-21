@@ -507,13 +507,6 @@ VIEWS.analysis = () => {
     ...FISC_CARDS.map(c => ({ ...c, big: fiscHead(c.id)[0], small: fiscHead(c.id)[1] })),
   ];
   view(`
-  <div class="card"><h2>${CUR}년 예산안 규모·증감</h2>
-    <div class="kpis">
-      <div class="kpi"><span>${CUR} 정부안 총지출</span><b>${jo(g)}원</b></div>
-      <div class="kpi"><span>${PREV} 국회 확정 대비</span><b class="${g > n ? "up" : "down"}">${pct((g / n - 1) * 100)}</b></div>
-      <div class="kpi"><span>증감액</span><b>${jo(g - n)}원</b></div>
-      <div class="kpi"><span>세부사업</span><b>${P.filter(p => curGov(p) > 0).length.toLocaleString()}개</b></div>
-    </div></div>
   <div class="bn"><div class="bgrid2 agrid">${AN_SECTIONS.map(x => `<div class="brow acard" role="button" tabindex="0" data-a="${x.id}"
       onclick="anOpen(this.dataset.a,this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();anOpen(this.dataset.a,this)}">
       <div class="ahd">${ic(x.icon)}<b>${x.title}</b></div><div class="abig" id="abig-${x.id}">${x.big}</div><div class="sub">${x.small}</div></div>`).join("")}</div></div>
