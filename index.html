@@ -1195,6 +1195,58 @@ function retrieve(q) {
 }
 const fact = p => `${p.ministry} ${p.program || ""} > ${p.name}: ` + YEARS.map(y => { const v = Y(p, y); return `${y} 정부안 ${won(v.gov)}억, 확정 ${won(v.na)}억`; }).join("; ")
   + ((D.exec_years || []).some(y => E(p, y)) ? ` / 소속 단위사업 '${unitOf(p) ? unitOf(p).activity : ""}' 결산: ` + D.exec_years.map(y => { const e = E(p, y); return e ? `${y} 집행률 ${e.rate == null ? "-" : e.rate.toFixed(1) + "%"}, 불용 ${won(e.unused)}억` : ""; }).filter(Boolean).join("; ") : "");
+/* AI분석: 재정통계(재정통계 탭 카드 + 열린재정 통계 그래프 자료)에서도 관련 통계를 찾는다 */
+const STAT_KW = { supp: ["추경", "추가경정"], execm: ["집행", "집행률", "집행진도"], debt: ["국가채무", "채무", "나랏빚", "부채", "의무지출", "재량지출"], plan: ["중기", "재정계획", "재정운용계획", "재정수지", "관리재정수지"] };
+const STAT_GENERIC = new Set(["예산", "사업", "재정", "정부", "국가", "얼마", "증가", "감소", "추이", "규모", "현황", "지원", "작년", "올해", "내년", "비교"]);
+const qTerms = q => q.split(/[\s,?.!]+/).map(t => t.replace(STOP, "")).filter(t => t.length >= 2);
+let CAT_IDX = null, STAT_HITS = [];
+async function statHits(q) {
+  const terms = qTerms(q).filter(t => !STAT_GENERIC.has(t)); if (!terms.length) return [];
+  try { if (!OA_DATA) OA_DATA = await fetch("data/openfiscal_api.json").then(r => r.json()); } catch (e) {}
+  try { if (!CAT_IDX) CAT_IDX = await fetch("data/fiscal/catalog/index.json").then(r => r.json()); } catch (e) { CAT_IDX = { items: {} }; }
+  const out = [];
+  FISC_CARDS.forEach(c => {
+    const kw = STAT_KW[c.id] || [];
+    const s = terms.reduce((a, t) => a + (kw.some(k => t.includes(k) || k.includes(t)) ? 3 : 0) + (c.title.includes(t) ? 2 : 0), 0);
+    if (s > 0) out.push({ kind: "card", id: c.id, name: c.title, score: s + 1 });
+  });
+  (OA_DATA ? OA_DATA.groups : []).forEach((g, gi) => g.items.forEach((it, ii) => {
+    if (!CAT_IDX.items[it.no]) return;   // 그래프 자료가 있는 통계만
+    const nm = it.name.replace(/\s/g, "");
+    const s = terms.reduce((a, t) => a + (nm.includes(t) ? t.length : 0), 0);
+    if (s >= 2) out.push({ kind: "oa", gi, ii, no: it.no, name: it.name, score: s });
+  }));
+  return out.sort((a, b) => b.score - a.score).slice(0, 4);
+}
+async function statFacts(h) {
+  if (h.kind === "card") {
+    await loadFiscal();
+    const c = FISC_CARDS.find(x => x.id === h.id), box = document.createElement("div");
+    box.innerHTML = c.body().replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<\/t[dh]>/g, " | $&").replace(/<\/(tr|h4|div)>/g, "$&\n");
+    return { title: c.title + " " + c.sub, source: "열린재정 (재정통계 탭)", facts: box.textContent.replace(/[ \t]+/g, " ").replace(/\n\s*/g, " / ").slice(0, 1500), text: "" };
+  }
+  let d = null; try { d = await fetch(`data/fiscal/catalog/${h.no}.json`).then(r => r.ok ? r.json() : null); } catch (e) {}
+  if (!d) return null;
+  const lines = [], named = (d.nums || []).filter(n => /[가-힣]/.test(d.cols[n] || ""));
+  if (!named.length) return null;   // 열 이름이 코드뿐이면 단위·뜻을 알 수 없어 AI 근거에서 뺀다
+  named.slice(0, 3).forEach(n => {
+    const u = colUnit(d.cols[n]), f = v => v == null ? "-" : fmtU(v * u.f, u);
+    if (d.trend && d.trend.series[n]) {
+      const xs = d.trend.x, k0 = Math.max(0, xs.length - 5);
+      Object.entries(d.trend.series[n]).slice(0, 6).forEach(([lab, vals]) => lines.push(`${d.cols[n]} · ${lab}: ` + xs.slice(k0).map((x, i) => `${x} ${f(vals[k0 + i])}`).join(", ")));
+    }
+    if (d.parts) { const i = d.nums.indexOf(n) + 1; lines.push(`${d.cols[n]} ${d.last || ""} ${d.cols[d.parts.by] || ""}별: ` + d.parts.rows.slice(0, 8).map(r => `${r[0]} ${f(r[i])}`).join(", ")); }
+  });
+  return { title: d.name, source: `열린재정 재정상세통계${d.org ? " · " + d.org : ""}`, facts: lines.join(" / ").slice(0, 1500), text: "" };
+}
+async function statOpen(i, btn) {
+  const h = STAT_HITS[i]; if (!h) return;
+  const card = btn.closest(".doc") || btn;
+  if (h.kind === "oa") return oaOpen(h.gi, h.ii, card);
+  await loadFiscal();
+  const c = FISC_CARDS.find(x => x.id === h.id);
+  await sheetOpen(card, `<div class="sub">재정통계</div><h3 id="bsTitle">${c.title} <span class="sub" style="font-size:13px;font-weight:600">${c.sub}</span></h3><div class="abody">${c.body()}</div>`);
+}
 async function ask() {
   const q = (document.getElementById("aq").value || "").trim(); if (!q) return;
   const box = document.getElementById("ans");
@@ -1203,7 +1255,8 @@ async function ask() {
   const got = retrieve(q);
   const extra = (await termHits(q)).filter(p => !got.some(h => h.p === p)).slice(0, 3).map(p => ({ p, score: 0 }));
   const hits = [...got, ...extra].slice(0, 6);
-  if (!hits.length) { box.innerHTML = "<div class='card sub'>관련 사업을 찾지 못했습니다.</div>"; return; }
+  const stats = await statHits(q); STAT_HITS = stats;
+  if (!hits.length && !stats.length) { box.innerHTML = "<div class='card sub'>관련 사업이나 재정통계를 찾지 못했습니다.</div>"; return; }
   const DI = (await loadDescIdx()) || {};
   const texts = await Promise.all(hits.map(async ({ p }) => {
     const id = DI[p.ministry + "|" + p.name];
@@ -1212,7 +1265,9 @@ async function ask() {
   }));
   const cite = hits.map(({ p }, i) => `<div class="doc">${link(p)}${texts[i] ? ' <span class="tag">사업설명 있음</span>' : ""}<br><span class="sub">출처: 열린재정 총지출 세부사업 · ${YEARS.map(y => `${y} ${won(amt(p, y))}`).join(" → ")}억</span>
     ${DI[p.ministry + "|" + p.name] ? `<br><button class="desc-btn" data-min="${esc(p.ministry)}" data-name="${esc(p.name)}" onclick="openDescBtn(this)">사업 설명 보기 ›</button>` : ""}</div>`).join("");
-  const list = `<div class="sub">관련 사업</div>${cite}`;
+  const list = hits.length ? `<div class="card"><div class="sub">관련 사업</div>${cite}</div>` : "";
+  const statFx = (await Promise.all(stats.map(statFacts)));
+  const statList = stats.length ? `<div class="card"><div class="sub">관련 재정통계</div>${stats.map((h, i) => `<div class="doc"><b>${esc(h.name)}</b><br><span class="sub">출처: ${h.kind === "oa" ? "열린재정 재정상세통계" : "열린재정 (재정통계 탭)"}</span><br><button class="desc-btn" onclick="statOpen(${i},this)">그래프 보기 ›</button></div>`).join("")}</div>` : "";
 
   let answer = "", note = "", usedModel = "";
   if (!AI_API) {
@@ -1222,7 +1277,8 @@ async function ask() {
     const name = (LLMS.find(([k]) => k === pick) || LLMS[0])[1];
     box.innerHTML = `<div class="card sub">${esc(name)}로 답을 만드는 중…</div>`;
     try {
-      const sources = hits.map(({ p }, i) => ({ title: `${p.ministry} · ${p.name}`, source: "열린재정 총지출 세부사업", facts: fact(p), text: (texts[i] || "").slice(0, 1500) }));
+      const sources = [...hits.map(({ p }, i) => ({ kind: "사업", title: `${p.ministry} · ${p.name}`, source: "열린재정 총지출 세부사업", facts: fact(p), text: (texts[i] || "").slice(0, 1500) })),
+        ...statFx.filter(Boolean).map(x => ({ kind: "재정통계", ...x }))];
       const r = await fetch(AI_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q, llm: pick, sources }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
@@ -1234,7 +1290,7 @@ async function ask() {
   }
   box.innerHTML = (answer ? `<div class="card"><div class="ansbody">${esc(answer).replace(/\n/g, "<br>")}</div><div class="sub" style="margin-top:8px">${usedModel ? `답변 모델: ${esc(usedModel)} · ` : ""}AI 답변은 아래 자료를 근거로 만들었습니다. 원자료와 함께 확인해 주세요.</div></div>` : "")
     + (note ? `<div class="doc">${note}</div>` : "")
-    + `<div class="card">${list}</div>`;
+    + list + statList;
 }
 
 /* ---------- 7. 삶의 질 지표 ---------- */

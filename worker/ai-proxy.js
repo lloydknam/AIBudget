@@ -10,7 +10,8 @@ const PER_HOUR = 30;               // IP당 시간당 질문 수 (인스턴스 �
 const hits = new Map();
 
 const SYSTEM = "너는 한국 국가예산 자료를 설명하는 도우미다. 반드시 [자료]에 있는 내용만 근거로 답하고, 근거 문장 끝에 [번호]로 출처를 표시한다. " +
-  "자료에 없는 내용은 '자료에서 확인되지 않음'이라고 말하고 추측하지 않는다. 금액은 자료의 단위(억원)를 그대로 쓴다. 한국어로 간결하게 답한다.";
+  "자료에 없는 내용은 '자료에서 확인되지 않음'이라고 말하고 추측하지 않는다. 금액은 자료의 단위를 그대로 쓴다. 한국어로 간결하게 답한다. " +
+  "자료는 [사업]과 [재정통계] 두 종류다. 두 종류가 모두 있으면 답을 '■ 사업 자료'와 '■ 재정통계' 두 부분으로 나눠 쓰고, 한 종류만 있으면 그 부분만 쓴다.";
 
 export default {
   async fetch(req, env) {
@@ -34,9 +35,9 @@ export default {
     try { body = await req.json(); } catch (e) { return json({ error: "요청 형식이 잘못됐습니다" }, 400, cors); }
     const q = String(body.q || "").slice(0, 300).trim();
     if (!q) return json({ error: "질문이 비어 있습니다" }, 400, cors);
-    const sources = (Array.isArray(body.sources) ? body.sources : []).slice(0, 6);
+    const sources = (Array.isArray(body.sources) ? body.sources : []).slice(0, 10);
     const ctx = sources.map((s, i) =>
-      `[${i + 1}] ${s.title} (${s.source})\n- 수치: ${String(s.facts || "").slice(0, 800)}\n- 사업설명: ${String(s.text || "").slice(0, 1500)}`
+      `[${i + 1}] [${s.kind === "재정통계" ? "재정통계" : "사업"}] ${s.title} (${s.source})\n- 수치: ${String(s.facts || "").slice(0, 1500)}${s.text ? `\n- 사업설명: ${String(s.text).slice(0, 1500)}` : ""}`
     ).join("\n\n");
     const user = `[자료]\n${ctx || "(관련 자료 없음)"}\n\n[질문] ${q}`;
 
