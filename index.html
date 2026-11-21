@@ -387,7 +387,7 @@ function go(k, push = true) { cur = k; drawTabs(); VIEWS[k](); window.scrollTo(0
 function setHash(h) { if (location.hash !== h) history.pushState(null, "", h); }
 function route() {
   let [k, id] = decodeURIComponent(location.hash.slice(1)).split("/");
-  if (k === "explore" && id && P.some(p => p.id === id)) { cur = "explore"; drawTabs(); VIEWS.explore(); showProject(id); return; }
+  if (k === "explore") { k = "analysis"; if (id) setTimeout(() => openProject(id), 0); }   // 예전 #explore 주소는 재정통계 화면 + 세부사업 설명으로 연결
   k = ALIAS[k] || k;
   go(TABS.some(([t]) => t === k) ? k : "analysis", false);
 }
@@ -832,7 +832,8 @@ function drawNaeyeok(p) {
     addDescBtn();
   });
 }
-function openProject(id) { setHash("#explore/" + id); showProject(id); }
+// 검색 결과·사업명을 누르면 상세 카드 대신 세부사업 설명자료(시트)를 연다
+function openProject(id) { const p = P.find(x => x.id === id); if (p) openDesc(p.ministry, p.name); }
 /* 모든 메뉴 공통 상단 검색: 입력하면 바로 결과, 고르면 사업 상세 */
 const gq = document.getElementById("gq"), gclr = document.getElementById("gclr"), gres = document.getElementById("gres");
 function gClear() { gq.value = ""; gclr.hidden = true; gres.innerHTML = ""; }
