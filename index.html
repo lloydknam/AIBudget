@@ -541,11 +541,14 @@ function suppYear(y, v) {
     ${v.w.length ? `<table style="margin-top:8px"><tr><th>줄어든 사업</th><th>본예산</th><th>추경 후</th><th>증감</th></tr>${v.w.map(row).join("")}</table>` : `<div class="sub" style="margin-top:6px">줄어든 세부사업 없음</div>`}
     <table style="margin-top:8px"><tr><th>부처</th><th>본예산</th><th>추경 후</th><th>증감</th></tr>${v.m.map(([o, b, a]) => row([o, o, b, a]).replace(`<div class="sub">${esc(o)}</div>`, "")).join("")}</table>`;
 }
+const niceStep = span => { if (!(span > 0)) return 1; const p = 10 ** Math.floor(Math.log10(span / 4)), f = span / 4 / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; };
+const shortNum = v => Math.abs(v) >= 1e4 ? (v / 1e4).toLocaleString("ko-KR", { maximumFractionDigits: 1 }) + "만" : (+v.toFixed(2)).toLocaleString("ko-KR");
 function lineSvg(series, opt = {}) {   // series: [{name, color, vals}] (null은 건너뜀)
-  const W = 640, H = 220, L = 34, R = 10, T = 12, B = 26, n = series[0].vals.length;
-  const all = series.flatMap(s => s.vals).filter(v => v != null), max = opt.max ?? Math.ceil(Math.max(...all) / 10) * 10, min = opt.min ?? 0;
+  const W = 640, H = 220, L = 46, R = 10, T = 12, B = 26, n = series[0].vals.length;
+  const all = series.flatMap(s => s.vals).filter(v => v != null), step = niceStep(Math.max(...all, 0) - Math.min(...all, 0)),
+    max = opt.max ?? (Math.ceil(Math.max(...all, 0) / step) * step || 1), min = opt.min ?? Math.floor(Math.min(...all, 0) / step) * step;
   const X = i => L + (W - L - R) * i / (n - 1), Yv = v => T + (H - T - B) * (1 - (v - min) / (max - min));
-  const grid = [0, .25, .5, .75, 1].map(f => { const v = min + (max - min) * f; return `<line x1="${L}" x2="${W - R}" y1="${Yv(v)}" y2="${Yv(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${Yv(v) + 4}" text-anchor="end" font-size="11" fill="var(--sub)">${Math.round(v)}${opt.unit || ""}</text>`; }).join("");
+  const grid = [0, .25, .5, .75, 1].map(f => { const v = min + (max - min) * f; return `<line x1="${L}" x2="${W - R}" y1="${Yv(v)}" y2="${Yv(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${Yv(v) + 4}" text-anchor="end" font-size="11" fill="var(--sub)">${shortNum(v)}${opt.unit || ""}</text>`; }).join("");
   const xl = (opt.labels || []).map((t, i) => t ? `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--sub)">${t}</text>` : "").join("");
   const lines = series.map(s => { const pts = s.vals.map((v, i) => v == null ? null : `${X(i).toFixed(1)},${Yv(v).toFixed(1)}`).filter(Boolean);
     const lastI = s.vals.map((v, i) => v == null ? -1 : i).filter(i => i >= 0).at(-1);
@@ -594,12 +597,77 @@ async function loadOpenApi() {
         onclick="oaOpen(${gi},${ii},this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();oaOpen(${gi},${ii},this)}">
         <div class="ahd">${ic("list")}<b>${esc(it.name)}</b></div><div class="sub">No.${it.no} · ${esc(g.title)}</div></div>`).join("")}</div></div>`).join("");
 }
+/* OPEN API 목록 카드: 같은 이름의 재정상세통계를 요약한 자료(data/fiscal/catalog/번호.json)로 그래프를 그린다 */
+const OA_PAL = ["#ffd84d", "#7fb8e6", "#f0527f", "#5ad1a4", "#b56cf0", "#ff9f43", "#4c8dff", "#9aa4b2"];
+function colUnit(name) {   // 열 이름의 단위로 화면 단위를 정한다
+  const n = name || "";
+  if (/\(원\)|\(원화\)/.test(n)) return { f: 1e-8, u: "억원" };
+  if (/천원/.test(n)) return { f: 1e-5, u: "억원" };
+  if (/백만원/.test(n)) return { f: 1e-2, u: "억원" };
+  const m = n.match(/\(([^()]*(조원|억원|%|명|개|건|원))\)/); return { f: 1, u: m ? m[1] : "" };
+}
+const fmtU = (v, u) => v == null || isNaN(v) ? "-" : u.u === "억원" ? (Math.abs(v) >= 1e4 ? (v / 1e4).toLocaleString("ko-KR", { maximumFractionDigits: 1 }) + "조" : (+v.toFixed(0)).toLocaleString("ko-KR") + "억")
+  : (+v.toFixed(1)).toLocaleString("ko-KR") + (u.u || "");
+function barSvg(rows, u) {   // rows: [[이름, 값]] 가로 막대
+  const W = 640, rh = 26, L = 150, H = rows.length * rh + 8, max = Math.max(...rows.map(r => Math.abs(r[1])), 1);
+  return `<div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:320px;height:auto" role="img" aria-label="막대 그래프">${rows.map(([k, v], i) => {
+    const w = Math.abs(v) / max * (W - L - 90), y = 4 + i * rh;
+    return `<text x="${L - 8}" y="${y + 16}" text-anchor="end" font-size="12" fill="var(--ink)">${esc(String(k).slice(0, 14))}</text>
+      <rect x="${L}" y="${y + 4}" width="${Math.max(w, 1).toFixed(1)}" height="16" rx="4" fill="${v < 0 ? "#7fb8e6" : OA_PAL[0]}"/>
+      <text x="${L + w + 6}" y="${y + 16}" font-size="11" fill="var(--sub)">${fmtU(v, u)}</text>`; }).join("")}</svg></div>`;
+}
+function pieSvg(rows, u) {   // 양수만, 상위 8개 + 기타
+  const pos = rows.filter(r => r[1] > 0).sort((a, b) => b[1] - a[1]); if (pos.length < 2) return `<div class="sub">비중으로 보기에 알맞지 않은 자료입니다.</div>`;
+  const top = pos.slice(0, 8), rest = pos.slice(8).reduce((a, r) => a + r[1], 0); if (rest > 0) top.push(["기타", rest]);
+  const sum = top.reduce((a, r) => a + r[1], 0); let a0 = -Math.PI / 2;
+  const arcs = top.map(([k, v], i) => { const a1 = a0 + v / sum * Math.PI * 2, big = a1 - a0 > Math.PI ? 1 : 0, R = 90, r = 52, cx = 110, cy = 110;
+    const p = (a, rr) => `${(cx + rr * Math.cos(a)).toFixed(2)} ${(cy + rr * Math.sin(a)).toFixed(2)}`;
+    const d = top.length === 1 ? "" : `M ${p(a0, R)} A ${R} ${R} 0 ${big} 1 ${p(a1, R)} L ${p(a1, r)} A ${r} ${r} 0 ${big} 0 ${p(a0, r)} Z`; a0 = a1;
+    return `<path d="${d}" fill="${OA_PAL[i % OA_PAL.length]}" stroke="var(--card)" stroke-width="2"/>`; }).join("");
+  const leg = top.map(([k, v], i) => `<div style="display:flex;align-items:center;gap:8px;margin:3px 0"><i style="width:10px;height:10px;border-radius:3px;background:${OA_PAL[i % OA_PAL.length]};flex:none"></i><span style="flex:1;min-width:0">${esc(k)}</span><b>${(v / sum * 100).toFixed(1)}%</b><span class="sub">${fmtU(v, u)}</span></div>`).join("");
+  return `<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center"><svg viewBox="0 0 220 220" style="width:200px;max-width:100%;flex:none" role="img" aria-label="비중 그래프">${arcs}</svg><div style="flex:1;min-width:220px;font-size:13px">${leg}</div></div>`;
+}
+let OA_VIEW = null;
 async function oaOpen(gi, ii, card) {
   const g = OA_DATA.groups[gi], it = g.items[ii];
-  await sheetOpen(card, `<div class="sub">열린재정 OPEN API · ${esc(g.title)}</div><h3 id="bsTitle">${esc(it.name)}</h3>
-    <div class="abody"><table><tr><th>목록 번호</th><td>${it.no}번</td></tr><tr><th>분류</th><td>${esc(g.title)}</td></tr>
-    <tr><th>제공</th><td>열린재정 재정정보 공개(OPEN API)</td></tr></table>
-    <p class="sub" style="margin-top:10px">데이터명 전체와 설명은 목록 원문을 확인하세요. 원문: <a href="https://www.openfiscaldata.go.kr/op/ko/ds/UOPKODSA06" target="_blank" rel="noopener">열린재정 OPEN API 목록</a></p></div>`);
+  let d = null; try { d = await fetch(`data/fiscal/catalog/${it.no}.json`).then(r => r.ok ? r.json() : null); } catch (e) {}
+  const head = `<div class="sub">열린재정 통계 · ${esc(g.title)}</div><h3 id="bsTitle">${esc(it.name)}</h3>`;
+  if (!d) {
+    await sheetOpen(card, head + `<div class="abody"><p class="sub">이 항목은 아직 그래프 자료가 없습니다. 열린재정에 표 형식(SHEET)으로 공개되지 않았거나 이름이 달라 연결하지 못한 통계입니다.</p>
+      <p class="sub">원문: <a href="https://www.openfiscaldata.go.kr/op/ko/ds/UOPKODSA06" target="_blank" rel="noopener">열린재정 OPEN API 목록</a></p></div>`);
+    return;
+  }
+  const types = [d.trend && ["line", "추이"], (d.parts || (d.trend && d.trend.sum)) && ["bar", "막대"], d.parts && ["pie", "비중"], ["table", "표"]].filter(Boolean);
+  OA_VIEW = { d, type: types[0][0], num: d.nums[0] };
+  await sheetOpen(card, head + `<div class="sub">${[d.name !== it.name ? "통계명 " + esc(d.name) : "", d.org && esc(d.org), d.cycle && esc(d.cycle) + " 공표"].filter(Boolean).join(" · ")}</div>
+    <div class="abody"><div class="oa-ctl" style="display:flex;flex-wrap:wrap;gap:8px;margin:12px 0">
+      <div class="chips" id="oaType">${types.map(([k, t]) => `<button data-k="${k}" class="${k === OA_VIEW.type ? "on" : ""}">${t}</button>`).join("")}</div>
+      ${d.nums.length > 1 ? `<select id="oaNum" aria-label="항목 선택" style="flex:1;min-width:160px">${d.nums.map(n => `<option value="${esc(n)}">${esc(d.cols[n] || n)}</option>`).join("")}</select>` : ""}
+    </div><div id="oaChart"></div>
+    <div class="sub" style="margin-top:12px">출처: 열린재정 재정상세통계 「${esc(d.name)}」 · ${d.got < d.total ? `최근 ${d.got.toLocaleString()}행 기준(전체 ${d.total.toLocaleString()}행) · ` : ""}수집 ${esc(d.fetched_at)}</div></div>`);
+  document.querySelectorAll("#oaType button").forEach(b => b.onclick = () => { OA_VIEW.type = b.dataset.k; document.querySelectorAll("#oaType button").forEach(x => x.classList.toggle("on", x === b)); oaDraw(); });
+  const sel = document.getElementById("oaNum"); if (sel) sel.onchange = () => { OA_VIEW.num = sel.value; oaDraw(); };
+  oaDraw();
+}
+function oaDraw() {
+  const el = document.getElementById("oaChart"); if (!el || !OA_VIEW) return;
+  const { d, type, num } = OA_VIEW, u = colUnit(d.cols[num]), sc = v => v == null ? null : v * u.f;
+  const when = d.last ? `${d.last}${d.last_month ? "년 " + (+d.last_month) + "월" : "년"} 기준` : "";
+  if (type === "line" && d.trend) {
+    const ser = Object.entries(d.trend.series[num] || {}).map(([k, vals], i) => ({ name: k, color: OA_PAL[i % OA_PAL.length], vals: vals.map(sc), w: i ? 2 : 3 }));
+    const n = d.trend.x.length, every = Math.ceil(n / 8);
+    el.innerHTML = (ser.length ? lineSvg(ser, { labels: d.trend.x.map((x, i) => i % every === 0 || i === n - 1 ? x : ""), label: d.cols[num] }) : "") +
+      `<div class="sub">${esc(d.cols[num] || num)}${u.u ? " · 단위 " + esc(u.u) : ""}${d.trend.sum ? " · 연도별 합계" : ""}${d.trend.by ? " · " + esc(d.cols[d.trend.by] || "") + "별" : ""}</div>`;
+  } else if (type === "bar" || type === "pie") {
+    const i = d.nums.indexOf(num) + 1;
+    const rows = d.parts ? d.parts.rows.map(r => [r[0], sc(r[i])]).filter(r => r[1] != null) : d.trend.x.map((x, k) => [x, sc(Object.values(d.trend.series[num])[0][k])]);
+    el.innerHTML = (type === "bar" ? barSvg(rows.slice(0, 20), u) : pieSvg(rows, u)) +
+      `<div class="sub" style="margin-top:6px">${esc(d.cols[num] || num)}${d.parts ? " · " + esc(d.cols[d.parts.by] || "") + "별 · " + when : " · 연도별"}</div>`;
+  } else {
+    const t = d.table, units = t.cols.map(c => colUnit(d.cols[c]));
+    el.innerHTML = `<div class="sub" style="margin-bottom:6px">${when} · 앞 ${t.rows.length}행</div><div style="overflow-x:auto"><table><tr>${t.cols.map(c => `<th>${esc(d.cols[c] || c)}</th>`).join("")}</tr>
+      ${t.rows.map(r => `<tr>${r.map((v, k) => `<td>${typeof v === "number" && d.nums.includes(t.cols[k]) ? fmtU(v * units[k].f, units[k]) : esc(v == null ? "" : String(v))}</td>`).join("")}</tr>`).join("")}</table></div>`;
+  }
 }
 async function anOpen(id, card) {
   const x = AN_SECTIONS.find(s => s.id === id); if (!x) return;
