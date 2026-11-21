@@ -27,11 +27,13 @@ jobs:
         run: python scripts/fetch_bokjiro.py
       - name: 예산 사업 매칭
         run: python scripts/match_gov24.py
+      - name: 국민혜택 화면 자료
+        run: python scripts/build_benefits.py
       - name: 커밋
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git add data/gov24.json data/benefit_map.json
+          git add data/gov24.json data/benefit_map.json data/benefit_review.csv data/benefits.json
           if [ -f data/bokjiro.json ]; then git add data/bokjiro.json; fi
           git diff --cached --quiet && echo "변경 없음" && exit 0
           git commit -m "정부24 공공서비스 자료 갱신"

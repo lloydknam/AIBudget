@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=9"+location.hash);return;}if(!location.hash)location.replace("map.html?v=9");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=9를 붙이고 예산 지도로 보낸다 -->
+<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=10"+location.hash);return;}if(!location.hash)location.replace("map.html?v=10");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=10를 붙이고 예산 지도로 보낸다 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 예산 프리즘</title>
 <link rel="icon" type="image/png" href="assets/icon-192.png">
@@ -110,6 +110,34 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .chips button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
 .chips button.on{border-color:var(--accent);color:var(--accent);font-weight:700}
 .chips small{color:var(--sub);font-size:11px}
+/* 국민혜택 */
+.bn{--gold:#d8c28e;--ico:#7fb8e6}
+.bn .chips button.on{border-color:var(--gold);color:var(--gold)}
+.bic{width:18px;height:18px;flex:none;stroke:var(--ico);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px}
+.bmode{display:flex;gap:8px;margin:14px 0 4px}
+.bmode button{flex:1;min-height:44px;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--sub);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.bmode button.on{border-color:var(--gold);color:var(--ink);font-weight:700;box-shadow:inset 0 -2px 0 var(--gold)}
+.bmode button.on .bic{stroke:var(--gold)}
+.bage{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
+.bage b{font-size:32px;font-weight:800;color:var(--gold)}.bage small{font-size:14px;color:var(--sub);font-weight:600}
+.bn input[type=range]{width:100%;appearance:none;-webkit-appearance:none;height:3px;padding:0;border:0;box-shadow:none;background:linear-gradient(to right,var(--gold) var(--v),var(--line) var(--v));border-radius:2px;margin:10px 0 6px;outline:none}
+.bn input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 6px rgba(216,194,142,.18);cursor:pointer}
+.bn input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:50%;background:var(--gold);cursor:pointer}
+.blab{font-size:13px;font-weight:700;margin-top:14px}
+.blab+.chips{margin-top:6px}
+.bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.bgrid button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;word-break:keep-all}
+.bgrid button.on{border-color:var(--gold);color:var(--gold)}.bgrid button.on .bic{stroke:var(--gold)}
+.blead{font-size:16px;line-height:1.75;margin:4px 4px 14px}.blead .g{color:var(--gold)}
+.bn>.chips{margin:0 0 14px}
+.bh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.brow{padding:13px 0;border-bottom:1px solid var(--line)}.brow:last-of-type{border-bottom:0}
+.bhd{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.bhd a{color:var(--ink)}
+.btag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap}.btag.soon{border:1px solid var(--gold);color:var(--gold)}
+.bsum{font-size:13.5px;margin-top:4px;color:#c9ced6}
+.bbud{display:flex;gap:6px;align-items:flex-start;font-size:13px;margin-top:6px;color:var(--sub)}.bbud .bic{stroke:var(--gold);width:16px;height:16px;margin-top:2px}.bbud a{color:var(--ink)}
+.bnote{margin:4px 4px 0;line-height:1.7}
+@media (max-width:640px){.bgrid{grid-template-columns:repeat(2,1fr)}}
 .sheet-body h3{margin:20px 0 6px;font-size:15px;line-height:1.4;word-break:keep-all;color:var(--ink)}
 .sheet-body h4{margin:14px 0 6px;font-size:14px;line-height:1.4;word-break:keep-all;color:var(--sub)}
 .sheet-body p{margin:4px 0;word-break:keep-all}
@@ -601,37 +629,140 @@ function showProject(id) {
   document.getElementById("detail").scrollIntoView({ behavior: "smooth" });
 }
 
-/* ---------- 4. 국민혜택 (생애주기별 혜택 찾기) ---------- */
-// 태그: data/lifecycle.json (scripts/build_lifecycle.py 가 사업설명 '대상' 문장에서 만든다. 자동 분류라 검수 전)
-const LC_STAGES = ["영유아", "아동", "청소년", "청년", "신혼·육아", "중장년", "노년"];
-const LC_SITS = ["저소득", "장애", "주거", "돌봄", "일자리", "건강"];
-let LC = null, LC_STAGE = "영유아", LC_SIT = new Set(), LC_N = 60;
-async function loadLifecycle() { if (!LC) LC = await fetch("data/lifecycle.json").then(r => r.ok ? r.json() : Promise.reject()).catch(() => ({})); return LC; }
-function benefitHits() {
-  return P.filter(p => {
-    const t = LC[p.id]; if (!t || !t.s.includes(LC_STAGE)) return false;
-    for (const x of LC_SIT) if (!t.t.includes(x)) return false;
-    return curGov(p) > 0;
-  }).sort((a, b) => curGov(b) - curGov(a));
+/* ---------- 4. 국민혜택 (정부24 공공서비스 + 열린재정 예산) ---------- */
+// 자료: data/benefits.json (scripts/build_benefits.py). 지원조건은 정부24 공공서비스 지원조건 코드(JA…),
+// 예산 연결은 data/benefit_map.json (자동 매칭 0.9 이상 + 사람 검수 확정분).
+let BN = null;
+const BS = { mode: "P", age: 30, sex: "", inc: "", hh: new Set(), sit: new Set(), field: "", n: 30,
+             biz: "1102", ind: "" };
+async function loadBenefits() { if (!BN) BN = await fetch("data/benefits.json").then(r => r.ok ? r.json() : Promise.reject()).catch(() => ({ items: [] })); return BN; }
+const B_INC = [["", "모름"], ["0201", "중위 50% 이하"], ["0202", "51~75%"], ["0203", "76~100%"], ["0204", "101~200%"], ["0205", "200% 초과"]];
+const B_HH = [["0404", "1인 가구"], ["0411", "다자녀"], ["0403", "한부모·조손"], ["0401", "다문화"], ["0402", "북한이탈주민"], ["0412", "무주택"], ["0413", "신규 전입"]];
+const B_SIT = [["0301", "예비부모·난임"], ["0302", "임신 중"], ["0303", "출산·입양"], ["0317", "초등학생"], ["0318", "중학생"], ["0319", "고등학생"],
+  ["0320", "대학(원)생"], ["0326", "직장인"], ["0327", "구직 중"], ["0328", "장애인"], ["0329", "보훈대상"], ["0330", "질병·질환"],
+  ["0313", "농업인"], ["0314", "어업인"], ["0315", "축산업인"], ["0316", "임업인"]];
+const B_BIZ = [["1101", "예비창업자", "rocket"], ["1102", "영업 중 소상공인", "store"], ["1103", "폐업·재기 준비", "redo"],
+  ["2101", "중소기업", "factory"], ["2103", "기관·단체", "org"], ["2102", "사회복지시설", "heart"]];
+const B_IND = [["", "업종 전체"], ["food", "음식점업"], ["mfg", "제조업"], ["ict", "정보통신업"], ["agr", "농림어업"], ["etc", "기타"]];
+const IND_CODE = { food: ["1201", "2299"], mfg: ["1202", "2201"], ict: ["1299", "2203"], agr: ["1299", "2202"], etc: ["1299", "2299"] };
+const ICON = {
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+  case: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5h6v2"/>',
+  rocket: '<path d="M12 3c3 3 4 6 4 9l-4 4-4-4c0-3 1-6 4-9zM8 14l-3 3M16 14l3 3"/>',
+  store: '<path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9h16"/>',
+  redo: '<path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5"/>',
+  factory: '<path d="M3 21V9l6 3V9l6 3V4h6v17z"/>',
+  org: '<path d="M3 21V5h18v16M8 9h2M14 9h2M8 13h2M14 13h2M10 21v-4h4v4"/>',
+  heart: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  soon: '<path d="M3 12h4l3-7 4 14 3-7h4"/>',
+  coin: '<circle cx="12" cy="12" r="9"/><path d="M9 9.5h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H15M12 7v10"/>',
+};
+const ic = k => `<svg class="bic" viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
+const has = (r, pre) => r.k.filter(c => c.startsWith(pre));
+
+// 개인·가구: 나이 이외 조건 통과 여부
+function bnPassPerson(r) {
+  if (!/[PH]/.test(r.u)) return false;
+  if (BS.sex) { const m = r.k.includes("0101"), f = r.k.includes("0102"); if (m !== f && !r.k.includes(BS.sex)) return false; }
+  if (BS.inc) { const ic2 = has(r, "02"); if (ic2.length && !ic2.includes(BS.inc)) return false; }
+  if (!(r.z & 1)) { const s = r.k.filter(c => /^03(0[1-3]|1[3-9]|2[0-9]|30)$/.test(c)); if (s.length && !s.some(c => BS.sit.has(c))) return false; }
+  if (!(r.z & 2)) { const h = has(r, "04").filter(c => c !== "0410"); if (h.length && !h.some(c => BS.hh.has(c))) return false; }
+  return true;
+}
+function bnPassBiz(r) {
+  const c11 = has(r, "11"), c12 = has(r, "12"), c21 = has(r, "21"), c22 = has(r, "22");
+  const ind = BS.ind ? IND_CODE[BS.ind] : null;
+  if (BS.biz.startsWith("11")) {
+    if (c11.length ? !c11.includes(BS.biz) : !r.u.includes("S")) return false;
+    if (ind && c12.length && !c12.includes(ind[0])) return false;
+  } else {
+    if (c21.length ? !c21.includes(BS.biz) : !(r.u.includes("C") && !c11.length)) return false;
+    if (ind && c22.length && !c22.includes(ind[1])) return false;
+  }
+  return true;
+}
+function bnHits() {
+  const now = [], soon = [];
+  for (const r of BN.items) {
+    if (BS.field && r.f !== BS.field) continue;
+    if (BS.mode === "B") { if (bnPassBiz(r)) now.push(r); continue; }
+    if (!bnPassPerson(r)) continue;
+    const [lo, hi] = r.a;
+    if (hi != null && BS.age > hi) continue;
+    if (lo == null || lo <= BS.age) now.push(r);
+    else if (lo - BS.age <= 15) soon.push(r);
+  }
+  return { now, soon: soon.sort((a, b) => a.a[0] - b.a[0]) };
+}
+function bnRow(r, soon) {
+  const p = r.p && projById(r.p);
+  const bud = p && curGov(p) > 0
+    ? `<div class="bbud">${ic("coin")}<span>예산 <a href="#" onclick="openProject('${p.id}');return false">${esc(p.name)}</a> · ${CUR} 정부안 <b>${won(curGov(p))}억</b> ${isNew(p) ? '<span class="warn">신규</span>' : pct(chg(p) * 100)}</span></div>` : "";
+  const tag = soon ? `<span class="btag soon">${r.a[0]}세부터</span>` : "";
+  const name = r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.n)}</a>` : esc(r.n);
+  return `<div class="brow"><div class="bhd"><b>${name}</b>${tag}</div>
+    <div class="sub">${esc(r.o)}${r.t ? " · " + esc(r.t) : ""}${r.f ? " · " + esc(r.f) : ""}</div>
+    ${r.s ? `<div class="bsum">${esc(r.s)}</div>` : ""}${bud}</div>`;
+}
+function chipRow(id, list, isOn) {
+  return `<div class="chips" id="${id}">${list.map(([k, t]) => `<button class="${isOn(k) ? "on" : ""}" data-k="${k}">${t}</button>`).join("")}</div>`;
 }
 function drawBenefit() {
-  const hits = benefitHits();
-  const cnt = s => Object.values(LC).filter(t => t.s.includes(s)).length;
+  const { now, soon } = bnHits();
+  const pids = new Set(now.map(r => r.p).filter(Boolean));
+  const sum = [...pids].reduce((a, id) => a + (curGov(projById(id) || {}) || 0), 0);
+  const orgs = new Set(now.map(r => r.o)).size;
+  const fields = {}; now.forEach(r => { if (r.f) fields[r.f] = (fields[r.f] || 0) + 1; });
+  const person = BS.mode === "P";
+  const pctAge = Math.min(100, BS.age);
   view(`
-  <div class="card"><h2>국민 혜택 찾기 <span class="sub">생애주기</span></h2>
-    <div class="sub">2027 정부안 기준 사업 예산입니다. 개인이 받는 금액이 아니며, 자격은 사업설명 원문과 복지로·정부24에서 확인하세요. 태그는 자동 분류라 검수 중입니다.</div>
-    <div class="chips" id="bStage">${LC_STAGES.map(s => `<button class="${s === LC_STAGE ? "on" : ""}" data-s="${s}">${s} <small>${cnt(s)}</small></button>`).join("")}</div>
-    <div class="chips" id="bSit">${LC_SITS.map(s => `<button class="${LC_SIT.has(s) ? "on" : ""}" data-t="${s}">${s}</button>`).join("")}</div>
+  <div class="bn">
+  <div class="card">
+    <h2>${person ? "나이로 보는 내 정부 혜택" : "사업 단계에서 찾는 지원"}</h2>
+    <div class="sub">${person ? "나이와 가구 조건을 고르면 지금 받을 수 있는 것과 곧 열리는 것을 나눠 보여줍니다." : "사업 단계와 업종을 고르면 해당 지원을 모아 보여줍니다."} 선택한 정보는 이 화면에서만 쓰이며 저장·전송되지 않습니다.</div>
+    <div class="bmode">
+      <button class="${person ? "on" : ""}" data-m="P">${ic("user")}국민 개인·가구</button>
+      <button class="${person ? "" : "on"}" data-m="B">${ic("case")}사업주·창업·기업</button>
+    </div>
+    ${person ? `
+    <div class="bage"><span class="sub">나이</span><b>${BS.age}<small> 세</small></b></div>
+    <input type="range" id="bAge" min="0" max="100" value="${BS.age}" aria-label="나이" style="--v:${pctAge}%">
+    <div class="blab">성별</div>${chipRow("bSex", [["", "전체"], ["0102", "여성"], ["0101", "남성"]], k => k === BS.sex)}
+    <div class="blab">가구 소득 <span class="sub">기준중위소득 대비</span></div>${chipRow("bInc", B_INC, k => k === BS.inc)}
+    <div class="blab">가구 <span class="sub">해당하는 것만</span></div>${chipRow("bHh", B_HH, k => BS.hh.has(k))}
+    <div class="blab">상황 <span class="sub">해당하는 것만 · 복수 선택</span></div>${chipRow("bSit", B_SIT, k => BS.sit.has(k))}
+    ` : `
+    <div class="bgrid" id="bBiz">${B_BIZ.map(([k, t, i]) => `<button class="${BS.biz === k ? "on" : ""}" data-k="${k}">${ic(i)}<span>${t}</span></button>`).join("")}</div>
+    <div class="blab">업종</div>${chipRow("bInd", B_IND, k => k === BS.ind)}
+    `}
   </div>
-  <div class="card"><h2>${LC_STAGE} · ${hits.length.toLocaleString()}건 <span class="sub">(2027 정부안 큰 순)</span></h2>
-    ${hits.slice(0, LC_N).map(p => `<div class="item">${link(p)}<br><span class="sub">${esc(p.ministry)} · ${won(curGov(p))}억 ${isNew(p) ? '<span class="warn">신규</span>' : pct(chg(p) * 100)}</span></div>`).join("") || "<div class='sub'>해당 없음</div>"}
-    ${hits.length > LC_N ? `<button class="go" id="bMore" style="margin-top:10px">더 보기</button>` : ""}
+  <div class="blead">지금 해당하는 지원은 <b class="g">${now.length.toLocaleString()}건</b>, 관련 기관은 <b>${orgs}곳</b>입니다.
+    ${pids.size ? `이 가운데 예산 사업과 연결된 ${pids.size}개 사업의 ${CUR} 정부안 합계는 <b>${sum >= 10000 ? jo(sum) : won(sum) + "억"}</b>입니다.` : ""}</div>
+  ${Object.keys(fields).length > 1 ? chipRow("bField", [["", "분야 전체"], ...Object.entries(fields).sort((a, b) => b[1] - a[1]).map(([f, n]) => [f, `${f} <small>${n}</small>`])], k => k === BS.field) : ""}
+  <div class="card"><h2 class="bh">${ic("clock")}지금 받을 수 있는 것 <span class="sub">${now.length.toLocaleString()}건 · 조회 많은 순</span></h2>
+    ${now.slice(0, BS.n).map(r => bnRow(r)).join("") || "<div class='sub'>조건에 맞는 지원이 없습니다. 상황이나 가구 선택을 줄여 보세요.</div>"}
+    ${now.length > BS.n ? `<button class="go" id="bMore" style="margin-top:12px">더 보기</button>` : ""}
+  </div>
+  ${person && soon.length ? `<div class="card"><h2 class="bh">${ic("soon")}곧 열리는 것 <span class="sub">15년 안에 나이 조건이 열리는 ${soon.length}건 · 현 제도 기준</span></h2>
+    ${soon.slice(0, 20).map(r => bnRow(r, true)).join("")}</div>` : ""}
+  <div class="sub bnote">출처: 행정안전부 공공서비스(혜택) 정보(정부24, ${esc(BN.fetched_at || "")}) · 예산: 열린재정 ${CUR} 정부안.
+    전국 대상(중앙부처·공공기관) ${BN.items.length.toLocaleString()}건만 담았고 지자체 자체 사업은 빠져 있습니다. 예산은 사업 전체 규모이며 개인이 받는 금액이 아닙니다.
+    예산 연결은 자동 매칭과 검수를 거쳤지만 틀릴 수 있습니다. 자격은 정부24 원문에서 확인하세요.</div>
   </div>`);
-  document.querySelectorAll("#bStage button").forEach(b => b.onclick = () => { LC_STAGE = b.dataset.s; LC_N = 60; drawBenefit(); });
-  document.querySelectorAll("#bSit button").forEach(b => b.onclick = () => { const t = b.dataset.t; LC_SIT.has(t) ? LC_SIT.delete(t) : LC_SIT.add(t); LC_N = 60; drawBenefit(); });
-  const more = document.getElementById("bMore"); if (more) more.onclick = () => { LC_N += 60; drawBenefit(); };
+  const q = s => document.querySelectorAll(s);
+  q(".bmode button").forEach(b => b.onclick = () => { BS.mode = b.dataset.m; BS.field = ""; BS.n = 30; drawBenefit(); });
+  const age = document.getElementById("bAge");
+  if (age) { age.oninput = () => { document.querySelector(".bage b").innerHTML = `${age.value}<small> 세</small>`; age.style.setProperty("--v", age.value + "%"); };
+             age.onchange = () => { BS.age = +age.value; BS.n = 30; drawBenefit(); }; }
+  const one = (id, key) => q(`#${id} button`).forEach(b => b.onclick = () => { BS[key] = b.dataset.k; BS.n = 30; drawBenefit(); });
+  const many = (id, set) => q(`#${id} button`).forEach(b => b.onclick = () => { const k = b.dataset.k; set.has(k) ? set.delete(k) : set.add(k); BS.n = 30; drawBenefit(); });
+  one("bSex", "sex"); one("bInc", "inc"); one("bInd", "ind"); one("bField", "field");
+  many("bHh", BS.hh); many("bSit", BS.sit);
+  q("#bBiz button").forEach(b => b.onclick = () => { BS.biz = b.dataset.k; BS.n = 30; drawBenefit(); });
+  const more = document.getElementById("bMore"); if (more) more.onclick = () => { BS.n += 30; drawBenefit(); };
 }
-VIEWS.benefit = async () => { await loadLifecycle(); drawBenefit(); };
+VIEWS.benefit = async () => { view(`<div class="card sub">혜택 자료를 불러오는 중…</div>`); await loadBenefits(); drawBenefit(); };
 
 /* ---------- 5. 조건으로 찾기 ---------- */
 VIEWS.filter = () => {
