@@ -1161,7 +1161,7 @@ function startAiExamples() {
   }, 3000);
 }
 const AI_API = "https://aibudget-ai.lloydnam.workers.dev/ask"; // Cloudflare Worker 배포 후 주소를 넣는다 (예: "https://aibudget-ai.<계정>.workers.dev/ask"). 비워 두면 자료 검색만 한다.
-const LLMS = [["gemini", "1 · Gemini Flash-Lite (기본)"], ["groq", "2 · Groq Llama 3.3 70B"]];
+const LLMS = [["gemini", "1 · Gemini Flash-Lite (기본)"], ["groq", "2 · Groq Llama 3.3 70B"], ["exaone", "3 · LG K-EXAONE 2.5"]];
 const PLANE = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M21 3 3 10.5l7 2.5 2.5 7L21 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
 function llmPick() { try { const v = localStorage.getItem("llmPick"); return LLMS.some(([k]) => k === v) ? v : "gemini"; } catch (e) { return "gemini"; } }
 function setLlm(v) { try { localStorage.setItem("llmPick", v); } catch (e) {} }

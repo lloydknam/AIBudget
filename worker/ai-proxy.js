@@ -1,8 +1,9 @@
 // 클사무관의 예산 프리즘 · AI분석 중계 서버 (Cloudflare Workers 무료 플랜)
 // 역할: 브라우저에 API 키를 노출하지 않고, 허용된 사이트에서 온 질문만 LLM에 전달한다.
 // 환경변수(Worker 설정 > Variables and Secrets):
-//   GEMINI_API_KEY (필수, 기본 LLM 1번), GROQ_API_KEY (선택, 2번)
+//   GEMINI_API_KEY (필수, 기본 LLM 1번), GROQ_API_KEY (2번), EXAONE_API_KEY (3번, LG K-EXAONE)
 //   GEMINI_MODEL (선택, 기본 gemini-3.5-flash-lite), GROQ_MODEL (선택, 기본 llama-3.3-70b-versatile)
+//   EXAONE_MODEL (선택, 기본 k-exaone_v2.5), EXAONE_URL (선택, 기본 https://api.exaone.ai/v1/chat/completions)
 
 const ALLOW = ["https://lloydknam.github.io"];
 const PER_HOUR = 30;               // IP당 시간당 질문 수 (인스턴스 메모리 기준, 대략적 제한)
@@ -40,7 +41,7 @@ export default {
     const user = `[자료]\n${ctx || "(관련 자료 없음)"}\n\n[질문] ${q}`;
 
     try {
-      const answer = body.llm === "groq" ? await groq(env, user) : await gemini(env, user);
+      const answer = body.llm === "groq" ? await groq(env, user) : body.llm === "exaone" ? await exaone(env, user) : await gemini(env, user);
       return json({ answer }, 200, cors);
     } catch (e) {
       return json({ error: String(e.message || e).slice(0, 200) }, 502, cors);
@@ -52,6 +53,7 @@ async function gemini(env, user) {
   const model = env.GEMINI_MODEL || "gemini-3.5-flash-lite";
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
+    signal: AbortSignal.timeout(30000),
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM }] },
@@ -67,6 +69,7 @@ async function gemini(env, user) {
 async function groq(env, user) {
   const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
+    signal: AbortSignal.timeout(30000),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.GROQ_API_KEY}` },
     body: JSON.stringify({
       model: env.GROQ_MODEL || "llama-3.3-70b-versatile",
@@ -78,6 +81,25 @@ async function groq(env, user) {
   const j = await r.json();
   if (!r.ok) throw new Error(j.error?.message || "Groq 호출 실패");
   return j.choices?.[0]?.message?.content || "";
+}
+
+async function exaone(env, user) {
+  const r = await fetch(env.EXAONE_URL || "https://api.exaone.ai/v1/chat/completions", {
+    method: "POST",
+    signal: AbortSignal.timeout(45000),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.EXAONE_API_KEY}` },
+    body: JSON.stringify({
+      model: env.EXAONE_MODEL || "k-exaone_v2.5",
+      reasoning_effort: "low",
+      temperature: 0.2,
+      max_tokens: 900,
+      messages: [{ role: "system", content: SYSTEM }, { role: "user", content: user }],
+    }),
+  });
+  const raw = await r.text();
+  let j; try { j = JSON.parse(raw); } catch (e) { throw new Error(`EXAONE 응답 오류(${r.status})`); }
+  if (!r.ok) throw new Error(j.error?.message || j.message || `EXAONE 호출 실패(${r.status})`);
+  return (j.choices?.[0]?.message?.content || "").replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 }
 
 function json(obj, status, headers) {
