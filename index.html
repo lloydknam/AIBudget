@@ -57,6 +57,7 @@ header.ghead{padding:6px 0 2px;max-width:952px;margin:0 auto}  /* 예산 지도 
 @media (max-width:640px){header.ghead{padding:0 5px;max-width:none}}
 #gres{position:absolute;top:calc(100% + 6px);left:0;width:min(520px,calc(100vw - 32px));max-height:60vh;overflow:auto;z-index:50;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 14px;box-shadow:0 12px 32px rgba(0,0,0,.35)}
 #gres:empty{display:none}
+.doc .pname{color:var(--ink);font-weight:800}
 @media (max-width:640px){#gres{position:fixed;left:8px;right:8px;width:auto;max-width:none;max-height:60vh}.hsearch .clr{width:18px;height:18px;font-size:11px;right:4px}}
 .notice{margin:0 auto 16px;max-width:640px;color:var(--note-ink);font-size:12.5px;line-height:1.6;word-break:keep-all}
 nav{flex:none;display:flex;gap:22px;align-items:center;overflow-x:auto;padding:7.6px 0 6px;border-bottom:1px solid var(--line);max-width:952px;margin:0 auto 2px;scrollbar-width:none}
@@ -1297,7 +1298,7 @@ async function ask() {
     if (!id) return "";
     try { return descRecText(await gunzipJSON(`desc/${id}.json.gz`)).slice(0, 1500); } catch (e) { return ""; }
   }));
-  const cite = hits.map(({ p }, i) => `<div class="doc">${link(p)}${texts[i] ? ' <span class="tag">사업설명 있음</span>' : ""}<br><span class="sub">출처: 열린재정 총지출 세부사업 · ${YEARS.map(y => `${y} ${won(amt(p, y))}`).join(" → ")}억</span>
+  const cite = hits.map(({ p }, i) => `<div class="doc"><b class="pname">${label(p)}</b>${texts[i] ? ' <span class="tag">사업설명 있음</span>' : ""}<br><span class="sub">출처: 열린재정 총지출 세부사업 · ${YEARS.map(y => `${y} ${won(amt(p, y))}`).join(" → ")}억</span>
     ${DI[p.ministry + "|" + p.name] ? `<br><button class="desc-btn" data-min="${esc(p.ministry)}" data-name="${esc(p.name)}" onclick="openDescBtn(this)">사업 설명 보기 ›</button>` : ""}</div>`).join("");
   const list = hits.length ? `<div class="card"><div class="sub">관련 사업</div>${cite}</div>` : "";
   const statFx = (await Promise.all(stats.map(statFacts)));
