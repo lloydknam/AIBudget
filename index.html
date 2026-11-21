@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=10"+location.hash);return;}if(!location.hash)location.replace("map.html?v=10");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=10를 붙이고 예산 지도로 보낸다 -->
+<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=11"+location.hash);return;}if(!location.hash)location.replace("map.html?v=11");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=11를 붙이고 예산 지도로 보낸다 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 예산 프리즘</title>
 <link rel="icon" type="image/png" href="assets/icon-192.png">
@@ -137,6 +137,11 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .bsum{font-size:13.5px;margin-top:4px;color:#c9ced6}
 .bbud{display:flex;gap:6px;align-items:flex-start;font-size:13px;margin-top:6px;color:var(--sub)}.bbud .bic{stroke:var(--gold);width:16px;height:16px;margin-top:2px}.bbud a{color:var(--ink)}
 .bnote{margin:4px 4px 0;line-height:1.7}
+.breg{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}.breg .blab{margin:0 4px 0 0}
+.breg select{flex:1 1 140px;min-width:0;max-width:240px;height:38px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:14px}
+.breg select:focus{outline:none;border-color:var(--gold)}
+.btag.loc{border:1px solid var(--line);color:var(--ico);margin-left:4px}
+.bhd>span{display:flex;gap:4px;flex:none}
 @media (max-width:640px){.bgrid{grid-template-columns:repeat(2,1fr)}}
 .sheet-body h3{margin:20px 0 6px;font-size:15px;line-height:1.4;word-break:keep-all;color:var(--ink)}
 .sheet-body h4{margin:14px 0 6px;font-size:14px;line-height:1.4;word-break:keep-all;color:var(--sub)}
@@ -632,10 +637,25 @@ function showProject(id) {
 /* ---------- 4. 국민혜택 (정부24 공공서비스 + 열린재정 예산) ---------- */
 // 자료: data/benefits.json (scripts/build_benefits.py). 지원조건은 정부24 공공서비스 지원조건 코드(JA…),
 // 예산 연결은 data/benefit_map.json (자동 매칭 0.9 이상 + 사람 검수 확정분).
-let BN = null;
+let BN = null, BLX = null;
+const BL = {};   // 시도 파일 캐시
 const BS = { mode: "P", age: 30, sex: "", inc: "", hh: new Set(), sit: new Set(), field: "", n: 30,
-             biz: "1102", ind: "" };
-async function loadBenefits() { if (!BN) BN = await fetch("data/benefits.json").then(r => r.ok ? r.json() : Promise.reject()).catch(() => ({ items: [] })); return BN; }
+             biz: "1102", ind: "", sido: "", sgg: "" };
+const getJ = u => fetch(u).then(r => r.ok ? r.json() : Promise.reject()).catch(() => null);
+async function loadBenefits() {
+  if (!BN) [BN, BLX] = await Promise.all([getJ("data/benefits.json"), getJ("data/benefits_local/index.json")]);
+  BN = BN || { items: [] }; BLX = BLX || { sido: [] };
+  try { const v = JSON.parse(localStorage.getItem("bnRegion") || "{}"); if (v.sido && !BS.sido) { BS.sido = v.sido; BS.sgg = v.sgg || ""; } } catch (e) {}
+  await loadLocal();
+}
+async function loadLocal() {
+  const x = BLX.sido.find(x => x.sido === BS.sido); if (!x || BL[x.sido]) return;
+  BL[x.sido] = (await getJ("data/benefits_local/" + x.file)) || { items: [] };
+}
+const bnPool = () => {
+  const loc = (BS.sido && BL[BS.sido]) ? BL[BS.sido].items.filter(r => r.r === "" || (BS.sgg && r.r === BS.sgg)) : [];
+  return loc.concat(BN.items);
+};
 const B_INC = [["", "모름"], ["0201", "중위 50% 이하"], ["0202", "51~75%"], ["0203", "76~100%"], ["0204", "101~200%"], ["0205", "200% 초과"]];
 const B_HH = [["0404", "1인 가구"], ["0411", "다자녀"], ["0403", "한부모·조손"], ["0401", "다문화"], ["0402", "북한이탈주민"], ["0412", "무주택"], ["0413", "신규 전입"]];
 const B_SIT = [["0301", "예비부모·난임"], ["0302", "임신 중"], ["0303", "출산·입양"], ["0317", "초등학생"], ["0318", "중학생"], ["0319", "고등학생"],
@@ -684,7 +704,7 @@ function bnPassBiz(r) {
 }
 function bnHits() {
   const now = [], soon = [];
-  for (const r of BN.items) {
+  for (const r of bnPool()) {
     if (BS.field && r.f !== BS.field) continue;
     if (BS.mode === "B") { if (bnPassBiz(r)) now.push(r); continue; }
     if (!bnPassPerson(r)) continue;
@@ -699,10 +719,10 @@ function bnRow(r, soon) {
   const p = r.p && projById(r.p);
   const bud = p && curGov(p) > 0
     ? `<div class="bbud">${ic("coin")}<span>예산 <a href="#" onclick="openProject('${p.id}');return false">${esc(p.name)}</a> · ${CUR} 정부안 <b>${won(curGov(p))}억</b> ${isNew(p) ? '<span class="warn">신규</span>' : pct(chg(p) * 100)}</span></div>` : "";
-  const tag = soon ? `<span class="btag soon">${r.a[0]}세부터</span>` : "";
+  const tag = (soon ? `<span class="btag soon">${r.a[0]}세부터</span>` : "") + (r.r != null ? `<span class="btag loc">${esc(r.r || BS.sido.replace(/(특별자치|특별|광역|통합특별)?(시|도)$/, ""))}</span>` : "");
   const name = r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.n)}</a>` : esc(r.n);
   return `<div class="brow"><div class="bhd"><b>${name}</b>${tag}</div>
-    <div class="sub">${esc(r.o)}${r.t ? " · " + esc(r.t) : ""}${r.f ? " · " + esc(r.f) : ""}</div>
+    <div class="sub">${esc(r.o)}${r.t ? " · " + esc(r.t.replace(/\|\|/g, ", ")) : ""}${r.f ? " · " + esc(r.f) : ""}</div>
     ${r.s ? `<div class="bsum">${esc(r.s)}</div>` : ""}${bud}</div>`;
 }
 function chipRow(id, list, isOn) {
@@ -713,6 +733,7 @@ function drawBenefit() {
   const pids = new Set(now.map(r => r.p).filter(Boolean));
   const sum = [...pids].reduce((a, id) => a + (curGov(projById(id) || {}) || 0), 0);
   const orgs = new Set(now.map(r => r.o)).size;
+  const nLoc = now.filter(r => r.r != null).length;
   const fields = {}; now.forEach(r => { if (r.f) fields[r.f] = (fields[r.f] || 0) + 1; });
   const person = BS.mode === "P";
   const pctAge = Math.min(100, BS.age);
@@ -724,6 +745,10 @@ function drawBenefit() {
     <div class="bmode">
       <button class="${person ? "on" : ""}" data-m="P">${ic("user")}국민 개인·가구</button>
       <button class="${person ? "" : "on"}" data-m="B">${ic("case")}사업주·창업·기업</button>
+    </div>
+    <div class="breg"><span class="blab">${person ? "사는 곳" : "사업장 소재지"}</span>
+      <select id="bSido" aria-label="시도"><option value="">전국 공통만</option>${BLX.sido.map(x => `<option ${x.sido === BS.sido ? "selected" : ""}>${x.sido}</option>`).join("")}</select>
+      ${BS.sido ? `<select id="bSgg" aria-label="시군구"><option value="">${(BLX.sido.find(x => x.sido === BS.sido) || {}).sgg && Object.keys(BLX.sido.find(x => x.sido === BS.sido).sgg).length ? "시군구 선택" : "시도 전체"}</option>${Object.keys((BLX.sido.find(x => x.sido === BS.sido) || {}).sgg || {}).map(g => `<option ${g === BS.sgg ? "selected" : ""}>${g}</option>`).join("")}</select>` : ""}
     </div>
     ${person ? `
     <div class="bage"><span class="sub">나이</span><b>${BS.age}<small> 세</small></b></div>
@@ -737,7 +762,7 @@ function drawBenefit() {
     <div class="blab">업종</div>${chipRow("bInd", B_IND, k => k === BS.ind)}
     `}
   </div>
-  <div class="blead">지금 해당하는 지원은 <b class="g">${now.length.toLocaleString()}건</b>, 관련 기관은 <b>${orgs}곳</b>입니다.
+  <div class="blead">지금 해당하는 지원은 <b class="g">${now.length.toLocaleString()}건</b>${nLoc ? `(지역 ${nLoc.toLocaleString()}건 포함)` : ""}, 관련 기관은 <b>${orgs}곳</b>입니다.
     ${pids.size ? `이 가운데 예산 사업과 연결된 ${pids.size}개 사업의 ${CUR} 정부안 합계는 <b>${sum >= 10000 ? jo(sum) : won(sum) + "억"}</b>입니다.` : ""}</div>
   ${Object.keys(fields).length > 1 ? chipRow("bField", [["", "분야 전체"], ...Object.entries(fields).sort((a, b) => b[1] - a[1]).map(([f, n]) => [f, `${f} <small>${n}</small>`])], k => k === BS.field) : ""}
   <div class="card"><h2 class="bh">${ic("clock")}지금 받을 수 있는 것 <span class="sub">${now.length.toLocaleString()}건 · 조회 많은 순</span></h2>
@@ -747,7 +772,7 @@ function drawBenefit() {
   ${person && soon.length ? `<div class="card"><h2 class="bh">${ic("soon")}곧 열리는 것 <span class="sub">15년 안에 나이 조건이 열리는 ${soon.length}건 · 현 제도 기준</span></h2>
     ${soon.slice(0, 20).map(r => bnRow(r, true)).join("")}</div>` : ""}
   <div class="sub bnote">출처: 행정안전부 공공서비스(혜택) 정보(정부24, ${esc(BN.fetched_at || "")}) · 예산: 열린재정 ${CUR} 정부안.
-    전국 대상(중앙부처·공공기관) ${BN.items.length.toLocaleString()}건만 담았고 지자체 자체 사업은 빠져 있습니다. 예산은 사업 전체 규모이며 개인이 받는 금액이 아닙니다.
+    전국 공통(중앙부처·공공기관) ${BN.items.length.toLocaleString()}건과 지역(시도·시군구·교육청·지방 출연기관) ${BLX.sido.reduce((a, x) => a + x.n, 0).toLocaleString()}건을 담았습니다. 지방 출연기관의 지역은 기관명으로 추정했습니다. 예산은 사업 전체 규모이며 개인이 받는 금액이 아닙니다.
     예산 연결은 자동 매칭과 검수를 거쳤지만 틀릴 수 있습니다. 자격은 정부24 원문에서 확인하세요.</div>
   </div>`);
   const q = s => document.querySelectorAll(s);
@@ -757,6 +782,10 @@ function drawBenefit() {
              age.onchange = () => { BS.age = +age.value; BS.n = 30; drawBenefit(); }; }
   const one = (id, key) => q(`#${id} button`).forEach(b => b.onclick = () => { BS[key] = b.dataset.k; BS.n = 30; drawBenefit(); });
   const many = (id, set) => q(`#${id} button`).forEach(b => b.onclick = () => { const k = b.dataset.k; set.has(k) ? set.delete(k) : set.add(k); BS.n = 30; drawBenefit(); });
+  const sido = document.getElementById("bSido"), sgg = document.getElementById("bSgg");
+  const saveReg = () => { try { localStorage.setItem("bnRegion", JSON.stringify({ sido: BS.sido, sgg: BS.sgg })); } catch (e) {} };
+  if (sido) sido.onchange = async () => { BS.sido = sido.value; BS.sgg = ""; BS.n = 30; BS.field = ""; saveReg(); await loadLocal(); drawBenefit(); };
+  if (sgg) sgg.onchange = () => { BS.sgg = sgg.value; BS.n = 30; BS.field = ""; saveReg(); drawBenefit(); };
   one("bSex", "sex"); one("bInc", "inc"); one("bInd", "ind"); one("bField", "field");
   many("bHh", BS.hh); many("bSit", BS.sit);
   q("#bBiz button").forEach(b => b.onclick = () => { BS.biz = b.dataset.k; BS.n = 30; drawBenefit(); });
