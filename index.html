@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=19"+location.hash);return;}if(!location.hash)location.replace("map.html?v=19");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=19를 붙이고 예산 지도로 보낸다 -->
+<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=20"+location.hash);return;}if(!location.hash)location.replace("map.html?v=20");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=20를 붙이고 예산 지도로 보낸다 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 예산 프리즘</title>
 <link rel="icon" type="image/png" href="assets/icon-192.png">
@@ -150,6 +150,12 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .bsum{font-size:13.5px;margin-top:4px;color:#c9ced6}
 .bbud{display:flex;gap:6px;align-items:flex-start;font-size:13px;margin-top:6px;color:var(--sub)}.bbud .bic{stroke:var(--gold);width:16px;height:16px;margin-top:2px}.bbud a{color:var(--ink)}
 .bnote{margin:4px 4px 0;line-height:1.7}
+.agrid{margin-bottom:16px}
+.acard{display:flex;flex-direction:column;gap:6px;padding:16px;background:var(--card)}
+.ahd{display:flex;align-items:center;gap:8px;font-size:14px}.ahd b{font-weight:700}
+.abig{font-size:19px;font-weight:800;letter-spacing:-.03em;line-height:1.35;color:var(--gold);word-break:keep-all}
+.abody table{width:100%}.abody .item:last-child{border-bottom:0}
+@media (max-width:640px){.acard{padding:12px 11px}.ahd{font-size:12.5px;gap:6px}.ahd .bic{width:16px;height:16px}.abig{font-size:15.5px}.acard .sub{font-size:11.5px}}
 .bsheet{position:fixed;inset:0;z-index:50;display:none}.bsheet.on{display:block}
 .bsbg{position:absolute;inset:0;background:rgba(0,0,0,.6)}
 .bsbox{position:absolute;left:max(16px,calc(50% - 360px));right:max(16px,calc(50% - 360px));top:7vh;max-height:86vh;transform-origin:0 0;will-change:transform;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 22px 18px;--gold:#d8c28e;--ico:#7fb8e6}
@@ -436,6 +442,40 @@ VIEWS.analysis = () => {
   const funds = {};
   P.forEach(p => { const v = curGov(p); if (v && p.fund) { const k = p.fund.split("/")[0]; funds[k] = (funds[k] || 0) + v; } });
   const fundRows = Object.entries(funds).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const fastest = frows.filter(r => r[2] > 0).sort((a, b) => (b[1] / b[2]) - (a[1] / a[2]))[0];
+  const y0 = YEARS[0], tot0 = total(y0, "na") || total(y0, "gov");
+  const ex = U.length ? (() => { const c = U.reduce((a, u) => a + ((u.years[EXEC_LAST] || {}).cur || 0), 0), sp = U.reduce((a, u) => a + ((u.years[EXEC_LAST] || {}).spent || 0), 0), un = U.reduce((a, u) => a + ((u.years[EXEC_LAST] || {}).unused || 0), 0); return { rate: c ? sp / c * 100 : 0, un }; })() : null;
+  const topU = U.filter(u => u.years[EXEC_LAST] && !isFin(u)).sort((a, b) => b.years[EXEC_LAST].unused - a.years[EXEC_LAST].unused)[0];
+  // 카드 목록: 제목·한 줄 요약(앞) / 펼친 창 내용(뒤)
+  AN_SECTIONS = [
+    { id: "field", icon: "chart", title: "분야별 규모·증감", big: frows[0] ? esc(frows[0][0]) : "-", small: frows[0] ? `${jo(frows[0][1])} · 비중 ${(frows[0][1] / sumG * 100).toFixed(0)}%가 가장 큼` : "",
+      sub: `(${CUR} 정부안, ${PREV} 확정 대비)`,
+      body: () => `<table><tr><th>분야</th><th>${CUR}</th><th>비중</th><th>증감</th></tr>
+        ${frows.map(([k, a, b]) => `<tr><td>${esc(k)}<div class="bar" style="margin-top:4px"><i style="width:${(a / fmax * 100).toFixed(0)}%"></i></div></td>
+          <td>${jo(a)}</td><td class="sub">${(a / sumG * 100).toFixed(1)}%</td><td class="${a > b ? "up" : "down"}">${pct((a / b - 1) * 100)}</td></tr>`).join("")}
+        <tr><td><b>합계</b></td><td><b>${jo(sumG)}</b></td><td></td><td></td></tr></table>
+        ${fastest ? `<div class="sub" style="margin-top:10px">가장 빠르게 늘어난 분야: ${esc(fastest[0])} ${pct((fastest[1] / fastest[2] - 1) * 100)}</div>` : ""}` },
+    { id: "up", icon: "up", title: "가장 많이 늘어난 사업", big: top[0] ? esc(top[0].name) : "-", small: top[0] ? `<span class="up">+${won(diff(top[0]))}억</span> 등 5개` : "",
+      sub: `(${PREV} 확정 → ${CUR} 정부안, 억원)`,
+      body: () => top.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p))} (<span class="up">+${won(diff(p))}</span>, ${pct(chg(p) * 100)})</span></div>`).join("") },
+    { id: "down", icon: "down", title: "가장 많이 줄어든 사업", big: cut[0] ? esc(cut[0].name) : "-", small: cut[0] ? `<span class="down">${won(diff(cut[0]))}억</span> 등 5개` : "",
+      sub: `(${PREV} 확정 → ${CUR} 정부안, 억원)`,
+      body: () => cut.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p) || 0)} (<span class="down">${won(diff(p))}</span>${isGone(p) ? ", 미편성" : ", " + pct(chg(p) * 100)})</span></div>`).join("") },
+    { id: "years", icon: "calendar", title: "연도별 총지출", big: `${jo(tot0)} → ${jo(g)}`, small: `${y0}~${CUR} · 국회 확정 기준(${CUR}은 정부안)`,
+      sub: `(국회 확정, ${CUR}은 정부안)`,
+      body: () => `<table><tr><th>연도</th><th>정부안</th><th>국회 확정</th><th>증감(확정 기준)</th></tr>
+        ${YEARS.map((y, i) => { const gv = total(y, "gov"), nv = total(y, "na"), prev = i ? total(YEARS[i - 1], "na") : null;
+          return `<tr><td>${y}</td><td>${jo(gv)}</td><td>${nv ? jo(nv) : "-"}</td><td>${prev ? pct(((nv || gv) / prev - 1) * 100) : "-"}</td></tr>`; }).join("")}</table>` },
+    { id: "fund", icon: "layers", title: "회계·기금 구성", big: fundRows[0] ? esc(fundRows[0][0]) : "-", small: fundRows[0] ? `${jo(fundRows[0][1])} · 상위 12개` : "",
+      sub: `(${CUR} 정부안 상위 12)`,
+      body: () => `<table>${fundRows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${jo(v)}</td></tr>`).join("")}</table>` },
+    { id: "items", icon: "list", title: `${CUR} 내역사업 TOP 10`, big: "…", small: "금액 큰 순", sub: "(억원)", body: () => AN_ITEMS || `<div class="sub">불러오는 중…</div>` },
+    { id: "series", icon: "wave", title: "시계열 자료", big: "차트", small: "항목을 누르면 차트가 뜹니다", sub: "", body: () => `<div id="seriesCard"></div>`, after: renderSeriesCard },
+    { id: "exec", icon: "check", title: "결산 요약", big: ex ? `집행률 ${ex.rate.toFixed(1)}%` : "연결 전", small: ex ? `${EXEC_LAST} · 불용 ${jo(ex.un)}` : "결산 자료 연결 전",
+      sub: "", body: () => execTables() },
+    { id: "unused", icon: "trash", title: `${EXEC_LAST} 불용액 큰 단위사업`, big: topU ? esc(topU.activity) : "-", small: topU ? `<span class="warn">불용 ${won(topU.years[EXEC_LAST].unused)}억</span> 등 10개` : "",
+      sub: "(억원, 금융·내부거래 제외)", body: () => execUnused() },
+  ];
   view(`
   <div class="card"><h2>${CUR}년 예산안 규모·증감</h2>
     <div class="kpis">
@@ -447,37 +487,26 @@ VIEWS.analysis = () => {
   <div class="card"><h2>사업 검색</h2>
     <input id="q" aria-label="사업 검색" placeholder="사업명·부처·내역사업 (예: 기초연금, 교육부 늘봄)" oninput="onSearchInput(this, document.getElementById('qr'), document.getElementById('qd'), 30)">
     <div id="qr" style="margin-top:6px"></div><div id="qd" style="margin-top:10px"></div></div>
-  <div class="card"><h2>분야별 규모·증감 <span class="sub">(${CUR} 정부안, ${PREV} 확정 대비)</span></h2>
-    <table><tr><th>분야</th><th>${CUR}</th><th>비중</th><th>증감</th></tr>
-    ${frows.map(([k, a, b]) => `<tr><td>${esc(k)}<div class="bar" style="margin-top:4px"><i style="width:${(a / fmax * 100).toFixed(0)}%"></i></div></td>
-      <td>${jo(a)}</td><td class="sub">${(a / sumG * 100).toFixed(1)}%</td><td class="${a > b ? "up" : "down"}">${pct((a / b - 1) * 100)}</td></tr>`).join("")}
-    <tr><td><b>합계</b></td><td><b>${jo(sumG)}</b></td><td></td><td></td></tr></table></div>
-  <div class="card"><h2>가장 많이 늘어난 사업 <span class="sub">(${PREV} 확정 → ${CUR} 정부안, 억원)</span></h2>
-    ${top.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p))} (<span class="up">+${won(diff(p))}</span>, ${pct(chg(p) * 100)})</span></div>`).join("")}</div>
-  <div class="card"><h2>가장 많이 줄어든 사업</h2>
-    ${cut.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p) || 0)} (<span class="down">${won(diff(p))}</span>${isGone(p) ? ", 미편성" : ", " + pct(chg(p) * 100)})</span></div>`).join("")}</div>
-  <div class="card"><h2>연도별 총지출 <span class="sub">(국회 확정, ${CUR}은 정부안)</span></h2>
-    <table><tr><th>연도</th><th>정부안</th><th>국회 확정</th><th>증감(확정 기준)</th></tr>
-    ${YEARS.map((y, i) => { const gv = total(y, "gov"), nv = total(y, "na"), prev = i ? total(YEARS[i - 1], "na") : null;
-      return `<tr><td>${y}</td><td>${jo(gv)}</td><td>${nv ? jo(nv) : "-"}</td><td>${prev ? pct(((nv || gv) / prev - 1) * 100) : "-"}</td></tr>`; }).join("")}
-    </table></div>
-  <div class="card"><h2>회계·기금 구성 <span class="sub">(${CUR} 정부안 상위 12)</span></h2>
-    <table>${fundRows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${jo(v)}</td></tr>`).join("")}</table></div>
-  <div class="card" id="topItems"><h2>${CUR} 내역사업 금액 큰 순 TOP 10 <span class="sub">(억원)</span></h2><div class="sub">불러오는 중…</div></div>
-  <div class="card" id="seriesCard"></div>
-  ${execSummary()}`);
-  renderSeriesCard();
+  <div class="bn"><div class="bgrid2 agrid">${AN_SECTIONS.map(x => `<div class="brow acard" role="button" tabindex="0" data-a="${x.id}"
+      onclick="anOpen(this.dataset.a,this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();anOpen(this.dataset.a,this)}">
+      <div class="ahd">${ic(x.icon)}<b>${x.title}</b></div><div class="abig" id="abig-${x.id}">${x.big}</div><div class="sub">${x.small}</div></div>`).join("")}</div></div>`);
   naeyeokData().then(all => {
-    const el = document.getElementById("topItems"); if (!el) return;
     const rows = [];
     for (const k in all) for (const it of all[k]) rows.push({ key: k, name: it.name, amt: it.amt });
     rows.sort((a, b) => b.amt - a.amt);
-    el.innerHTML = `<h2>${CUR} 내역사업 금액 큰 순 TOP 10 <span class="sub">(억원)</span></h2>` + rows.slice(0, 10).map((r, i) => {
+    AN_ITEMS = rows.slice(0, 10).map((r, i) => {
       const [min, pn] = r.key.split("|");
       return `<div class="item"><b>${i + 1}. ${esc(r.name)}</b> <span class="sub">${esc(pn)} · ${esc(min)}</span><br><span class="sub">${won(r.amt)}억</span></div>`;
     }).join("");
+    const el = document.getElementById("abig-items"); if (el && rows[0]) el.textContent = rows[0].name;
   });
 };
+let AN_SECTIONS = [], AN_ITEMS = null;
+async function anOpen(id, card) {
+  const x = AN_SECTIONS.find(s => s.id === id); if (!x) return;
+  await sheetOpen(card, `<div class="sub">주요분석</div><h3 id="bsTitle">${x.title} <span class="sub" style="font-size:13px;font-weight:600">${x.sub}</span></h3><div class="abody">${x.body()}</div>`);
+  if (x.after) x.after();
+}
 
 /* ---------- 시계열 자료 (주요분석 하단 목록 → 팝업 차트) ---------- */
 let SERIES_IDX = null;
@@ -490,7 +519,7 @@ async function renderSeriesCard() {
   const el = document.getElementById("seriesCard"); if (!el) return;
   const idx = await loadSeriesIdx();
   const groups = idx.groups.filter(g => g.items && g.items.length);
-  el.innerHTML = `<h2>시계열 자료 <span class="sub">(목록을 누르면 팝업으로 차트가 뜹니다)</span></h2>` +
+  el.innerHTML = (el.closest(".bsin") ? "" : `<h2>시계열 자료 <span class="sub">(목록을 누르면 팝업으로 차트가 뜹니다)</span></h2>`) +
     (groups.length ? groups.map(g => `<div class="series-g"><h3>${esc(g.title)}</h3>${g.items.map(it =>
       `<button class="series-btn" data-series="${esc(it.id)}">${esc(it.title)}<span>${esc(it.desc || "")}</span></button>`).join("")}</div>`).join("")
       : `<div class="sub">등록된 시계열이 아직 없습니다.</div>`);
@@ -540,23 +569,23 @@ function seriesChartHTML(d) {
   const src = d.source ? `<div class="sub" style="margin-top:8px">출처: ${esc(d.source)} · 단위 ${esc(d.unit || "")}</div>` : "";
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(d.title)} 차트">${grid}${xl}${lines}</svg>${legend}${table}${src}`;
 }
-function execSummary() {
-  if (!U.length) return `<div class="card"><h2>결산 요약</h2><div class="sub">결산(집행·이월·불용) 데이터는 아직 연결 전입니다.</div></div>`;
+function execTables() {
+  if (!U.length) return `<div class="sub">결산(집행·이월·불용) 데이터는 아직 연결 전입니다.</div>`;
   const ey = D.exec_years;
   const table = (label, sel) => {
     const sum = (y, k) => U.reduce((a, u) => a + (sel(u) ? ((u.years[y] || {})[k] || 0) : 0), 0);
     return `<tr><td colspan="6" style="text-align:left;padding-top:12px"><b>${label}</b></td></tr>` + ey.map(y => { const c = sum(y, "cur"), s = sum(y, "spent");
       return `<tr><td>${y}</td><td>${jo(c)}</td><td>${jo(s)}</td><td>${jo(sum(y, "carry"))}</td><td class="warn">${jo(sum(y, "unused"))}</td><td>${(c ? s / c * 100 : 0).toFixed(1)}%</td></tr>`; }).join("");
   };
-  const top = U.filter(u => u.years[EXEC_LAST] && !isFin(u)).sort((a, b) => b.years[EXEC_LAST].unused - a.years[EXEC_LAST].unused).slice(0, 10);
-  return `<div class="card"><h2>결산 요약</h2>
-    <div class="sub">기금은 원리금 상환·예탁 같은 금융 거래가 섞여 있어 회계와 나눠 봅니다. 기금 여유자금 운용은 제외했습니다.</div>
+  return `<div class="sub">기금은 원리금 상환·예탁 같은 금융 거래가 섞여 있어 회계와 나눠 봅니다. 기금 여유자금 운용은 제외했습니다.</div>
     <table><tr><th>연도</th><th>예산현액</th><th>지출</th><th>이월</th><th>불용</th><th>집행률</th></tr>
-    ${table("일반·특별회계", u => !isFundUnit(u))}${table("기금", isFundUnit)}
-    </table></div>
-  <div class="card"><h2>${EXEC_LAST} 불용액 큰 단위사업 <span class="sub">(억원, 금융·내부거래 제외)</span></h2>
-    ${top.map(u => { const v = u.years[EXEC_LAST]; return `<div class="item"><b>${esc(u.activity)}</b> <span class="sub">${esc(u.ministry)} · ${esc(u.program)}</span><br>
-      <span class="sub">현액 ${won(v.cur)} · 지출 ${won(v.spent)} · 이월 ${won(v.carry)} · <span class="warn">불용 ${won(v.unused)}</span> · 집행률 ${v.rate.toFixed(1)}%</span></div>`; }).join("")}</div>`;
+    ${table("일반·특별회계", u => !isFundUnit(u))}${table("기금", isFundUnit)}</table>`;
+}
+function execUnused() {
+  if (!U.length) return `<div class="sub">결산 데이터 연결 전입니다.</div>`;
+  const top = U.filter(u => u.years[EXEC_LAST] && !isFin(u)).sort((a, b) => b.years[EXEC_LAST].unused - a.years[EXEC_LAST].unused).slice(0, 10);
+  return top.map(u => { const v = u.years[EXEC_LAST]; return `<div class="item"><b>${esc(u.activity)}</b> <span class="sub">${esc(u.ministry)} · ${esc(u.program)}</span><br>
+      <span class="sub">현액 ${won(v.cur)} · 지출 ${won(v.spent)} · 이월 ${won(v.carry)} · <span class="warn">불용 ${won(v.unused)}</span> · 집행률 ${v.rate.toFixed(1)}%</span></div>`; }).join("");
 }
 
 /* ---------- 3. 예산 탐색 ---------- */
@@ -701,6 +730,15 @@ const ICON = {
   heart: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   soon: '<path d="M3 12h4l3-7 4 14 3-7h4"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  up: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>',
+  down: '<path d="M3 7l6 6 4-4 8 8M15 17h6v-6"/>',
+  calendar: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',
+  layers: '<path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5"/>',
+  list: '<path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+  wave: '<path d="M2 12c3-6 5-6 8 0s5 6 8 0 3-4 4-4"/>',
+  check: '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   coin: '<circle cx="12" cy="12" r="9"/><path d="M9 9.5h4.5a1.5 1.5 0 0 1 0 3h-3a1.5 1.5 0 0 0 0 3H15M12 7v10"/>',
 };
 const ic = k => `<svg class="bic" viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
@@ -855,17 +893,37 @@ function bnMorph(card, box, back) {
   const an = g.animate(back ? [t, f] : [f, t], { duration: back ? 300 : 440, easing: back ? "cubic-bezier(.4,0,.2,1)" : "cubic-bezier(.2,.8,.2,1)", fill: "both" });
   return an.finished.catch(() => {}).then(() => { g.remove(); if (!back) box.style.visibility = ""; });
 }
-async function bnOpen(id, card) {
-  const r = bnFind(id); if (!r) return;
-  bnFrom = card || null;
+// 펼침 창 (국민혜택 설명·주요분석 카드가 같이 쓴다)
+function sheetEl() {
   let el = document.getElementById("bSheet");
   if (!el) {
     el = document.createElement("div"); el.id = "bSheet"; el.className = "bsheet";
     el.innerHTML = `<div class="bsbg"></div><div class="bsbox" role="dialog" aria-modal="true" aria-labelledby="bsTitle"><button class="bsx" aria-label="닫기">×</button><div class="bsin"></div></div>`;
     document.body.appendChild(el);
-    el.querySelector(".bsbg").onclick = el.querySelector(".bsx").onclick = bnClose;
+    el.querySelector(".bsbg").onclick = el.querySelector(".bsx").onclick = () => bnClose();
     document.addEventListener("keydown", e => { if (e.key === "Escape" && el.classList.contains("on")) bnClose(); });
+    // 창 안에서 사업 상세·시계열로 넘어가면 창을 바로 닫는다
+    el.querySelector(".bsin").addEventListener("click", e => {
+      const a = e.target.closest("a[onclick*='openProject'],[data-series]"); if (a) bnClose(true);
+    }, true);
   }
+  return el;
+}
+async function sheetOpen(card, html) {
+  bnFrom = card || null;
+  const el = sheetEl(), box = el.querySelector(".bsin");
+  box.classList.remove("in"); box.innerHTML = html;
+  el.classList.add("on"); document.body.style.overflow = "hidden";
+  const bx = el.querySelector(".bsbox"); bx.scrollTop = 0;
+  if (card) card.classList.add("open");
+  await bnMorph(card, bx);
+  box.classList.add("in");
+  return box;
+}
+async function bnOpen(id, card) {
+  const r = bnFind(id); if (!r) return;
+  bnFrom = card || null;
+  const el = sheetEl();
   const p = r.p && projById(r.p);
   const head = `<div class="sub">${orgLine(r)}</div>
     <h3 id="bsTitle">${esc(r.n)}</h3>
@@ -890,11 +948,11 @@ async function bnOpen(id, card) {
   await bnMorph(card, bx);
   box.classList.add("in");
 }
-async function bnClose() {
+async function bnClose(now) {
   const el = document.getElementById("bSheet"); if (!el || !el.classList.contains("on") || el.classList.contains("closing")) return;
   const card = bnFrom && document.body.contains(bnFrom) ? bnFrom : null;
   el.classList.add("closing");
-  await bnMorph(card, el.querySelector(".bsbox"), true);
+  if (!now) await bnMorph(card, el.querySelector(".bsbox"), true);
   el.classList.remove("on", "closing"); el.querySelector(".bsbox").style.visibility = ""; document.body.style.overflow = "";
   if (card) { card.classList.remove("open"); card.focus({ preventScroll: true }); }
   bnFrom = null;
