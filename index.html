@@ -121,11 +121,12 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .bmode button.on .bic{stroke:var(--gold)}
 .bage{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px}
 .bage b{font-size:32px;font-weight:800;color:var(--gold)}.bage small{font-size:14px;color:var(--sub);font-weight:600}
-.bn input[type=range]{width:100%;appearance:none;-webkit-appearance:none;height:3px;padding:0;border:0;box-shadow:none;background:linear-gradient(to right,var(--gold) var(--v),var(--line) var(--v));border-radius:2px;margin:10px 0 6px;outline:none}
+.bn input[type=range]{width:100%;appearance:none;-webkit-appearance:none;height:28px;padding:0;border:0;box-shadow:none;background:linear-gradient(to right,var(--gold) var(--v),var(--line) var(--v)) center / 100% 3px no-repeat;border-radius:2px;margin:6px 0 4px;outline:none}
 .bn input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 6px rgba(216,194,142,.18);cursor:pointer}
 .bn input[type=range]::-moz-range-thumb{width:18px;height:18px;border:0;border-radius:50%;background:var(--gold);cursor:pointer}
 .blab{font-size:13px;font-weight:700;margin-top:14px}
 .blab+.chips{margin-top:6px}
+@media (max-width:640px){.bn .chips button{min-height:36px;padding:8px 14px}#oaWrap .oa-head h2 .sub{display:block;margin-top:4px;font-size:13px;line-height:1.4}}
 .bgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
 .bgrid button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 4px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;word-break:keep-all}
 .bgrid button.on{border-color:var(--gold);color:var(--gold)}.bgrid button.on .bic{stroke:var(--gold)}
@@ -221,6 +222,8 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .llm{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;margin-top:12px;font-size:14px;color:var(--sub)}
 .llm label{display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
 .llm-lab{font-weight:700;color:var(--ink);white-space:nowrap}
+.llm input[type=radio]{width:18px;height:18px;margin:0;accent-color:var(--accent);cursor:pointer;flex:none}
+@media (max-width:640px){.llm{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:10px}.llm-lab{margin-bottom:2px}.llm label{font-size:15px}}
 .ansbody{line-height:1.75;word-break:keep-all}
 .lab{display:inline-flex;flex-direction:column;align-items:center}
 .lab-note{display:block;text-align:center;color:#fff;text-decoration:none;font-size:11px;line-height:1.2;white-space:nowrap;margin-top:3px;letter-spacing:-.01em}
