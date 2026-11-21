@@ -461,69 +461,8 @@ function byField(y, pick) {
   return m;
 }
 VIEWS.analysis = () => {
-  const g = total(CUR, "gov"), n = total(PREV, "na");
-  const top = P.filter(p => base(p) > 0 && curGov(p) > 0).sort((a, b) => diff(b) - diff(a)).slice(0, 5);
-  const cut = P.filter(p => base(p) > 0).sort((a, b) => diff(a) - diff(b)).slice(0, 5);
-  const fg = byField(CUR, (p, y) => Y(p, y).gov), fn = byField(PREV, (p, y) => Y(p, y).na);
-  const sumG = Object.values(fg).reduce((a, b) => a + b, 0);
-  const frows = Object.keys({ ...fg, ...fn }).map(k => [k, fg[k] || 0, fn[k] || 0]).sort((a, b) => b[1] - a[1]);
-  const fmax = Math.max(...frows.map(r => r[1]));
-  const funds = {};
-  P.forEach(p => { const v = curGov(p); if (v && p.fund) { const k = p.fund.split("/")[0]; funds[k] = (funds[k] || 0) + v; } });
-  const fundRows = Object.entries(funds).sort((a, b) => b[1] - a[1]).slice(0, 12);
-  const fastest = frows.filter(r => r[2] > 0).sort((a, b) => (b[1] / b[2]) - (a[1] / a[2]))[0];
-  const y0 = YEARS[0], tot0 = total(y0, "na") || total(y0, "gov");
-  const ex = U.length ? (() => { const c = U.reduce((a, u) => a + ((u.years[EXEC_LAST] || {}).cur || 0), 0), sp = U.reduce((a, u) => a + ((u.years[EXEC_LAST] || {}).spent || 0), 0), un = U.reduce((a, u) => a + ((u.years[EXEC_LAST] || {}).unused || 0), 0); return { rate: c ? sp / c * 100 : 0, un }; })() : null;
-  const topU = U.filter(u => u.years[EXEC_LAST] && !isFin(u)).sort((a, b) => b.years[EXEC_LAST].unused - a.years[EXEC_LAST].unused)[0];
-  // 카드 목록: 제목·한 줄 요약(앞) / 펼친 창 내용(뒤)
-  AN_SECTIONS = [
-    { id: "field", icon: "chart", title: "분야별 규모·증감", big: frows[0] ? esc(frows[0][0]) : "-", small: frows[0] ? `${jo(frows[0][1])} · 비중 ${(frows[0][1] / sumG * 100).toFixed(0)}%가 가장 큼` : "",
-      sub: `(${CUR} 정부안, ${PREV} 확정 대비)`,
-      body: () => `<table><tr><th>분야</th><th>${CUR}</th><th>비중</th><th>증감</th></tr>
-        ${frows.map(([k, a, b]) => `<tr><td>${esc(k)}<div class="bar" style="margin-top:4px"><i style="width:${(a / fmax * 100).toFixed(0)}%"></i></div></td>
-          <td>${jo(a)}</td><td class="sub">${(a / sumG * 100).toFixed(1)}%</td><td class="${a > b ? "up" : "down"}">${pct((a / b - 1) * 100)}</td></tr>`).join("")}
-        <tr><td><b>합계</b></td><td><b>${jo(sumG)}</b></td><td></td><td></td></tr></table>
-        ${fastest ? `<div class="sub" style="margin-top:10px">가장 빠르게 늘어난 분야: ${esc(fastest[0])} ${pct((fastest[1] / fastest[2] - 1) * 100)}</div>` : ""}` },
-    { id: "up", icon: "up", title: "가장 많이 늘어난 사업", big: top[0] ? esc(top[0].name) : "-", small: top[0] ? `<span class="up">+${won(diff(top[0]))}억</span> 등 5개` : "",
-      sub: `(${PREV} 확정 → ${CUR} 정부안, 억원)`,
-      body: () => top.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p))} (<span class="up">+${won(diff(p))}</span>, ${pct(chg(p) * 100)})</span></div>`).join("") },
-    { id: "down", icon: "down", title: "가장 많이 줄어든 사업", big: cut[0] ? esc(cut[0].name) : "-", small: cut[0] ? `<span class="down">${won(diff(cut[0]))}억</span> 등 5개` : "",
-      sub: `(${PREV} 확정 → ${CUR} 정부안, 억원)`,
-      body: () => cut.map(p => `<div class="item">${link(p)}<br><span class="sub">${won(base(p))} → ${won(curGov(p) || 0)} (<span class="down">${won(diff(p))}</span>${isGone(p) ? ", 미편성" : ", " + pct(chg(p) * 100)})</span></div>`).join("") },
-    { id: "years", icon: "calendar", title: "연도별 총지출", big: `${jo(tot0)} → ${jo(g)}`, small: `${y0}~${CUR} · 국회 확정 기준(${CUR}은 정부안)`,
-      sub: `(국회 확정, ${CUR}은 정부안)`,
-      body: () => `<table><tr><th>연도</th><th>정부안</th><th>국회 확정</th><th>증감(확정 기준)</th></tr>
-        ${YEARS.map((y, i) => { const gv = total(y, "gov"), nv = total(y, "na"), prev = i ? total(YEARS[i - 1], "na") : null;
-          return `<tr><td>${y}</td><td>${jo(gv)}</td><td>${nv ? jo(nv) : "-"}</td><td>${prev ? pct(((nv || gv) / prev - 1) * 100) : "-"}</td></tr>`; }).join("")}</table>` },
-    { id: "fund", icon: "layers", title: "회계·기금 구성", big: fundRows[0] ? esc(fundRows[0][0]) : "-", small: fundRows[0] ? `${jo(fundRows[0][1])} · 상위 12개` : "",
-      sub: `(${CUR} 정부안 상위 12)`,
-      body: () => `<table>${fundRows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${jo(v)}</td></tr>`).join("")}</table>` },
-    { id: "items", icon: "list", title: `${CUR} 내역사업 TOP 10`, big: "…", small: "금액 큰 순", sub: "(억원)", body: () => AN_ITEMS || `<div class="sub">불러오는 중…</div>` },
-    { id: "series", icon: "wave", title: "시계열 자료", big: "차트", small: "항목을 누르면 차트가 뜹니다", sub: "", body: () => `<div id="seriesCard"></div>`, after: renderSeriesCard },
-    { id: "exec", icon: "check", title: "결산 요약", big: ex ? `집행률 ${ex.rate.toFixed(1)}%` : "연결 전", small: ex ? `${EXEC_LAST} · 불용 ${jo(ex.un)}` : "결산 자료 연결 전",
-      sub: "", body: () => execTables() },
-    { id: "unused", icon: "trash", title: `${EXEC_LAST} 불용액 큰 단위사업`, big: topU ? esc(topU.activity) : "-", small: topU ? `<span class="warn">불용 ${won(topU.years[EXEC_LAST].unused)}억</span> 등 10개` : "",
-      sub: "(억원, 금융·내부거래 제외)", body: () => execUnused() },
-    ...FISC_CARDS.map(c => ({ ...c, big: fiscHead(c.id)[0], small: fiscHead(c.id)[1] })),
-  ];
-  view(`
-  <div class="bn"><div class="bgrid2 agrid">${AN_SECTIONS.map(x => `<div class="brow acard" role="button" tabindex="0" data-a="${x.id}"
-      onclick="anOpen(this.dataset.a,this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();anOpen(this.dataset.a,this)}">
-      <div class="ahd">${ic(x.icon)}<b>${x.title}</b></div><div class="abig" id="abig-${x.id}">${x.big}</div><div class="sub">${x.small}</div></div>`).join("")}</div></div>
-  <div class="bn" id="oaWrap"><div class="sub">열린재정 OPEN API 목록을 불러오는 중…</div></div>`);
+  view(`<div class="bn" id="oaWrap"><div class="sub">열린재정 OPEN API 목록을 불러오는 중…</div></div>`);
   loadOpenApi();
-  loadFiscal().then(() => FISC_CARDS.forEach(c => { const [b, s] = fiscHead(c.id), el = document.getElementById("abig-" + c.id);
-    if (el) { el.innerHTML = b; el.nextElementSibling.innerHTML = s; } }));
-  naeyeokData().then(all => {
-    const rows = [];
-    for (const k in all) for (const it of all[k]) rows.push({ key: k, name: it.name, amt: it.amt });
-    rows.sort((a, b) => b.amt - a.amt);
-    AN_ITEMS = rows.slice(0, 10).map((r, i) => {
-      const [min, pn] = r.key.split("|");
-      return `<div class="item"><b>${i + 1}. ${esc(r.name)}</b> <span class="sub">${esc(pn)} · ${esc(min)}</span><br><span class="sub">${won(r.amt)}억</span></div>`;
-    }).join("");
-    const el = document.getElementById("abig-items"); if (el && rows[0]) el.textContent = rows[0].name;
-  });
 };
 let AN_SECTIONS = [], AN_ITEMS = null;
 /* ---------- 열린재정 추가 자료: 추경·월별 집행·국가채무·중기계획 (data/fiscal/*.json) ---------- */
