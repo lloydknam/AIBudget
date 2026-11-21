@@ -309,7 +309,7 @@ const total = (y, k) => D.totals ? D.totals[y][k] : P.reduce((a, p) => a + (Y(p,
 document.getElementById("notice").innerHTML = SAMPLE
   ? "화면 시험용 <b>샘플 데이터</b>입니다. 실제 예산 수치가 아닙니다."
   : `출처: 열린재정 Open API · 예산 ${YEARS[0]}~${CUR} (총지출 기준, 세부사업 ${P.length.toLocaleString()}개)${HAS_EXEC ? ` · 결산 ${(D.exec_years || [])[0]}~${EXEC_LAST} (단위사업 ${U.length.toLocaleString()}개)` : ""} · 단위 ${D.unit} · 수집 ${esc((D.fetched_at || "").slice(0, 10))}<br>
-     국회 검토문서는 아직 연결 전입니다. 공식 시스템과 무관한 개인 프로젝트입니다.`;
+     공식 시스템과 무관한 개인 프로젝트입니다.`;
 
 const TABS = [["analysis", "재정통계"], ["benefit", "국민혜택"],
   ["ask", "AI분석"]];
