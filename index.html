@@ -205,6 +205,8 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .odd-list li{padding:4px 12px;font-size:12px;line-height:1.25;color:var(--ink);cursor:pointer}
 .odd-list li:hover{background:rgba(216,194,142,.1)}
 .odd-list li.on{color:var(--gold)}
+.breg .odd{flex:1 1 140px;min-width:0;max-width:240px}
+.fsec .breg .odd{max-width:none;flex:1 1 100%}
 .fsec .bage{margin:0 0 4px}
 .fsec .bage b{font-size:16px;font-weight:700}
 .bn .fsec input[type=range]{margin:0;height:20px;background:linear-gradient(to right,var(--gold) var(--v),var(--line) var(--v)) center / 100% 6px no-repeat}
@@ -1134,6 +1136,24 @@ function drawBenefit() {
   const saveReg = () => { try { localStorage.setItem("bnRegion", JSON.stringify({ sido: BS.sido, sgg: BS.sgg })); } catch (e) {} };
   if (sido) sido.onchange = async () => { BS.sido = sido.value; BS.sgg = ""; BS.n = 30; BS.field = ""; saveReg(); await loadLocal(); drawBenefit(); };
   if (sgg) sgg.onchange = () => { BS.sgg = sgg.value; BS.n = 30; BS.field = ""; saveReg(); drawBenefit(); };
+  // 지역 선택도 부처 목록과 같은 작은 글자·촘촘한 펼침 목록으로 교체
+  const miniDD = sel => {
+    if (!sel) return;
+    sel.style.display = "none";
+    const wrap = document.createElement("div"); wrap.className = "odd";
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "odd-btn";
+    btn.textContent = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : "";
+    const ul = document.createElement("ul"); ul.className = "odd-list"; ul.style.display = "none";
+    [...sel.options].forEach((o, i) => {
+      const li = document.createElement("li"); li.textContent = o.text;
+      if (i === sel.selectedIndex) li.className = "on";
+      li.onclick = () => { sel.selectedIndex = i; sel.dispatchEvent(new Event("change")); };
+      ul.appendChild(li);
+    });
+    btn.onclick = () => { ul.style.display = ul.style.display === "block" ? "none" : "block"; };
+    wrap.append(btn, ul); sel.parentNode.insertBefore(wrap, sel.nextSibling);
+  };
+  miniDD(sido); miniDD(sgg);
   const orgSel = document.getElementById("bOrg");
   if (orgSel) orgSel.onchange = () => { BS.org = orgSel.value; BS.n = 30; drawBenefit(); };
   const orgBtn = document.getElementById("bOrgBtn"), orgList = document.getElementById("bOrgList");
