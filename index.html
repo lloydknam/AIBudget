@@ -186,6 +186,8 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .btag.loc{border:1px solid var(--line);color:var(--ico);margin-left:4px}
 .bhd>span{display:flex;gap:4px;flex:none}
 @media (max-width:640px){.bgrid{grid-template-columns:repeat(2,1fr)}}
+.bbiz{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media (max-width:640px){.bbiz{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .sheet-body .dbody{font-size:12.5px;line-height:1.6;margin-top:4px}
 .sheet-body .dbody p{margin:3px 0;word-break:keep-all}
 .sheet-body .dbody p.li{padding-left:12px;text-indent:-9px}
@@ -1070,7 +1072,7 @@ function drawBenefit() {
     <div class="blab">가구 <span class="sub">해당하는 것만</span></div>${chipRow("bHh", B_HH, k => BS.hh.has(k))}
     <div class="blab">상황 <span class="sub">해당하는 것만 · 복수 선택</span></div>${chipRow("bSit", B_SIT, k => BS.sit.has(k))}
     ` : `
-    <div class="bgrid" id="bBiz">${B_BIZ.map(([k, t, i]) => `<button class="${BS.biz === k ? "on" : ""}" data-k="${k}">${ic(i)}<span>${t}</span></button>`).join("")}</div>
+    <div class="bgrid bbiz" id="bBiz">${B_BIZ.map(([k, t, i]) => `<button class="${BS.biz === k ? "on" : ""}" data-k="${k}">${ic(i)}<span>${t}</span></button>`).join("")}</div>
     <div class="blab">업종</div>${chipRow("bInd", B_IND, k => k === BS.ind)}
     `}
   </div>
