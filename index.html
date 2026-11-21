@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=16"+location.hash);return;}if(!location.hash)location.replace("map.html?v=16");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=16를 붙이고 예산 지도로 보낸다 -->
+<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=18"+location.hash);return;}if(!location.hash)location.replace("map.html?v=18");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=18를 붙이고 예산 지도로 보낸다 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 예산 프리즘</title>
 <link rel="icon" type="image/png" href="assets/icon-192.png">
@@ -133,14 +133,15 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .bh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .brow{min-width:0;padding:14px 15px;background:var(--bg);border:1px solid var(--line);border-radius:14px;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s}
 .brow:hover,.brow:focus-visible{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.35);outline:none}
-.brow.open{border-color:var(--gold);opacity:.35}
+.brow.open{visibility:hidden}.brow.busy{border-color:var(--gold);opacity:.7}
+.bsghost{position:fixed;z-index:51;background:var(--card);border:1px solid #d8c28e;box-shadow:0 18px 50px rgba(0,0,0,.5);pointer-events:none}
 .bgrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.bsbg{transition:opacity .3s}.bsheet.closing .bsbg{opacity:0}
-.bsin>*{transition:opacity .25s .15s}.bsin:not(.in)>*{opacity:0}
+.bsbg{transition:opacity .3s}.bsheet.on .bsbg{animation:bsfade .3s}@keyframes bsfade{from{opacity:0}}.bsheet.closing .bsbg{opacity:0}
+.bsin>*{transition:opacity .22s}.bsin:not(.in)>*{opacity:0}
 .bsheet.closing .bsin>*{opacity:0;transition-delay:0s;transition-duration:.12s}
 @media (prefers-reduced-motion:reduce){.brow,.bsbg,.bsin>*{transition:none}.brow:hover{transform:none}}
 .bhd b{position:relative;padding-left:14px}
-.bhd b::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.bhd b::before{content:"";position:absolute;left:0;top:.6em;width:7px;height:7px;border-radius:50%;background:var(--mc,var(--gold))}
 .bsum{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 @media (max-width:640px){.bgrid2{gap:8px}.brow{padding:11px 10px;border-radius:12px}.bhd b{font-size:14px;padding-left:12px}.bhd b::before{width:5px;height:5px}
   .bgrid2 .brow .sub{font-size:11.5px}.bgrid2 .bsum{font-size:12.5px;line-height:1.5;-webkit-line-clamp:2}.bgrid2 .bbud{font-size:11.5px}.bgrid2 .bbud .bic{display:none}.bgrid2 .btag{font-size:10px;padding:1px 5px}}
@@ -704,6 +705,17 @@ const ICON = {
 };
 const ic = k => `<svg class="bic" viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
 const has = (r, pre) => r.k.filter(c => c.startsWith(pre));
+// 부처 색: 예산지도(부처별 보기)와 같은 규칙. 2027 정부안 부처 합계 큰 순서대로 6색 팔레트를 돌려 쓴다 (map.html colorOfPath)
+const MAP_PAL = ["#7cc4ff", "#5fe3a1", "#c9a7ff", "#ffc27a", "#ff8fa3", "#8ef0e6"];
+let MIN_COL = null;
+const minCol = o => {
+  if (!MIN_COL) {
+    const t = {}; P.forEach(p => { const v = curGov(p); if (v > 0) t[p.ministry] = (t[p.ministry] || 0) + v; });
+    MIN_COL = new Map(Object.entries(t).sort((a, b) => b[1] - a[1]).map(([m], i) => [m, MAP_PAL[i % MAP_PAL.length]]));
+  }
+  return MIN_COL.get(o) || "#9aa4b2";
+};
+const orgLine = r => `<span style="color:${minCol(r.o)}">${esc(r.o)}</span>${r.t ? " · " + esc(r.t.replace(/\|\|/g, ", ")) : ""}${r.f ? " · " + esc(r.f) : ""}`;
 
 // 개인·가구: 나이 이외 조건 통과 여부
 function bnPassPerson(r) {
@@ -744,8 +756,8 @@ function bnRow(r, soon) {
   const bud = p && curGov(p) > 0
     ? `<div class="bbud">${ic("coin")}<span>예산 <a href="#" onclick="event.stopPropagation();openProject('${p.id}');return false">${esc(p.name)}</a> · ${CUR} 정부안 <b>${won(curGov(p))}억</b> ${isNew(p) ? '<span class="warn">신규</span>' : pct(chg(p) * 100)}</span></div>` : "";
   const tag = (soon ? `<span class="btag soon">${r.a[0]}세부터</span>` : "") + (r.r != null ? `<span class="btag loc">${esc(r.r || BS.sido.replace(/(특별자치|특별|광역|통합특별)?(시|도)$/, ""))}</span>` : "");
-  return `<div class="brow" role="button" tabindex="0" data-i="${esc(r.i)}" onclick="bnOpen(this.dataset.i,this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();bnOpen(this.dataset.i,this)}"><div class="bhd"><b>${esc(r.n)}</b>${tag}</div>
-    <div class="sub">${esc(r.o)}${r.t ? " · " + esc(r.t.replace(/\|\|/g, ", ")) : ""}${r.f ? " · " + esc(r.f) : ""}</div>
+  return `<div class="brow" role="button" tabindex="0" data-i="${esc(r.i)}" onclick="bnOpen(this.dataset.i,this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();bnOpen(this.dataset.i,this)}"><div class="bhd"><b style="--mc:${minCol(r.o)}">${esc(r.n)}</b>${tag}</div>
+    <div class="sub">${orgLine(r)}</div>
     ${r.s ? `<div class="bsum">${esc(r.s)}</div>` : ""}${bud}</div>`;
 }
 function chipRow(id, list, isOn) {
@@ -828,14 +840,20 @@ const bnText = t => esc(String(t).replace(/https?:\/\/ns\.service\.go\.kr\S*/g, 
 const bnCalm = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 let bnFrom = null;   // 펼쳐진 카드 (닫을 때 그 자리로 돌아감)
 // 카드 자리에서 설명 창 자리로 커지는 애니메이션 (FLIP)
+// 카드가 제자리에서 펼쳐져 설명 창 크기로 커지는 애니메이션.
+// 카드와 같은 모양의 빈 상자(ghost)를 카드 위치·크기에서 설명 창 위치·크기로 키운 뒤, 진짜 창을 보여준다. 닫을 때는 반대로.
 function bnMorph(card, box, back) {
-  if (!card || bnCalm() || !box.animate) return Promise.resolve();
+  if (!card || bnCalm() || !document.body.animate) return Promise.resolve();
   const a = card.getBoundingClientRect(), b = box.getBoundingClientRect();
   if (!a.width || !b.width) return Promise.resolve();
-  const from = { transform: `translate(${a.left - b.left}px,${a.top - b.top}px) scale(${a.width / b.width},${a.height / b.height})`, borderRadius: "14px", opacity: .85 };
-  const to = { transform: "none", borderRadius: getComputedStyle(box).borderRadius, opacity: 1 };
-  const an = box.animate(back ? [to, from] : [from, to], { duration: back ? 260 : 420, easing: back ? "cubic-bezier(.4,0,.6,1)" : "cubic-bezier(.2,.85,.25,1)", fill: "both" });
-  return an.finished.then(() => an.cancel()).catch(() => {});
+  const g = document.createElement("div"); g.className = "bsghost";
+  document.body.appendChild(g);
+  const R = getComputedStyle(box).borderRadius;
+  const f = { left: a.left + "px", top: a.top + "px", width: a.width + "px", height: a.height + "px", borderRadius: "14px", borderColor: "#d8c28e" };
+  const t = { left: b.left + "px", top: b.top + "px", width: b.width + "px", height: b.height + "px", borderRadius: R, borderColor: "#20252d" };
+  box.style.visibility = "hidden";
+  const an = g.animate(back ? [t, f] : [f, t], { duration: back ? 300 : 440, easing: back ? "cubic-bezier(.4,0,.2,1)" : "cubic-bezier(.2,.8,.2,1)", fill: "both" });
+  return an.finished.catch(() => {}).then(() => { g.remove(); if (!back) box.style.visibility = ""; });
 }
 async function bnOpen(id, card) {
   const r = bnFind(id); if (!r) return;
@@ -849,33 +867,35 @@ async function bnOpen(id, card) {
     document.addEventListener("keydown", e => { if (e.key === "Escape" && el.classList.contains("on")) bnClose(); });
   }
   const p = r.p && projById(r.p);
-  const head = `<div class="sub">${esc(r.o)}${r.t ? " · " + esc(r.t.replace(/\|\|/g, ", ")) : ""}${r.f ? " · " + esc(r.f) : ""}</div>
+  const head = `<div class="sub">${orgLine(r)}</div>
     <h3 id="bsTitle">${esc(r.n)}</h3>
     ${p && curGov(p) > 0 ? `<div class="bbud">${ic("coin")}<span>예산 <a href="#" onclick="bnClose();openProject('${p.id}');return false">${esc(p.name)}</a> · ${CUR} 정부안 <b>${won(curGov(p))}억</b> ${isNew(p) ? '<span class="warn">신규</span>' : pct(chg(p) * 100)}</span></div>` : ""}`;
   const box = el.querySelector(".bsin");
-  box.innerHTML = head + `<div class="sub" style="margin-top:16px">설명을 불러오는 중…</div>`;
-  el.classList.add("on"); document.body.style.overflow = "hidden";
-  const bx = el.querySelector(".bsbox"); bx.scrollTop = 0;
-  if (card) card.classList.add("open");
-  box.classList.remove("in"); void box.offsetWidth;
-  bnMorph(card, bx); box.classList.add("in");
-  const n = bnShard(id);
+  if (card) card.classList.add("busy");
+  const n = bnShard(id);   // 설명을 먼저 불러와 창의 최종 크기를 알고 나서 펼친다
   if (!BD[n]) BD[n] = (await getJ(`data/gov24_detail/${n}.json`)) || {};
+  if (card) card.classList.remove("busy");
   const d = BD[n][id] || { purpose: r.s, target: r.g, content: r.c, deadline: r.d };
   const sec = (t, v) => { const h = v ? bnText(v) : ""; return h ? `<section><h4>${t}</h4><div class="bstx">${h}</div></section>` : ""; };
   const docs = [d.docs, d.docs_official && "공무원이 확인: " + d.docs_official, d.docs_self && "본인 확인 필요: " + d.docs_self].filter(Boolean).join("\n\n");
   const law = [d.law, d.rule, d.ordinance].filter(Boolean).join("\n");
+  box.classList.remove("in");
   box.innerHTML = head + sec("서비스 목적", d.purpose) + sec("지원 대상", d.target) + sec("선정 기준", d.criteria) + sec("지원 내용", d.content)
     + sec("신청 방법", d.apply) + sec("신청 기한", d.deadline) + sec("구비 서류", docs) + sec("접수 기관", d.office) + sec("문의처", d.contact) + sec("근거 법령", law)
     + `<div class="bsft"><span class="sub">출처: 정부24 공공서비스${d.updated ? " · 수정 " + esc(String(d.updated).slice(0, 10)) : ""}</span>
        <span>${d.online ? `<a class="bsbtn" href="${esc(d.online)}" target="_blank" rel="noopener">온라인 신청</a>` : ""}</span></div>`;
+  el.classList.add("on"); document.body.style.overflow = "hidden";
+  const bx = el.querySelector(".bsbox"); bx.scrollTop = 0;
+  if (card) card.classList.add("open");
+  await bnMorph(card, bx);
+  box.classList.add("in");
 }
 async function bnClose() {
   const el = document.getElementById("bSheet"); if (!el || !el.classList.contains("on") || el.classList.contains("closing")) return;
   const card = bnFrom && document.body.contains(bnFrom) ? bnFrom : null;
   el.classList.add("closing");
   await bnMorph(card, el.querySelector(".bsbox"), true);
-  el.classList.remove("on", "closing"); document.body.style.overflow = "";
+  el.classList.remove("on", "closing"); el.querySelector(".bsbox").style.visibility = ""; document.body.style.overflow = "";
   if (card) { card.classList.remove("open"); card.focus({ preventScroll: true }); }
   bnFrom = null;
 }
