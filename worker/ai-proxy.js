@@ -2,7 +2,7 @@
 // 역할: 브라우저에 API 키를 노출하지 않고, 허용된 사이트에서 온 질문만 LLM에 전달한다.
 // 환경변수(Worker 설정 > Variables and Secrets):
 //   GEMINI_API_KEY (필수, 기본 LLM 1번), GROQ_API_KEY (선택, 2번)
-//   GEMINI_MODEL (선택, 기본 gemini-3.8-flash), GROQ_MODEL (선택, 기본 llama-3.3-70b-versatile)
+//   GEMINI_MODEL (선택, 기본 gemini-3.5-flash-lite), GROQ_MODEL (선택, 기본 llama-3.3-70b-versatile)
 
 const ALLOW = ["https://lloydknam.github.io"];
 const PER_HOUR = 30;               // IP당 시간당 질문 수 (인스턴스 메모리 기준, 대략적 제한)
@@ -49,7 +49,7 @@ export default {
 };
 
 async function gemini(env, user) {
-  const model = env.GEMINI_MODEL || "gemini-3.8-flash";
+  const model = env.GEMINI_MODEL || "gemini-3.5-flash-lite";
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },

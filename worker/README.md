@@ -13,3 +13,8 @@
 - 허용 사이트는 `ALLOW` 목록(lloydknam.github.io)만. 다른 사이트에서 호출하면 403.
 - 호출 제한은 Worker 인스턴스 메모리 기준이라 대략적입니다. 정확한 제한이 필요하면 Cloudflare Rate Limiting 규칙을 추가하세요.
 - 모델 이름(`GEMINI_MODEL`, `GROQ_MODEL`)은 무료 티어 지원 여부를 확인한 뒤 바꿀 수 있습니다.
+
+## 현재 배포
+- Worker: `aibudget-ai` (https://aibudget-ai.lloydnam.workers.dev/ask)
+- 환경변수: `GEMINI_API_KEY`(Secret), `GEMINI_MODEL=gemini-3.5-flash-lite`
+- `gemini-3.8-flash`는 이 Worker에서 응답이 100초 넘게 걸려 시간초과(524)가 나서 Flash-Lite로 바꿨습니다.
