@@ -58,13 +58,13 @@ header.ghead{padding:6px 0 2px;max-width:952px;margin:0 auto}  /* 예산 지도 
 #gres{position:absolute;top:calc(100% + 6px);left:0;width:min(520px,calc(100vw - 32px));max-height:60vh;overflow:auto;z-index:50;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 14px;box-shadow:0 12px 32px rgba(0,0,0,.35)}
 #gres:empty{display:none}
 .notice{margin:0 auto 16px;max-width:640px;color:var(--note-ink);font-size:12.5px;line-height:1.6;word-break:keep-all}
-nav{flex:none;display:flex;gap:22px;align-items:center;overflow-x:auto;padding:6px 0;border-bottom:1px solid var(--line);max-width:952px;margin:0 auto 2px;scrollbar-width:none}
+nav{flex:none;display:flex;gap:22px;align-items:center;overflow-x:auto;padding:7.6px 0 6px;border-bottom:1px solid var(--line);max-width:952px;margin:0 auto 2px;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
 nav button,nav a{flex:none;border:0;background:none;color:var(--sub);padding:4px 0;cursor:pointer;font:inherit;font-size:17px;font-weight:600;letter-spacing:-.01em;text-decoration:none}
 nav button:hover,nav a:hover{color:var(--ink)}
 nav button.on,nav a.here{font-weight:700;background:linear-gradient(90deg,#f0527f,#b56cf0 55%,#4c8dff);-webkit-background-clip:text;background-clip:text;color:transparent}
 /* 모바일: 메뉴 전체 폭에 고르게 나눈다 (예산 지도 페이지 메뉴와 같은 규칙) */
-@media (max-width:640px){nav{justify-content:space-between;gap:3px;overflow:hidden;padding:0 5px 2px;margin-bottom:0;max-width:none}nav button,nav a{font-size:clamp(12px,4.6vw,18px);padding:1px 0;white-space:nowrap}}
+@media (max-width:640px){nav{justify-content:space-between;gap:3px;overflow:hidden;padding:4px 5px 2px;margin-bottom:0;max-width:none}nav button,nav a{font-size:clamp(12px,4.6vw,18px);padding:1px 0;white-space:nowrap}}
 main{max-width:960px;margin:auto;padding:0 16px 24px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:16px}
 .card h2{font-size:21px;font-weight:800;letter-spacing:-.035em;margin:0 0 12px}
