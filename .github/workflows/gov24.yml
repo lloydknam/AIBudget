@@ -20,6 +20,11 @@ jobs:
         env:
           DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
         run: python scripts/fetch_gov24.py
+      - name: 복지로 중앙부처 복지서비스 목록
+        continue-on-error: true
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+        run: python scripts/fetch_bokjiro.py
       - name: 예산 사업 매칭
         run: python scripts/match_gov24.py
       - name: 커밋
@@ -27,6 +32,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
           git add data/gov24.json data/benefit_map.json
+          if [ -f data/bokjiro.json ]; then git add data/bokjiro.json; fi
           git diff --cached --quiet && echo "변경 없음" && exit 0
           git commit -m "정부24 공공서비스 자료 갱신"
           git push
