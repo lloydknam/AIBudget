@@ -305,7 +305,7 @@ footer .hits{display:inline-block;line-height:0;margin-top:12px}footer .hits img
 <footer>
   <div class="notice" id="notice"></div>
   <a class="lab" href="https://github.com/lloydknam" target="_blank" rel="noopener" title="GitHub(@lloydknam)"><img src="assets/brand/lockup-dark.svg" alt="Lloyd's Balcony Lab · with claude · GitHub(@lloydknam)" height="34"></a><span class="lab-note">*Still experimenting</span>
-  <a class="hits" href="https://hits.sh/lloydknam.github.io/AIBudget/" aria-label="방문자 수"><img src="https://hits.sh/lloydknam.github.io/AIBudget.svg?view=today-total&amp;style=flat-square&amp;label=%EC%98%A4%EB%8A%98%20%2F%20%EC%A0%84%EC%B2%B4%20%EB%B0%A9%EB%AC%B8&amp;color=%23135f8c&amp;labelColor=%234a5057" alt="방문자 수" height="20" loading="lazy"></a>
+  <a class="hits" href="https://hits.sh/lloydknam.github.io/AIBudget/" aria-label="방문자 수"><img id="hitImg" alt="방문자 수" height="20"></a>
 </footer>
 
 <script src="data/budget.js"></script>
@@ -388,7 +388,10 @@ const FLASK = '<sup class="flask" role="img" aria-label="실험 중"><svg viewBo
   items.unshift(`<a href="map.html">예산지도</a>`);   // 가장 왼쪽: 사이트의 첫 화면
   document.getElementById("tabs").innerHTML = items.join("");
 }
-function go(k, push = true) { cur = k; drawTabs(); VIEWS[k](); window.scrollTo(0, 0); if (push) setHash("#" + k); }
+// 방문 수: 메뉴를 열 때마다 배지 이미지를 새로 불러와 +1 (사이트 전체 누적, 하단 배지 숫자도 함께 갱신)
+const HITS_BASE = "https://hits.sh/lloydknam.github.io/AIBudget.svg?view=today-total&style=flat-square&label=%EC%98%A4%EB%8A%98%20%2F%20%EC%A0%84%EC%B2%B4%20%EB%B0%A9%EB%AC%B8&color=%23135f8c&labelColor=%234a5057";
+function countHit() { const im = document.getElementById("hitImg"); if (im) im.src = HITS_BASE + "&t=" + Date.now(); }
+function go(k, push = true) { cur = k; countHit(); drawTabs(); VIEWS[k](); window.scrollTo(0, 0); if (push) setHash("#" + k); }
 // 주소(#탭 또는 #explore/세부사업ID)로 화면을 복원한다. 뒤로가기·새로고침·공유 링크 지원
 function setHash(h) { if (location.hash !== h) history.pushState(null, "", h); }
 function route() {

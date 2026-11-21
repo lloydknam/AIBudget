@@ -344,7 +344,7 @@ body.tree-mode .crumb{display:none}
 <div class="foot">
   <span class="src" id="src"></span>
   <a class="lab" href="https://github.com/lloydknam" target="_blank" rel="noopener" title="GitHub(@lloydknam)"><img src="assets/brand/lockup-dark.svg" alt="Lloyd's Balcony Lab · with claude · GitHub(@lloydknam)" height="18"></a><span class="lab-note">*Still experimenting</span>
-  <a class="hits" href="https://hits.sh/lloydknam.github.io/AIBudget/" aria-label="방문자 수"><img src="https://hits.sh/lloydknam.github.io/AIBudget.svg?view=today-total&amp;style=flat-square&amp;label=%EC%98%A4%EB%8A%98%20%2F%20%EC%A0%84%EC%B2%B4%20%EB%B0%A9%EB%AC%B8&amp;color=%23135f8c&amp;labelColor=%234a5057" alt="방문자 수" height="20" loading="lazy"></a>
+  <a class="hits" href="https://hits.sh/lloydknam.github.io/AIBudget/" aria-label="방문자 수"><img id="hitImg" alt="방문자 수" height="20"></a>
 </div>
 <nav class="bar" aria-label="메뉴">
   <button id="tabField"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="18" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg><span>분야별</span></button>
@@ -1275,6 +1275,10 @@ applyUrl(); syncUrl(false);
   }, { passive: true });
   addEventListener("touchend", () => { if (armed) location.reload(); ptr.classList.remove("on"); y0 = null; armed = false; }, { passive: true });
 })();
+// 방문 수: 이 페이지를 열 때마다 +1 (사이트 전체 누적, 하단 배지 숫자도 함께 갱신)
+const HITS_BASE = "https://hits.sh/lloydknam.github.io/AIBudget.svg?view=today-total&style=flat-square&label=%EC%98%A4%EB%8A%98%20%2F%20%EC%A0%84%EC%B2%B4%20%EB%B0%A9%EB%AC%B8&color=%23135f8c&labelColor=%234a5057";
+function countHit() { const im = document.getElementById("hitImg"); if (im) im.src = HITS_BASE + "&t=" + Date.now(); }
+countHit();
 render();
 </script>
 <script src="install.js" defer></script>
