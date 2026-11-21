@@ -55,9 +55,10 @@ num = lambda x: float(x or 0)
 def build_supp():
     rows = [r for r in load("supp") if r.get("FIN_DE_EP_NM") == "일반지출"]
     E = lambda x: round(num(x) / 1e5)  # 천원 → 억원
-    years = sorted({r["FSCL_YY"] for r in rows}, reverse=True)[:2]
     res = {}
-    for y in years:
+    for y in sorted({r["FSCL_YY"] for r in rows}, reverse=True):   # 추경이 있었던 최근 2개 연도
+        if len(res) == 2:
+            break
         yr = [r for r in rows if r["FSCL_YY"] == y]
         last = max(int(r["SBUDG_DGR"]) for r in yr)
         if last == 0:
@@ -84,7 +85,12 @@ X = re.compile(r"여유자금|예치|예탁|전출|전입|차입금|상환|내�
 def build_exec():
     rows = [r for r in load("exec") if not X.search(r.get("ACTV_NM") or "")]
     E = lambda x: round(num(x) / 1e8)  # 원 → 억원
-    ys = sorted({r["FSCL_YY"] for r in rows}, reverse=True)[:3]
+    # 한 번에 10만 행까지만 오므로, 앞 달이 잘린 연도는 뺀다 (1월 행 수가 가장 많은 달의 90% 미만이면 잘린 것)
+    cnt = defaultdict(int)
+    for r in rows:
+        cnt[(r["FSCL_YY"], r["EXE_M"])] += 1
+    full = lambda y: cnt[(y, "01")] >= 0.9 * max(v for (yy, _), v in cnt.items() if yy == y)
+    ys = [y for y in sorted({r["FSCL_YY"] for r in rows}, reverse=True) if full(y)][:3]
     by = defaultdict(lambda: [0.0, 0.0])
     for r in rows:
         if r["FSCL_YY"] in ys:
