@@ -14,6 +14,13 @@ BASE = "https://api.odcloud.kr/api/gov24/v3/"
 KEY = os.environ.get("DATA_GO_KR_KEY", "").strip()
 OUT = os.path.join(os.path.dirname(__file__), "..", "data", "gov24.json")
 PER = 1000
+DET_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "gov24_detail")
+SHARDS = 128
+# 상세 항목 → 짧은 키
+DETAIL = {"purpose": "서비스목적", "target": "지원대상", "criteria": "선정기준", "content": "지원내용",
+          "apply": "신청방법", "deadline": "신청기한", "docs": "구비서류", "docs_official": "공무원확인구비서류",
+          "docs_self": "본인확인필요구비서류", "office": "접수기관명", "contact": "문의처",
+          "online": "온라인신청사이트URL", "law": "법령", "rule": "행정규칙", "ordinance": "자치법규", "updated": "수정일시"}
 
 # 지원조건 코드 → 짧은 이름 (API 명세 supportConditions_model 기준)
 COND = {
@@ -66,6 +73,11 @@ def fetch_all(path):
 
 def clip(s, n):
     s = " ".join((s or "").split())
+    return s if len(s) <= n else s[: n - 1] + "…"
+
+
+def long(s, n=3000):
+    s = (s or "").replace("\r\n", "\n").strip()
     return s if len(s) <= n else s[: n - 1] + "…"
 
 
@@ -127,6 +139,21 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         json.dump(doc, f, ensure_ascii=False, separators=(",", ":"))
     print(f"saved {len(out)} services, {sum(1 for r in out if 'cond' in r)} with conditions → {OUT}")
+
+    # 상세: 화면의 '설명 보기' 창에서 쓴다. 서비스ID 글자 코드 합 % SHARDS 로 나눠 저장 (index.html 의 bnShard 와 같은 규칙)
+    det = fetch_all("serviceDetail")
+    shards = [dict() for _ in range(SHARDS)]
+    for d in det:
+        sid = d.get("서비스ID")
+        if not sid:
+            continue
+        rec = {k: long(d.get(f)) for k, f in DETAIL.items() if long(d.get(f))}
+        shards[sum(map(ord, sid)) % SHARDS][sid] = rec
+    os.makedirs(DET_DIR, exist_ok=True)
+    for n, sh in enumerate(shards):
+        with open(os.path.join(DET_DIR, f"{n}.json"), "w", encoding="utf-8") as f:
+            json.dump(sh, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"saved {len(det)} details → {DET_DIR} ({SHARDS} files)")
 
 
 if __name__ == "__main__":
