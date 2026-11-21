@@ -224,13 +224,13 @@ document.getElementById("notice").innerHTML = SAMPLE
   : `출처: 열린재정 Open API · 예산 ${YEARS[0]}~${CUR} (총지출 기준, 세부사업 ${P.length.toLocaleString()}개)${HAS_EXEC ? ` · 결산 ${(D.exec_years || [])[0]}~${EXEC_LAST} (단위사업 ${U.length.toLocaleString()}개)` : ""} · 단위 ${D.unit} · 수집 ${esc((D.fetched_at || "").slice(0, 10))}<br>
      국회 검토문서는 아직 연결 전입니다. 공식 시스템과 무관한 개인 프로젝트입니다.`;
 
-const TABS = [["analysis", "주요분석"], ["review", "심사참고"],
+const TABS = [["analysis", "주요분석"],
   ["filter", "조건검색"], ["ask", "AI분석"]];
 let cur = "analysis";
-const ALIAS = { home: "analysis", overview: "analysis" };   // 예전 주소 호환
+const ALIAS = { home: "analysis", overview: "analysis", review: "analysis" };   // 예전 주소 호환
 function drawTabs() {
 const FLASK = '<sup class="flask" role="img" aria-label="실험 중"><svg viewBox="0 0 24 24" width="9" height="10" aria-hidden="true"><path d="M9 2h6M10 2v6L4.6 18.2A2 2 0 0 0 6.3 21h11.4a2 2 0 0 0 1.7-2.8L14 8V2" fill="none" stroke="#facc15" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></sup>';   // 심사참고 옆 실험 중 표시
-  const items = TABS.map(([k, l]) => `<button class="${k === cur ? "on" : ""}"${k === cur ? ' aria-current="page"' : ""} onclick="go('${k}')">${l}${k === "review" || k === "ask" ? FLASK : ""}</button>`);
+  const items = TABS.map(([k, l]) => `<button class="${k === cur ? "on" : ""}"${k === cur ? ' aria-current="page"' : ""} onclick="go('${k}')">${l}${k === "ask" ? FLASK : ""}</button>`);
   items.unshift(`<a href="map.html">예산지도</a>`);   // 가장 왼쪽: 사이트의 첫 화면
   document.getElementById("tabs").innerHTML = items.join("");
 }
@@ -595,36 +595,6 @@ function showProject(id) {
   drawNaeyeok(p);
   document.getElementById("detail").scrollIntoView({ behavior: "smooth" });
 }
-
-/* ---------- 4. 심사 참고 ---------- */
-const RULES = [
-  { label: `${CUR} 신규 사업 (100억 이상, 명칭·소관 변경 연결 제외)`, test: p => isNew(p) && curGov(p) >= 100 },
-  { label: "전년 대비 50% 이상 증가 (100억 이상)", test: p => chg(p) >= 0.5 && curGov(p) >= 100 },
-  { label: "전년 대비 1,000억 이상 증가", test: p => base(p) > 0 && diff(p) >= 1000 },
-  { label: "전년 대비 30% 이상 감소 (100억 이상)", test: p => chg(p) <= -0.3 && base(p) >= 100 },
-  { label: "전년 대비 1,000억 이상 감소", test: p => diff(p) <= -1000 },
-  { label: `${PREV} 국회에서 10% 이상 증액된 사업`, test: p => { const v = Y(p, PREV); return v.gov > 0 && v.na >= v.gov * 1.1 && v.na - v.gov >= 10; } },
-  { label: `${EXEC_LAST} 단위사업 집행률 80% 미만 (현액 100억 이상)`, test: p => { const e = Eb(p, EXEC_LAST); return e && e.rate != null && e.rate < 80 && e.budget >= 100; } },
-  { label: `${CUR} 정부안 100억 이상인데 사업설명자료에 성과목표·지표 항목 없음`, test: p => !!FLAGS && FLAGS[p.id] && FLAGS[p.id].perf === false && curGov(p) >= 100 },
-  { label: `${EXEC_LAST - 1}·${EXEC_LAST} 2년 연속 이월+불용 20% 이상`, test: p => [EXEC_LAST - 1, EXEC_LAST].every(y => { const e = Eb(p, y); return e && e.budget >= 100 && idle(e) >= 20; }) },
-  { label: `${EXEC_LAST} 집행률 90% 미만인데 ${CUR} 증액`, test: p => { const e = Eb(p, EXEC_LAST); return e && e.rate != null && e.rate < 90 && e.budget >= 100 && diff(p) > 0 && chg(p) > 0.05; } },
-];
-let REVIEW_N = 150;
-function moreReview() { REVIEW_N += 150; VIEWS.review(); }
-VIEWS.review = async () => {
-  await loadFlags();
-  const hits = P.map(p => ({ p, hit: RULES.filter(r => r.test(p)) })).filter(x => x.hit.length)
-    .sort((a, b) => b.hit.length - a.hit.length || Math.abs(diff(b.p)) - Math.abs(diff(a.p)));
-  const counts = RULES.map(r => [r.label, hits.filter(h => h.hit.includes(r)).length]);
-  view(`
-  <div class="card"><h2>심사 참고: 규칙 기반 검토 대상</h2>
-    <div class="sub">규칙은 참고용 예시 기준입니다. 최종 판단은 심사자가 합니다.</div>
-    <div style="margin-top:8px">${counts.map(([l, c]) => `<span class="tag">${l} · ${c}</span>`).join("")}</div></div>
-  <div class="card"><h2>검토 대상 ${hits.length.toLocaleString()}건 <span class="sub">(해당 규칙 수 → 증감 규모순, 상위 ${REVIEW_N})</span></h2>
-    ${hits.slice(0, REVIEW_N).map(({ p, hit }) => `<div class="item">${link(p)}<br>
-      <span class="sub">${won(base(p))} → ${won(curGov(p))}억 (${isNew(p) ? "신규" : pct(chg(p) * 100)})</span><br>
-      ${hit.map(h => `<span class="tag warn">${h.label}</span>`).join("")}</div>`).join("") || "<div class='sub'>해당 없음</div>"}${hits.length > REVIEW_N ? `<button class="go" style="margin-top:12px" onclick="moreReview()">더 보기 (${(hits.length - REVIEW_N).toLocaleString()}건 남음)</button>` : ""}</div>`);
-};
 
 /* ---------- 5. 조건으로 찾기 ---------- */
 VIEWS.filter = () => {
