@@ -1017,10 +1017,10 @@ function bnPassBiz(r) {
   }
   return true;
 }
-function bnHits() {
+function bnHits(ignoreField) {
   const now = [], soon = [];
   for (const r of bnPool()) {
-    if (BS.field && r.f !== BS.field) continue;
+    if (!ignoreField && BS.field && r.f !== BS.field) continue;
     if (BS.mode === "B") { if (bnPassBiz(r)) now.push(r); continue; }
     if (!bnPassPerson(r)) continue;
     const [lo, hi] = r.a;
@@ -1048,7 +1048,8 @@ function drawBenefit() {
   const sum = [...pids].reduce((a, id) => a + (curGov(projById(id) || {}) || 0), 0);
   const orgs = new Set(now.map(r => r.o)).size;
   const nLoc = now.filter(r => r.r != null).length;
-  const fields = {}; now.forEach(r => { if (r.f) fields[r.f] = (fields[r.f] || 0) + 1; });
+  // 분야 칩은 분야 선택과 무관하게 전체 분야를 보여야 하므로 분야 필터 없이 집계
+  const fields = {}; bnHits(true).now.forEach(r => { if (r.f) fields[r.f] = (fields[r.f] || 0) + 1; });
   const person = BS.mode === "P";
   const pctAge = Math.min(100, BS.age);
   // 부처(기관) 필터: 지금 조건에 맞는 지원의 기관 목록 (건수 많은 순)
@@ -1072,14 +1073,15 @@ function drawBenefit() {
       ${BS.sido ? `<select id="bSgg" aria-label="시군구"><option value="">${(BLX.sido.find(x => x.sido === BS.sido) || {}).sgg && Object.keys(BLX.sido.find(x => x.sido === BS.sido).sgg).length ? "시군구 선택" : "시도 전체"}</option>${Object.keys((BLX.sido.find(x => x.sido === BS.sido) || {}).sgg || {}).map(g => `<option ${g === BS.sgg ? "selected" : ""}>${g}</option>`).join("")}</select>` : ""}
     </div>
     ${person ? `
-    <div class="fhd">2. 성별</div>${chipRow("bSex", [["", "전체"], ["0102", "여성"], ["0101", "남성"]], k => k === BS.sex)}
-    <div class="bage"><span class="sub">나이</span><b>${BS.age}<small> 세</small></b></div>
+    <div class="fhd">2. 나이</div>
+    <div class="bage"><b>${BS.age}<small> 세</small></b></div>
     <input type="range" id="bAge" min="0" max="100" value="${BS.age}" aria-label="나이" style="--v:${pctAge}%">
-    <div class="fhd">3. 가구소득</div><div class="sub bsub">기준중위소득 대비</div>${chipRow("bInc", B_INC, k => k === BS.inc)}
+    <div class="fhd">3. 성별</div>${chipRow("bSex", [["", "전체"], ["0102", "여성"], ["0101", "남성"]], k => k === BS.sex)}
+    <div class="fhd">4. 가구소득</div><div class="sub bsub">기준중위소득 대비</div>${chipRow("bInc", B_INC, k => k === BS.inc)}
     <div class="blab">가구 <span class="sub">해당하는 것만</span></div>${chipRow("bHh", B_HH, k => BS.hh.has(k))}
-    <div class="fhd">4. 상황</div><div class="sub bsub">해당하는 것만 · 복수 선택</div>${chipRow("bSit", B_SIT, k => BS.sit.has(k))}
-    <div class="fhd">5. 분야</div>${fieldHTML}
-    <div class="fhd">6. 부처/기관</div>${orgHTML}
+    <div class="fhd">5. 상황</div><div class="sub bsub">해당하는 것만 · 복수 선택</div>${chipRow("bSit", B_SIT, k => BS.sit.has(k))}
+    <div class="fhd">6. 분야</div>${fieldHTML}
+    <div class="fhd">7. 부처/기관</div>${orgHTML}
     ` : `
     <div class="bgrid bbiz" id="bBiz">${B_BIZ.map(([k, t, i]) => `<button class="${BS.biz === k ? "on" : ""}" data-k="${k}">${ic(i)}<span>${t}</span></button>`).join("")}</div>
     <div class="blab">업종</div>${chipRow("bInd", B_IND, k => k === BS.ind)}
