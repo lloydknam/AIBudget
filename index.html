@@ -187,6 +187,7 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .bhd>span{display:flex;gap:4px;flex:none}
 @media (max-width:640px){.bgrid{grid-template-columns:repeat(2,1fr)}}
 .bbiz{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media (max-width:640px){.bdesc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;line-height:1.5}}
 @media (max-width:640px){.bbiz{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .sheet-body .dbody{font-size:12.5px;line-height:1.6;margin-top:4px}
 .sheet-body .dbody p{margin:3px 0;word-break:keep-all}
@@ -1055,7 +1056,7 @@ function drawBenefit() {
   <div class="bn">
   <div class="card">
     <h2>${person ? "나에게 맞는 정부 혜택" : "사업 단계에서 찾는 지원"}</h2>
-    <div class="sub">${person ? "나이와 가구 조건을 고르면 지금 받을 수 있는 것과 곧 열리는 것을 나눠 보여줍니다." : "사업 단계와 업종을 고르면 해당 지원을 모아 보여줍니다."} 선택한 정보는 이 화면에서만 쓰이며 저장·전송되지 않습니다.</div>
+    <div class="sub bdesc">${person ? "나이·가구 조건을 고르면 받을 수 있는 혜택을 보여줍니다." : "사업 단계·업종을 고르면 해당 지원을 모아 보여줍니다."} 선택 정보는 저장되지 않습니다.</div>
     <div class="bmode">
       <button class="${person ? "on" : ""}" data-m="P">${ic("user")}국민 개인·가구</button>
       <button class="${person ? "" : "on"}" data-m="B">${ic("case")}사업주·창업·기업</button>
