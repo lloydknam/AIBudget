@@ -863,8 +863,8 @@ function showProject(id) {
         <td class="${e.rate != null && e.rate < 80 ? "warn" : ""}">${e.rate == null ? "-" : e.rate.toFixed(1) + "%"}</td></tr>`).join("")}</table>`
       : `<div class="sub">${HAS_EXEC ? "연결된 결산 자료가 없습니다 (신규 사업이거나 단위사업명이 바뀐 경우)." : "결산 데이터 연결 전"}</div>`}</div>
   <div class="card" id="naeyeok-card"><h2>내역사업 <span class="sub">(${CUR} 정부안, 억원)</span></h2><div class="sub">불러오는 중…</div></div>
-  <div class="card"><h2>국회 검토 문서</h2>
-    ${(p.docs || []).length ? p.docs.map(d => `<div class="doc"><b>${esc(d.title)}</b> · ${d.page}쪽<br>${esc(d.text)}</div>`).join("") : '<div class="sub">검토보고서 연결 전</div>'}</div>`;
+  ${(p.docs || []).length ? `<div class="card"><h2>국회 검토 문서</h2>
+    ${p.docs.map(d => `<div class="doc"><b>${esc(d.title)}</b> · ${d.page}쪽<br>${esc(d.text)}</div>`).join("")}</div>` : ""}`;
   drawNaeyeok(p);
   document.getElementById("detail").scrollIntoView({ behavior: "smooth" });
 }
