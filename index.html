@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=13"+location.hash);return;}if(!location.hash)location.replace("map.html?v=13");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=13를 붙이고 예산 지도로 보낸다 -->
+<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=14"+location.hash);return;}if(!location.hash)location.replace("map.html?v=14");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=14를 붙이고 예산 지도로 보낸다 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 예산 프리즘</title>
 <link rel="icon" type="image/png" href="assets/icon-192.png">
@@ -144,6 +144,7 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .bsx{position:sticky;top:0;float:right;margin:-8px -8px 0 0;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:22px;line-height:1;cursor:pointer}
 .bsin h3{font-size:21px;font-weight:800;letter-spacing:-.03em;margin:6px 0 4px;padding-right:36px}
 .bsin section{margin-top:18px}.bsin h4{font-size:13px;color:var(--gold);margin:0 0 6px;font-weight:700}
+.bstx a{color:var(--ico);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
 .bstx{white-space:pre-line;font-size:14.5px;line-height:1.75;color:#d7dbe2;word-break:keep-all;overflow-wrap:anywhere}
 .bsft{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
 .bsbtn{display:inline-block;padding:9px 16px;border-radius:999px;background:var(--gold);color:#14110a;font-weight:700;font-size:14px;text-decoration:none;margin-left:6px}
@@ -808,7 +809,13 @@ function drawBenefit() {
 const BD = {};
 const bnShard = id => [...id].reduce((a, c) => a + c.charCodeAt(0), 0) % 128;
 const bnFind = id => bnPool().find(r => r.i === id) || Object.values(BL).flatMap(x => x.items).find(r => r.i === id);
-const bnText = t => esc(t).replace(/\n{3,}/g, "\n\n");
+// 본문 속 주소는 눌러서 새 탭으로 열리게 하고, 정부24 내부 관리 주소(ns.service.go.kr)는 지운다
+const bnText = t => esc(String(t).replace(/https?:\/\/ns\.service\.go\.kr\S*/g, "").replace(/\n[ \t]*\n[ \t]*\n/g, "\n\n"))
+  .replace(/\n{3,}/g, "\n\n").trim()
+  .replace(/(https?:\/\/|www\.)[^\s<>"'()\[\]{}가-힣]+/g, u => {
+    const tail = (u.match(/[.,;:!?]+$/) || [""])[0], url = tail ? u.slice(0, -tail.length) : u;
+    return `<a href="${url.startsWith("www.") ? "https://" + url : url}" target="_blank" rel="noopener">${url}</a>${tail}`;
+  });
 async function bnOpen(id) {
   const r = bnFind(id); if (!r) return;
   let el = document.getElementById("bSheet");
@@ -830,13 +837,13 @@ async function bnOpen(id) {
   const n = bnShard(id);
   if (!BD[n]) BD[n] = (await getJ(`data/gov24_detail/${n}.json`)) || {};
   const d = BD[n][id] || { purpose: r.s, target: r.g, content: r.c, deadline: r.d };
-  const sec = (t, v) => v ? `<section><h4>${t}</h4><div class="bstx">${bnText(v)}</div></section>` : "";
+  const sec = (t, v) => { const h = v ? bnText(v) : ""; return h ? `<section><h4>${t}</h4><div class="bstx">${h}</div></section>` : ""; };
   const docs = [d.docs, d.docs_official && "공무원이 확인: " + d.docs_official, d.docs_self && "본인 확인 필요: " + d.docs_self].filter(Boolean).join("\n\n");
   const law = [d.law, d.rule, d.ordinance].filter(Boolean).join("\n");
   box.innerHTML = head + sec("서비스 목적", d.purpose) + sec("지원 대상", d.target) + sec("선정 기준", d.criteria) + sec("지원 내용", d.content)
     + sec("신청 방법", d.apply) + sec("신청 기한", d.deadline) + sec("구비 서류", docs) + sec("접수 기관", d.office) + sec("문의처", d.contact) + sec("근거 법령", law)
     + `<div class="bsft"><span class="sub">출처: 정부24 공공서비스${d.updated ? " · 수정 " + esc(String(d.updated).slice(0, 10)) : ""}</span>
-       <span>${d.online ? `<a class="bsbtn" href="${esc(d.online)}" target="_blank" rel="noopener">온라인 신청</a>` : ""}${r.url ? `<a class="bsbtn ghost" href="${esc(r.url)}" target="_blank" rel="noopener">정부24 원문</a>` : ""}</span></div>`;
+       <span>${d.online ? `<a class="bsbtn" href="${esc(d.online)}" target="_blank" rel="noopener">온라인 신청</a>` : ""}</span></div>`;
 }
 function bnClose() { const el = document.getElementById("bSheet"); if (el) el.classList.remove("on"); document.body.style.overflow = ""; }
 
