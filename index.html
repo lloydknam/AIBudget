@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=18"+location.hash);return;}if(!location.hash)location.replace("map.html?v=18");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=18를 붙이고 예산 지도로 보낸다 -->
+<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=19"+location.hash);return;}if(!location.hash)location.replace("map.html?v=19");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=19를 붙이고 예산 지도로 보낸다 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 예산 프리즘</title>
 <link rel="icon" type="image/png" href="assets/icon-192.png">
@@ -288,9 +288,9 @@ document.getElementById("notice").innerHTML = SAMPLE
      국회 검토문서는 아직 연결 전입니다. 공식 시스템과 무관한 개인 프로젝트입니다.`;
 
 const TABS = [["analysis", "주요분석"], ["benefit", "국민혜택"],
-  ["filter", "조건검색"], ["ask", "AI분석"]];
+  ["ask", "AI분석"]];
 let cur = "analysis";
-const ALIAS = { home: "analysis", overview: "analysis", review: "analysis" };   // 예전 주소 호환
+const ALIAS = { home: "analysis", overview: "analysis", review: "analysis", filter: "analysis" };   // 예전 주소 호환
 function drawTabs() {
 const FLASK = '<sup class="flask" role="img" aria-label="실험 중"><svg viewBox="0 0 24 24" width="9" height="10" aria-hidden="true"><path d="M9 2h6M10 2v6L4.6 18.2A2 2 0 0 0 6.3 21h11.4a2 2 0 0 0 1.7-2.8L14 8V2" fill="none" stroke="#facc15" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></sup>';   // 심사참고 옆 실험 중 표시
   const items = TABS.map(([k, l]) => `<button class="${k === cur ? "on" : ""}"${k === cur ? ' aria-current="page"' : ""} onclick="go('${k}')">${l}${k === "ask" ? FLASK : ""}</button>`);
@@ -901,42 +901,6 @@ async function bnClose() {
 }
 
 VIEWS.benefit = async () => { view(`<div class="card sub">혜택 자료를 불러오는 중…</div>`); await loadBenefits(); drawBenefit(); };
-
-/* ---------- 5. 조건으로 찾기 ---------- */
-VIEWS.filter = () => {
-  view(`
-  <div class="card"><h2>조건을 문장으로 입력</h2>
-    <div class="row"><input id="cond" aria-label="조건 문장" placeholder="예: 교육부 집행률 80% 미만 증가율 10% 이상" onkeydown="if(event.key==='Enter')runFilter()"><button class="go" onclick="runFilter()">찾기</button></div>
-    <div class="sub" style="margin-top:8px">인식하는 조건: 분야명·부처명, "증가율 N% 이상/이하", "집행률 N% 미만/이상"(최근 결산), "감소율 N% 이상", "N억 이상/이하"(${CUR} 정부안), "신규", "미편성", 그 밖의 단어는 사업명 검색</div>
-    <div id="fres" style="margin-top:12px"></div></div>`);
-};
-async function runFilter() {
-  await naeyeokData();
-  let s = document.getElementById("cond").value;
-  const conds = [], desc = [];
-  const num = re => { const m = s.match(re); if (m) s = s.replace(m[0], " "); return m ? +m[1].replace(/,/g, "") : null; };
-  const up = num(/증가율\s*(\d+)\s*%\s*이상/), upMax = num(/증가율\s*(\d+)\s*%\s*이하/), cut = num(/감소율\s*(\d+)\s*%\s*이상/);
-  const amin = num(/([\d,]+)\s*억\s*(?:원)?\s*이상/), amax = num(/([\d,]+)\s*억\s*(?:원)?\s*이하/);
-  const exLow = num(/집행률\s*(\d+)\s*%\s*(?:미만|이하)/), exHigh = num(/집행률\s*(\d+)\s*%\s*이상/);
-  if (exLow != null) { conds.push(p => { const e = Eb(p, EXEC_LAST); return e && e.rate != null && e.rate < exLow; }); desc.push(`${EXEC_LAST} 집행률 < ${exLow}% (금융·내부거래 제외)`); }
-  if (exHigh != null) { conds.push(p => { const e = Eb(p, EXEC_LAST); return e && e.rate != null && e.rate >= exHigh; }); desc.push(`${EXEC_LAST} 집행률 ≥ ${exHigh}% (금융·내부거래 제외)`); }
-  if (up != null) { conds.push(p => chg(p) * 100 >= up); desc.push(`증가율 ≥ ${up}%`); }
-  if (upMax != null) { conds.push(p => chg(p) * 100 <= upMax); desc.push(`증가율 ≤ ${upMax}%`); }
-  if (cut != null) { conds.push(p => chg(p) * -100 >= cut); desc.push(`감소율 ≥ ${cut}%`); }
-  if (amin != null) { conds.push(p => (curGov(p) || 0) >= amin); desc.push(`${CUR} 정부안 ≥ ${amin}억`); }
-  if (amax != null) { conds.push(p => (curGov(p) || 0) <= amax); desc.push(`${CUR} 정부안 ≤ ${amax}억`); }
-  if (/신규/.test(s)) { conds.push(isNew); desc.push("신규"); s = s.replace(/신규(\s*사업)?/, " "); }
-  if (/미편성|폐지/.test(s)) { conds.push(isGone); desc.push("미편성"); s = s.replace(/미편성|폐지/, " "); }
-  const fields = [...new Set(P.map(p => p.field))], mins = [...new Set(P.map(p => p.ministry))];
-  const m = mins.sort((a, b) => b.length - a.length).find(x => s.includes(x)); if (m) { conds.push(p => p.ministry === m); desc.push(`소관=${m}`); s = s.replace(m, " "); }
-  const f = fields.sort((a, b) => b.length - a.length).find(x => s.includes(x)); if (f) { conds.push(p => p.field === f); desc.push(`분야=${f}`); s = s.replace(f, " "); }
-  const words = s.replace(/분야|사업|중에?|이고|그리고|인|및/g, " ").split(/\s+/).filter(w => w.length >= 2);
-  words.forEach(w => { conds.push(p => `${p.name} ${p.program || ""} ${p.activity || ""}`.includes(w) || itemsOf(p).some(i => i.name.includes(w))); desc.push(`"${w}" 포함`); });
-  const res = conds.length ? P.filter(p => conds.every(c => c(p))).sort((a, b) => Math.abs(diff(b)) - Math.abs(diff(a))) : [];
-  document.getElementById("fres").innerHTML = conds.length
-    ? `<div class="sub">해석: ${desc.map(esc).join(" · ")} → ${res.length.toLocaleString()}건 (증감 규모순 상위 50)</div>` + res.slice(0, 50).map(resultRow).join("")
-    : "<div class='sub'>조건을 인식하지 못했습니다.</div>";
-}
 
 /* ---------- 6. AI에게 묻기 ---------- */
 VIEWS.ask = () => {
