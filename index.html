@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=15"+location.hash);return;}if(!location.hash)location.replace("map.html?v=15");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=15를 붙이고 예산 지도로 보낸다 -->
+<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=16"+location.hash);return;}if(!location.hash)location.replace("map.html?v=16");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=16를 붙이고 예산 지도로 보낸다 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 예산 프리즘</title>
 <link rel="icon" type="image/png" href="assets/icon-192.png">
@@ -131,22 +131,27 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .blead{font-size:16px;line-height:1.75;margin:4px 4px 14px}.blead .g{color:var(--gold)}
 .bn>.chips{margin:0 0 14px}
 .bh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.brow{padding:13px 0;border-bottom:1px solid var(--line);min-width:0}
-.bgrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
+.brow{min-width:0;padding:14px 15px;background:var(--bg);border:1px solid var(--line);border-radius:14px;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s}
+.brow:hover,.brow:focus-visible{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.35);outline:none}
+.brow.open{border-color:var(--gold);opacity:.35}
+.bgrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.bsbg{transition:opacity .3s}.bsheet.closing .bsbg{opacity:0}
+.bsin>*{transition:opacity .25s .15s}.bsin:not(.in)>*{opacity:0}
+.bsheet.closing .bsin>*{opacity:0;transition-delay:0s;transition-duration:.12s}
+@media (prefers-reduced-motion:reduce){.brow,.bsbg,.bsin>*{transition:none}.brow:hover{transform:none}}
 .bhd b{position:relative;padding-left:14px}
 .bhd b::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--gold)}
 .bsum{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-@media (max-width:640px){.bgrid2{column-gap:14px}.brow{padding:11px 0}.bhd b{font-size:14px;padding-left:12px}.bhd b::before{width:5px;height:5px}
+@media (max-width:640px){.bgrid2{gap:8px}.brow{padding:11px 10px;border-radius:12px}.bhd b{font-size:14px;padding-left:12px}.bhd b::before{width:5px;height:5px}
   .bgrid2 .brow .sub{font-size:11.5px}.bgrid2 .bsum{font-size:12.5px;line-height:1.5;-webkit-line-clamp:2}.bgrid2 .bbud{font-size:11.5px}.bgrid2 .bbud .bic{display:none}.bgrid2 .btag{font-size:10px;padding:1px 5px}}
 .bhd{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 8px;align-items:flex-start}.bhd a{color:var(--ink)}
 .btag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap}.btag.soon{border:1px solid var(--gold);color:var(--gold)}
 .bsum{font-size:13.5px;margin-top:4px;color:#c9ced6}
 .bbud{display:flex;gap:6px;align-items:flex-start;font-size:13px;margin-top:6px;color:var(--sub)}.bbud .bic{stroke:var(--gold);width:16px;height:16px;margin-top:2px}.bbud a{color:var(--ink)}
 .bnote{margin:4px 4px 0;line-height:1.7}
-.bhero{display:block;width:100%;max-width:560px;height:auto;margin:0 auto 16px;border-radius:16px}
 .bsheet{position:fixed;inset:0;z-index:50;display:none}.bsheet.on{display:block}
 .bsbg{position:absolute;inset:0;background:rgba(0,0,0,.6)}
-.bsbox{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(720px,calc(100% - 32px));max-height:86vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 22px 18px;--gold:#d8c28e;--ico:#7fb8e6}
+.bsbox{position:absolute;left:max(16px,calc(50% - 360px));right:max(16px,calc(50% - 360px));top:7vh;max-height:86vh;transform-origin:0 0;will-change:transform;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 22px 18px;--gold:#d8c28e;--ico:#7fb8e6}
 .bsx{position:sticky;top:0;float:right;margin:-8px -8px 0 0;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:22px;line-height:1;cursor:pointer}
 .bsin h3{font-size:21px;font-weight:800;letter-spacing:-.03em;margin:6px 0 4px;padding-right:36px}
 .bsin section{margin-top:18px}.bsin h4{font-size:13px;color:var(--gold);margin:0 0 6px;font-weight:700}
@@ -155,7 +160,7 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .bsft{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
 .bsbtn{display:inline-block;padding:9px 16px;border-radius:999px;background:var(--gold);color:#14110a;font-weight:700;font-size:14px;text-decoration:none;margin-left:6px}
 .bsbtn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
-@media (max-width:640px){.bsbox{left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:88vh;border-radius:20px 20px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom,0px))}}
+@media (max-width:640px){.bsbox{left:0;right:0;top:auto;bottom:0;max-height:88vh;border-radius:20px 20px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom,0px))}}
 .breg{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}.breg .blab{margin:0 4px 0 0}
 .breg select{flex:1 1 140px;min-width:0;max-width:240px;height:38px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:14px}
 .breg select:focus{outline:none;border-color:var(--gold)}
@@ -737,10 +742,9 @@ function bnHits() {
 function bnRow(r, soon) {
   const p = r.p && projById(r.p);
   const bud = p && curGov(p) > 0
-    ? `<div class="bbud">${ic("coin")}<span>예산 <a href="#" onclick="openProject('${p.id}');return false">${esc(p.name)}</a> · ${CUR} 정부안 <b>${won(curGov(p))}억</b> ${isNew(p) ? '<span class="warn">신규</span>' : pct(chg(p) * 100)}</span></div>` : "";
+    ? `<div class="bbud">${ic("coin")}<span>예산 <a href="#" onclick="event.stopPropagation();openProject('${p.id}');return false">${esc(p.name)}</a> · ${CUR} 정부안 <b>${won(curGov(p))}억</b> ${isNew(p) ? '<span class="warn">신규</span>' : pct(chg(p) * 100)}</span></div>` : "";
   const tag = (soon ? `<span class="btag soon">${r.a[0]}세부터</span>` : "") + (r.r != null ? `<span class="btag loc">${esc(r.r || BS.sido.replace(/(특별자치|특별|광역|통합특별)?(시|도)$/, ""))}</span>` : "");
-  const name = `<a href="#" onclick="bnOpen('${esc(r.i)}');return false">${esc(r.n)}</a>`;
-  return `<div class="brow"><div class="bhd"><b>${name}</b>${tag}</div>
+  return `<div class="brow" role="button" tabindex="0" data-i="${esc(r.i)}" onclick="bnOpen(this.dataset.i,this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();bnOpen(this.dataset.i,this)}"><div class="bhd"><b>${esc(r.n)}</b>${tag}</div>
     <div class="sub">${esc(r.o)}${r.t ? " · " + esc(r.t.replace(/\|\|/g, ", ")) : ""}${r.f ? " · " + esc(r.f) : ""}</div>
     ${r.s ? `<div class="bsum">${esc(r.s)}</div>` : ""}${bud}</div>`;
 }
@@ -759,7 +763,6 @@ function drawBenefit() {
   view(`
   <div class="bn">
   <div class="card">
-    <img class="bhero" src="assets/${person ? "benefit-family" : "benefit-shop"}.svg" alt="" width="640" height="300">
     <h2>${person ? "나이로 보는 내 정부 혜택" : "사업 단계에서 찾는 지원"}</h2>
     <div class="sub">${person ? "나이와 가구 조건을 고르면 지금 받을 수 있는 것과 곧 열리는 것을 나눠 보여줍니다." : "사업 단계와 업종을 고르면 해당 지원을 모아 보여줍니다."} 선택한 정보는 이 화면에서만 쓰이며 저장·전송되지 않습니다.</div>
     <div class="bmode">
@@ -822,8 +825,21 @@ const bnText = t => esc(String(t).replace(/https?:\/\/ns\.service\.go\.kr\S*/g, 
     const tail = (u.match(/[.,;:!?]+$/) || [""])[0], url = tail ? u.slice(0, -tail.length) : u;
     return `<a href="${url.startsWith("www.") ? "https://" + url : url}" target="_blank" rel="noopener">${url}</a>${tail}`;
   });
-async function bnOpen(id) {
+const bnCalm = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+let bnFrom = null;   // 펼쳐진 카드 (닫을 때 그 자리로 돌아감)
+// 카드 자리에서 설명 창 자리로 커지는 애니메이션 (FLIP)
+function bnMorph(card, box, back) {
+  if (!card || bnCalm() || !box.animate) return Promise.resolve();
+  const a = card.getBoundingClientRect(), b = box.getBoundingClientRect();
+  if (!a.width || !b.width) return Promise.resolve();
+  const from = { transform: `translate(${a.left - b.left}px,${a.top - b.top}px) scale(${a.width / b.width},${a.height / b.height})`, borderRadius: "14px", opacity: .85 };
+  const to = { transform: "none", borderRadius: getComputedStyle(box).borderRadius, opacity: 1 };
+  const an = box.animate(back ? [to, from] : [from, to], { duration: back ? 260 : 420, easing: back ? "cubic-bezier(.4,0,.6,1)" : "cubic-bezier(.2,.85,.25,1)", fill: "both" });
+  return an.finished.then(() => an.cancel()).catch(() => {});
+}
+async function bnOpen(id, card) {
   const r = bnFind(id); if (!r) return;
+  bnFrom = card || null;
   let el = document.getElementById("bSheet");
   if (!el) {
     el = document.createElement("div"); el.id = "bSheet"; el.className = "bsheet";
@@ -839,7 +855,10 @@ async function bnOpen(id) {
   const box = el.querySelector(".bsin");
   box.innerHTML = head + `<div class="sub" style="margin-top:16px">설명을 불러오는 중…</div>`;
   el.classList.add("on"); document.body.style.overflow = "hidden";
-  el.querySelector(".bsbox").scrollTop = 0;
+  const bx = el.querySelector(".bsbox"); bx.scrollTop = 0;
+  if (card) card.classList.add("open");
+  box.classList.remove("in"); void box.offsetWidth;
+  bnMorph(card, bx); box.classList.add("in");
   const n = bnShard(id);
   if (!BD[n]) BD[n] = (await getJ(`data/gov24_detail/${n}.json`)) || {};
   const d = BD[n][id] || { purpose: r.s, target: r.g, content: r.c, deadline: r.d };
@@ -851,7 +870,15 @@ async function bnOpen(id) {
     + `<div class="bsft"><span class="sub">출처: 정부24 공공서비스${d.updated ? " · 수정 " + esc(String(d.updated).slice(0, 10)) : ""}</span>
        <span>${d.online ? `<a class="bsbtn" href="${esc(d.online)}" target="_blank" rel="noopener">온라인 신청</a>` : ""}</span></div>`;
 }
-function bnClose() { const el = document.getElementById("bSheet"); if (el) el.classList.remove("on"); document.body.style.overflow = ""; }
+async function bnClose() {
+  const el = document.getElementById("bSheet"); if (!el || !el.classList.contains("on") || el.classList.contains("closing")) return;
+  const card = bnFrom && document.body.contains(bnFrom) ? bnFrom : null;
+  el.classList.add("closing");
+  await bnMorph(card, el.querySelector(".bsbox"), true);
+  el.classList.remove("on", "closing"); document.body.style.overflow = "";
+  if (card) { card.classList.remove("open"); card.focus({ preventScroll: true }); }
+  bnFrom = null;
+}
 
 VIEWS.benefit = async () => { view(`<div class="card sub">혜택 자료를 불러오는 중…</div>`); await loadBenefits(); drawBenefit(); };
 
