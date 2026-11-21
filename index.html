@@ -61,6 +61,7 @@ header.ghead{padding:6px 0 2px;max-width:952px;margin:0 auto}  /* 예산 지도 
 .doc .desc-btn{margin-top:0;margin-left:6px;vertical-align:middle;padding:4px 10px;font-size:12px}
 @media (max-width:640px){#gres{position:fixed;left:8px;right:8px;width:auto;max-width:none;max-height:60vh}.hsearch .clr{width:18px;height:18px;font-size:11px;right:4px}}
 .notice{margin:0 auto 16px;max-width:640px;color:var(--note-ink);font-size:12.5px;line-height:1.6;word-break:keep-all}
+.src{max-width:640px;margin:0 auto 10px;text-align:left}.src summary{cursor:pointer;color:var(--note-ink);font-size:12.5px;list-style:none}.src summary::before{content:'▸ ';color:var(--accent)}.src[open] summary::before{content:'▾ '}.src ul{margin:8px 0 0;padding-left:18px}.src li{margin:3px 0}.src-unit{margin:6px 0 0;font-size:11.5px;color:var(--sub)}.src-note{text-align:center;font-size:12px;color:var(--note-ink)}
 nav{flex:none;display:flex;gap:22px;align-items:center;overflow-x:auto;padding:7.6px 0 6px;border-bottom:1px solid var(--line);max-width:952px;margin:0 auto 2px;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
 nav button,nav a{flex:none;border:0;background:none;color:var(--sub);padding:4px 0;cursor:pointer;font:inherit;font-size:17px;font-weight:600;letter-spacing:-.01em;text-decoration:none}
@@ -377,10 +378,17 @@ const label = p => `${esc(p.name)} <span class="sub">${esc(p.ministry)}${p.progr
 const link = p => `<a href="#" onclick="openProject('${p.id}');return false">${label(p)}</a>`;
 const total = (y, k) => D.totals ? D.totals[y][k] : P.reduce((a, p) => a + (Y(p, y)[k] || 0), 0);
 
+const SRC_LINES = [
+  `열린재정 Open API: 총지출 예산 ${YEARS[0]}~${CUR} 정부안(세부사업 ${P.length.toLocaleString()}개)${HAS_EXEC ? `, 결산 ${(D.exec_years || [])[0]}~${EXEC_LAST}(단위사업 ${U.length.toLocaleString()}개)` : ""}, 재정통계 198건 (${esc((D.fetched_at || "").slice(0, 10))} 수집)`,
+  "열린재정 재정상세통계: 추경 포함 세부사업 예산편성, 월별 지출집행, 국가채무·중기재정계획",
+  "2027년 예산안 사업설명자료 (열린재정 공개본): 내역사업별 금액, 사업 설명 본문",
+  "행정안전부 공공서비스(혜택) 정보 (정부24): 공공데이터포털 15113968 (2026-11-21 수집)",
+  "한국사회보장정보원 중앙부처복지서비스 (복지로): 공공데이터포털 15090532 (2026-11-21 수집)"
+];
 document.getElementById("notice").innerHTML = SAMPLE
   ? "화면 시험용 <b>샘플 데이터</b>입니다. 실제 예산 수치가 아닙니다."
-  : `출처: 열린재정 Open API · 예산 ${YEARS[0]}~${CUR} (총지출 기준, 세부사업 ${P.length.toLocaleString()}개)${HAS_EXEC ? ` · 결산 ${(D.exec_years || [])[0]}~${EXEC_LAST} (단위사업 ${U.length.toLocaleString()}개)` : ""} · 단위 ${D.unit} · 수집 ${esc((D.fetched_at || "").slice(0, 10))}<br>
-     공식 시스템과 무관한 개인 프로젝트입니다.`;
+  : `<details class="src" id="srcBox"><summary>출처 · 수집 정보</summary><ul>${SRC_LINES.map(x => `<li>${x}</li>`).join("")}</ul><p class="src-unit">단위 ${esc(D.unit)} (예산·결산 원자료는 백만원 단위라 억원으로 환산)</p></details><div class="src-note">공식 시스템과 무관한 개인 프로젝트입니다.</div>`;
+if (!SAMPLE && matchMedia("(min-width:641px)").matches) document.getElementById("srcBox").open = true;
 
 const TABS = [["analysis", "재정통계"], ["benefit", "국민혜택"],
   ["ask", "AI분석"]];
