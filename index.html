@@ -223,6 +223,16 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .ansbody{line-height:1.75;word-break:keep-all}
 .lab{display:inline-flex;flex-direction:column;align-items:center}
 .lab-note{display:block;text-align:center;color:#fff;text-decoration:none;font-size:11px;line-height:1.2;white-space:nowrap;margin-top:3px;letter-spacing:-.01em}
+/* AI 답변 생성 중 표시 */
+.thinking{display:flex;align-items:center;gap:8px;color:var(--sub);font-size:14px}
+.think-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);flex:none;animation:thinkPulse 1.2s ease-in-out infinite}
+.think-lab{color:var(--ink)}
+.think-dots i{font-style:normal;animation:thinkBlink 1.4s infinite both}
+.think-dots i:nth-child(2){animation-delay:.2s}.think-dots i:nth-child(3){animation-delay:.4s}
+.think-sec{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--sub)}
+@keyframes thinkPulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+@keyframes thinkBlink{0%,80%,100%{opacity:.15}40%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.think-dot,.think-dots i{animation:none}}
 </style>
 </head>
 <body>
@@ -1247,10 +1257,20 @@ async function statOpen(i, btn) {
   const c = FISC_CARDS.find(x => x.id === h.id);
   await sheetOpen(card, `<div class="sub">재정통계</div><h3 id="bsTitle">${c.title} <span class="sub" style="font-size:13px;font-weight:600">${c.sub}</span></h3><div class="abody">${c.body()}</div>`);
 }
+/* 진행 표시: 점멸하는 점 + 경과 시간(초) */
+let THINK_T = null;
+function thinking(box, label) {
+  clearInterval(THINK_T);
+  const t0 = performance.now();
+  box.innerHTML = `<div class="card thinking" role="status" aria-live="polite"><span class="think-dot"></span><span class="think-lab">${label}</span><span class="think-dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span><span class="think-sec">0.0초</span></div>`;
+  const sec = box.querySelector(".think-sec");
+  THINK_T = setInterval(() => { if (!sec.isConnected) return clearInterval(THINK_T); sec.textContent = ((performance.now() - t0) / 1000).toFixed(1) + "초"; }, 100);
+  return () => { clearInterval(THINK_T); return (performance.now() - t0) / 1000; };
+}
 async function ask() {
   const q = (document.getElementById("aq").value || "").trim(); if (!q) return;
   const box = document.getElementById("ans");
-  box.innerHTML = `<div class="card sub">자료를 찾는 중…</div>`;
+  thinking(box, "자료를 찾는 중");
   await naeyeokData();
   const got = retrieve(q);
   const extra = (await termHits(q)).filter(p => !got.some(h => h.p === p)).slice(0, 3).map(p => ({ p, score: 0 }));
@@ -1269,13 +1289,13 @@ async function ask() {
   const statFx = (await Promise.all(stats.map(statFacts)));
   const statList = stats.length ? `<div class="card"><div class="sub">관련 재정통계</div>${stats.map((h, i) => `<div class="doc"><b>${esc(h.name)}</b><br><span class="sub">출처: ${h.kind === "oa" ? "열린재정 재정상세통계" : "열린재정 (재정통계 탭)"}</span><br><button class="desc-btn" onclick="statOpen(${i},this)">그래프 보기 ›</button></div>`).join("")}</div>` : "";
 
-  let answer = "", note = "", usedModel = "";
+  let answer = "", note = "", usedModel = "", elapsed = 0;
   if (!AI_API) {
     note = "AI 답변 서버가 아직 연결되지 않아 관련 사업 자료만 보여 드립니다.";
   } else {
     const pick = (document.querySelector('input[name="llm"]:checked') || {}).value || "gemini";
     const name = (LLMS.find(([k]) => k === pick) || LLMS[0])[1];
-    box.innerHTML = `<div class="card sub">${esc(name)}로 답을 만드는 중…</div>`;
+    const stop = thinking(box, `${esc(name)}로 답을 만드는 중`);
     try {
       const sources = [...hits.map(({ p }, i) => ({ kind: "사업", title: `${p.ministry} · ${p.name}`, source: "열린재정 총지출 세부사업", facts: fact(p), text: (texts[i] || "").slice(0, 1500) })),
         ...statFx.filter(Boolean).map(x => ({ kind: "재정통계", ...x }))];
@@ -1284,11 +1304,13 @@ async function ask() {
       if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
       answer = String(j.answer || "");
       usedModel = String(j.model || "");
+      elapsed = stop();
     } catch (e) {
+      stop();
       note = `AI 답변을 받지 못했습니다(${esc(e.message)}). 아래 자료로 직접 확인해 주세요.`;
     }
   }
-  box.innerHTML = (answer ? `<div class="card"><div class="ansbody">${esc(answer).replace(/\n/g, "<br>")}</div><div class="sub" style="margin-top:8px">${usedModel ? `답변 모델: ${esc(usedModel)} · ` : ""}AI 답변은 아래 자료를 근거로 만들었습니다. 원자료와 함께 확인해 주세요.</div></div>` : "")
+  box.innerHTML = (answer ? `<div class="card"><div class="ansbody">${esc(answer).replace(/\n/g, "<br>")}</div><div class="sub" style="margin-top:8px">${usedModel ? `답변 모델: ${esc(usedModel)}${elapsed ? ` (${elapsed.toFixed(1)}초)` : ""} · ` : ""}AI 답변은 아래 자료를 근거로 만들었습니다. 원자료와 함께 확인해 주세요.</div></div>` : "")
     + (note ? `<div class="doc">${note}</div>` : "")
     + list + statList;
 }
