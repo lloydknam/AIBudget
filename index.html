@@ -219,6 +219,7 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .plane{flex:none;width:46px;height:46px;border-radius:12px;border:0;background:var(--accent);color:#04241a;display:grid;place-items:center;cursor:pointer}
 .llm{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;margin-top:12px;font-size:14px;color:var(--sub)}
 .llm label{display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.llm-lab{font-weight:700;color:var(--ink);white-space:nowrap}
 .ansbody{line-height:1.75;word-break:keep-all}
 .lab{display:inline-flex;flex-direction:column;align-items:center}
 .lab-note{display:block;text-align:center;color:#fff;text-decoration:none;font-size:11px;line-height:1.2;white-space:nowrap;margin-top:3px;letter-spacing:-.01em}
@@ -1161,7 +1162,7 @@ function startAiExamples() {
   }, 3000);
 }
 const AI_API = "https://aibudget-ai.lloydnam.workers.dev/ask"; // Cloudflare Worker 배포 후 주소를 넣는다 (예: "https://aibudget-ai.<계정>.workers.dev/ask"). 비워 두면 자료 검색만 한다.
-const LLMS = [["gemini", "1 · Gemini Flash-Lite (기본)"], ["groq", "2 · Groq GPT-OSS 120B"], ["exaone", "3 · LG K-EXAONE 2.5"]];
+const LLMS = [["exaone", "LG EXAONE 2.5"], ["gemini", "Gemini Flash-Lite"], ["groq", "Groq GPT-OSS 120B"]];
 const PLANE = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M21 3 3 10.5l7 2.5 2.5 7L21 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
 function llmPick() { try { const v = localStorage.getItem("llmPick"); return LLMS.some(([k]) => k === v) ? v : "gemini"; } catch (e) { return "gemini"; } }
 function setLlm(v) { try { localStorage.setItem("llmPick", v); } catch (e) {} }
@@ -1177,7 +1178,7 @@ VIEWS.ask = () => {
         <button class="plane" type="submit" aria-label="질문 보내기">${PLANE}</button>
       </form>
       <div class="llm" role="radiogroup" aria-label="LLM 선택">
-        ${LLMS.map(([k, l]) => `<label><input type="radio" name="llm" value="${k}"${k === pick ? " checked" : ""} onchange="setLlm(this.value)"> ${l}</label>`).join("")}
+        <span class="llm-lab">LLM 선택:</span>${LLMS.map(([k, l]) => `<label><input type="radio" name="llm" value="${k}"${k === pick ? " checked" : ""} onchange="setLlm(this.value)"> ${l}</label>`).join("")}
       </div>
     </div>
     <div id="ans"></div>
