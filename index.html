@@ -479,6 +479,7 @@ VIEWS.analysis = () => {
       sub: "", body: () => execTables() },
     { id: "unused", icon: "trash", title: `${EXEC_LAST} 불용액 큰 단위사업`, big: topU ? esc(topU.activity) : "-", small: topU ? `<span class="warn">불용 ${won(topU.years[EXEC_LAST].unused)}억</span> 등 10개` : "",
       sub: "(억원, 금융·내부거래 제외)", body: () => execUnused() },
+    ...FISC_CARDS.map(c => ({ ...c, big: fiscHead(c.id)[0], small: fiscHead(c.id)[1] })),
   ];
   view(`
   <div class="card"><h2>${CUR}년 예산안 규모·증감</h2>
@@ -496,6 +497,8 @@ VIEWS.analysis = () => {
       <div class="ahd">${ic(x.icon)}<b>${x.title}</b></div><div class="abig" id="abig-${x.id}">${x.big}</div><div class="sub">${x.small}</div></div>`).join("")}</div></div>
   <div class="bn" id="oaWrap"><div class="sub">열린재정 OPEN API 목록을 불러오는 중…</div></div>`);
   loadOpenApi();
+  loadFiscal().then(() => FISC_CARDS.forEach(c => { const [b, s] = fiscHead(c.id), el = document.getElementById("abig-" + c.id);
+    if (el) { el.innerHTML = b; el.nextElementSibling.innerHTML = s; } }));
   naeyeokData().then(all => {
     const rows = [];
     for (const k in all) for (const it of all[k]) rows.push({ key: k, name: it.name, amt: it.amt });
@@ -508,6 +511,76 @@ VIEWS.analysis = () => {
   });
 };
 let AN_SECTIONS = [], AN_ITEMS = null;
+/* ---------- 열린재정 추가 자료: 추경·월별 집행·국가채무·중기계획 (data/fiscal/*.json) ---------- */
+let FISCAL = null;
+async function loadFiscal() {
+  if (FISCAL) return FISCAL;
+  const get = f => fetch("data/fiscal/" + f).then(r => r.json()).catch(() => null);
+  const [supp, exec, debt] = await Promise.all([get("supp.json"), get("exec_month.json"), get("debt_plan.json")]);
+  return (FISCAL = { supp, exec, debt });
+}
+const rate = (e, b) => b ? e / b * 100 : 0;
+const rbar = r => `<div class="bar" style="margin-top:4px"><i style="width:${Math.min(100, r).toFixed(0)}%"></i></div>`;
+const srcLine = (x, extra = "") => x ? `<div class="sub" style="margin-top:12px">출처: ${esc(x.source)}${x.basis ? " · " + esc(x.basis) : ""}${extra} (수집 ${esc(x.fetched_at)})</div>` : "";
+function fiscHead(id) {
+  const F = FISCAL; if (!F) return ["…", "불러오는 중"];
+  if (id === "supp" && F.supp) { const y = F.supp.years["2026"], z = F.supp.years["2025"];
+    return [`<span class="up">+${jo(y.a - y.b)}</span>`, `2026 ${y.g}차 추경 · 사업 ${y.c}개 변경 · 2025 ${z.g}차 +${jo(z.a - z.b)}`]; }
+  if (id === "execm" && F.exec) { const c = F.exec.curve, m = +F.exec.last.slice(5), r = c["2026"][m - 1], p = c["2025"][m - 1];
+    return [`집행률 ${r.toFixed(1)}%`, `${F.exec.last.replace("-", "년 ")}월 누계 · 전년 같은 달 ${p.toFixed(1)}%`]; }
+  if (id === "debt" && F.debt) { const a = F.debt.debt.at(-1), m = F.debt.debt_m.at(-1);
+    return [`${won(m[1])}조`, `중앙정부 ${m[0].replace("-", "년 ")}월 · ${a[0]}년 GDP대비 ${a[2]}%`]; }
+  if (id === "plan" && F.debt) { const b = F.debt.plan_bal, e = F.debt.plan_exp;
+    return [`${e[0][5]}조`, `${F.debt.plan_year}년 계획의 ${F.debt.plan_cols.at(-1)}년 지출 · 국가채무 ${b[4][5]}조`]; }
+  return ["-", "자료 없음"];
+}
+function suppYear(y, v) {
+  const row = ([o, n, b, a]) => `<tr><td>${esc(n)}<div class="sub">${esc(o)}</div></td><td>${won(b)}</td><td>${won(a)}</td><td class="${a > b ? "up" : "down"}">${a > b ? "+" : ""}${won(a - b)}</td></tr>`;
+  return `<h4 style="margin:16px 0 6px">${y}년 · ${v.g}차 추경까지 <span class="sub">본예산 ${jo(v.b)} → ${jo(v.a)} (<span class="up">+${jo(v.a - v.b)}</span>), 바뀐 세부사업 ${v.c}개</span></h4>
+    <table><tr><th>늘어난 사업</th><th>본예산</th><th>추경 후</th><th>증감</th></tr>${v.u.map(row).join("")}</table>
+    ${v.w.length ? `<table style="margin-top:8px"><tr><th>줄어든 사업</th><th>본예산</th><th>추경 후</th><th>증감</th></tr>${v.w.map(row).join("")}</table>` : `<div class="sub" style="margin-top:6px">줄어든 세부사업 없음</div>`}
+    <table style="margin-top:8px"><tr><th>부처</th><th>본예산</th><th>추경 후</th><th>증감</th></tr>${v.m.map(([o, b, a]) => row([o, o, b, a]).replace(`<div class="sub">${esc(o)}</div>`, "")).join("")}</table>`;
+}
+function lineSvg(series, opt = {}) {   // series: [{name, color, vals}] (null은 건너뜀)
+  const W = 640, H = 220, L = 34, R = 10, T = 12, B = 26, n = series[0].vals.length;
+  const all = series.flatMap(s => s.vals).filter(v => v != null), max = opt.max ?? Math.ceil(Math.max(...all) / 10) * 10, min = opt.min ?? 0;
+  const X = i => L + (W - L - R) * i / (n - 1), Yv = v => T + (H - T - B) * (1 - (v - min) / (max - min));
+  const grid = [0, .25, .5, .75, 1].map(f => { const v = min + (max - min) * f; return `<line x1="${L}" x2="${W - R}" y1="${Yv(v)}" y2="${Yv(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${Yv(v) + 4}" text-anchor="end" font-size="11" fill="var(--sub)">${Math.round(v)}${opt.unit || ""}</text>`; }).join("");
+  const xl = (opt.labels || []).map((t, i) => t ? `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--sub)">${t}</text>` : "").join("");
+  const lines = series.map(s => { const pts = s.vals.map((v, i) => v == null ? null : `${X(i).toFixed(1)},${Yv(v).toFixed(1)}`).filter(Boolean);
+    const lastI = s.vals.map((v, i) => v == null ? -1 : i).filter(i => i >= 0).at(-1);
+    return `<polyline points="${pts.join(" ")}" fill="none" stroke="${s.color}" stroke-width="${s.w || 2}" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${X(lastI)}" cy="${Yv(s.vals[lastI])}" r="3.5" fill="${s.color}"/>`; }).join("");
+  const legend = series.map(s => `<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px"><i style="width:12px;height:3px;border-radius:2px;background:${s.color};display:inline-block"></i>${esc(s.name)}</span>`).join("");
+  return `<div class="sub" style="margin:6px 0">${legend}</div><div style="overflow-x:auto"><svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:320px;height:auto" role="img" aria-label="${esc(opt.label || "")}">${grid}${xl}${lines}</svg></div>`;
+}
+const FISC_CARDS = [
+  { id: "supp", icon: "coin", title: "추경으로 바뀐 사업", sub: "(억원, 본예산 국회 확정 → 최종 추경 국회 확정)",
+    body: () => { const s = FISCAL && FISCAL.supp; if (!s) return `<div class="sub">자료를 불러오지 못했습니다.</div>`;
+      return suppYear("2026", s.years["2026"]) + suppYear("2025", s.years["2025"]) + srcLine(s); } },
+  { id: "execm", icon: "clock", title: "월별 지출집행 진도", sub: "(예산현액 대비 누계 집행률)",
+    body: () => { const x = FISCAL && FISCAL.exec; if (!x) return `<div class="sub">자료를 불러오지 못했습니다.</div>`;
+      const lab = Array.from({ length: 12 }, (_, i) => (i + 1) + "월");
+      const chart = lineSvg([{ name: "2024", color: "#6b7a90", vals: x.curve["2024"] }, { name: "2025", color: "#7fb8e6", vals: x.curve["2025"] }, { name: "2026", color: "#ffd84d", vals: x.curve["2026"], w: 3 }], { max: 100, unit: "%", labels: lab, label: "월별 누계 집행률" });
+      const tr = ([k, b, e]) => `<tr><td>${esc(k)}${rbar(rate(e, b))}</td><td>${jo(b)}</td><td>${jo(e)}</td><td>${rate(e, b).toFixed(1)}%</td></tr>`;
+      return `${chart}<div class="sub">${x.last.replace("-", "년 ")}월까지 ${jo(x.e)} 집행 / 예산현액 ${jo(x.b)}</div>
+        <h4 style="margin:16px 0 6px">분야별</h4><table><tr><th>분야</th><th>예산현액</th><th>누계 집행</th><th>집행률</th></tr>${x.fld.map(tr).join("")}</table>
+        <h4 style="margin:16px 0 6px">부처별 (예산 큰 순 15)</h4><table><tr><th>부처</th><th>예산현액</th><th>누계 집행</th><th>집행률</th></tr>${x.mins.map(tr).join("")}</table>
+        <h4 style="margin:16px 0 6px">집행이 더딘 큰 단위사업 <span class="sub">(예산 3천억 이상)</span></h4><table><tr><th>단위사업</th><th>예산현액</th><th>누계 집행</th><th>집행률</th></tr>
+        ${x.low.map(([o, n, b, e]) => tr([n + " · " + o, b, e])).join("")}</table>${srcLine(x)}`; } },
+  { id: "debt", icon: "wave", title: "국가채무 추이", sub: "(조원, 국가채무 D1)",
+    body: () => { const x = FISCAL && FISCAL.debt; if (!x) return `<div class="sub">자료를 불러오지 못했습니다.</div>`;
+      const m = x.debt_m, chart = lineSvg([{ name: "중앙정부 채무(월말)", color: "#ffd84d", vals: m.map(r => r[1]), w: 3 }], { min: 1100, max: 1400, unit: "", labels: m.map((r, i) => i % 3 === 0 ? r[0].slice(2).replace("-", ".") : ""), label: "월별 중앙정부 채무" });
+      return `${chart}<h4 style="margin:16px 0 6px">연도별 국가채무</h4><table><tr><th>연도</th><th>국가채무</th><th>GDP대비</th><th>중앙</th><th>지방</th></tr>
+        ${x.debt.slice().reverse().map(([y, t, g, c, l]) => `<tr><td>${y}</td><td>${won(t)}</td><td>${g}%</td><td>${won(c)}</td><td>${won(l)}</td></tr>`).join("")}</table>
+        <h4 style="margin:16px 0 6px">의무지출·재량지출 (결산)</h4><table><tr><th>연도</th><th>의무지출</th><th>재량지출</th><th>의무 비중</th></tr>
+        ${Object.entries(x.mand).reverse().map(([y, [a, b]]) => `<tr><td>${y}</td><td>${won(a)}</td><td>${won(b)}</td><td>${(a / (a + b) * 100).toFixed(1)}%</td></tr>`).join("")}</table>${srcLine(x)}`; } },
+  { id: "plan", icon: "calendar", title: "중기 재정계획", sub: "(조원, 국가재정운용계획)",
+    body: () => { const x = FISCAL && FISCAL.debt; if (!x) return `<div class="sub">자료를 불러오지 못했습니다.</div>`;
+      const t = rows => `<table><tr><th>구분</th>${x.plan_cols.map(c => `<th>${c}</th>`).join("")}</tr>${rows.map(r => `<tr><td>${esc(r[0])}</td>${r.slice(1).map(v => `<td>${v == null ? "-" : won(v)}</td>`).join("")}</tr>`).join("")}</table>`;
+      return `<div class="sub">열린재정에 공개된 가장 최근 계획은 ${x.plan_year}~${x.plan_cols.at(-1)}년 국가재정운용계획입니다. 이후 계획은 아직 이 통계에 반영되지 않았습니다.</div>
+        <h4 style="margin:16px 0 6px">재정지출 계획</h4>${t(x.plan_exp)}<h4 style="margin:16px 0 6px">재정수지·국가채무 전망</h4>${t(x.plan_bal)}${srcLine(x)}`; } },
+];
 /* ---------- 열린재정 OPEN API 목록 (주요분석 하단 카드 198건) ---------- */
 let OA_DATA = null;
 async function loadOpenApi() {

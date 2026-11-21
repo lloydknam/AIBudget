@@ -32,6 +32,12 @@
    ```
 4. `data/budget.json`, `data/budget.js` 커밋
 
+### 추경·월별 집행·국가채무·중기계획 (`data/fiscal/`)
+주요분석의 추경·월별 집행·국가채무·중기계획 카드는 열린재정 재정상세통계 화면이 쓰는 내부 조회(`/op/fa/sm/service/preview/rowSheet/gridDataLoad.do`)로 한국 IP 브라우저에서 받아 요약한 값입니다.
+- `supp.json`: 세출 세부사업 예산편성현황(추경포함). 일반·특별회계 일반지출, 본예산 국회 확정 대비 최종 추경 국회 확정 (억원)
+- `exec_month.json`: 월별 지출집행상황(단위사업별). 여유자금·예탁·전출입·차입금 상환 등 금융·내부거래 제외 (억원)
+- `debt_plan.json`: 국가채무(D1), 월별 국가채무(중앙정부), 의무·재량지출규모추이(결산), 중기 재정수지 전망·중기 재정지출 계획 (조원)
+
 `scripts/fetch_openfiscal.py`는 한국 IP의 PC에서 직접 실행할 때 쓰는 대안 수집기입니다 (`ExpenditureBudgetInit5`, 총계 기준이라 총지출과 다름).
 
 ## 구조
