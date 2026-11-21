@@ -36,8 +36,8 @@ button{font:inherit;color:inherit}
 /* 검색 */
 .app{flex:1 1 auto;min-height:0;width:100%;max-width:960px;margin:0 auto;padding:0 4px;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .app::-webkit-scrollbar{display:none}
-.ghead{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:6px 0 2px;margin-left:-6px}
-.ghead .brand{flex:none;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit}
+.ghead{flex:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:6px 0 2px}
+.ghead .brand{flex:none;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;padding-top:7px}
 .ghead .brand img{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--line)}
 .ghead h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.04em;line-height:1.1;white-space:nowrap}
 .ghead h1 em{font-style:normal;color:var(--accent)}
@@ -301,6 +301,7 @@ body.tree-mode .crumb{display:none}
 @media (max-width:640px){.bar #back{min-height:0;height:calc(30px + 2px);align-self:center;padding-top:0;padding-bottom:0}}
 /* 헤더 위 여백 절반 */
 .ghead{padding-top:0}.ghead .brand{padding-top:7px}
+@media (min-width:641px){.ghead{padding-top:6px}}
 @media (max-width:640px){.ghead .brand{padding-top:5px}}
 /* 실험 중 표시(위첨자 플라스크) */
 .flask{display:inline-block;vertical-align:super;line-height:0;margin-left:1px;font-size:0}.flask svg{display:inline-block;vertical-align:baseline}
