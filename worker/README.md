@@ -20,3 +20,4 @@
 - `gemini-3.8-flash`는 이 Worker에서 응답이 100초 넘게 걸려 시간초과(524)가 나서 Flash-Lite로 바꿨습니다.
 - 배치(Placement): Region → GCP `asia-northeast3`(서울). 기본 배치에서는 요청이 Gemini 미지원 지역 경유로 처리돼 "User location is not supported" 오류가 났습니다.
 - 3번 LLM: LG K-EXAONE 2.5 (`EXAONE_API_KEY`, 모델 `k-exaone_v2.5`, `reasoning_effort: low`). 키는 30일마다 만료되고 하루 호출 한도가 있으며 비상업적 사용만 허용됩니다.
+- 2번 LLM: Groq `openai/gpt-oss-120b` (환경변수 `GROQ_MODEL`). `llama-3.3-70b-versatile`은 이 계정에서 "does not exist or you do not have access" 오류가 나서 바꿨습니다.

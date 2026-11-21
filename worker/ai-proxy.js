@@ -2,7 +2,7 @@
 // 역할: 브라우저에 API 키를 노출하지 않고, 허용된 사이트에서 온 질문만 LLM에 전달한다.
 // 환경변수(Worker 설정 > Variables and Secrets):
 //   GEMINI_API_KEY (필수, 기본 LLM 1번), GROQ_API_KEY (2번), EXAONE_API_KEY (3번, LG K-EXAONE)
-//   GEMINI_MODEL (선택, 기본 gemini-3.5-flash-lite), GROQ_MODEL (선택, 기본 llama-3.3-70b-versatile)
+//   GEMINI_MODEL (선택, 기본 gemini-3.5-flash-lite), GROQ_MODEL (선택, 기본 openai/gpt-oss-120b)
 //   EXAONE_MODEL (선택, 기본 k-exaone_v2.5), EXAONE_URL (선택, 기본 https://api.exaone.ai/v1/chat/completions)
 
 const ALLOW = ["https://lloydknam.github.io"];
@@ -72,7 +72,7 @@ async function groq(env, user) {
     signal: AbortSignal.timeout(30000),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.GROQ_API_KEY}` },
     body: JSON.stringify({
-      model: env.GROQ_MODEL || "llama-3.3-70b-versatile",
+      model: env.GROQ_MODEL || "openai/gpt-oss-120b",
       temperature: 0.2,
       max_tokens: 900,
       messages: [{ role: "system", content: SYSTEM }, { role: "user", content: user }],
