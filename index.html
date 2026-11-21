@@ -847,7 +847,7 @@ function drawBenefit() {
     ${pids.size ? `이 가운데 예산 사업과 연결된 ${pids.size}개 사업의 ${CUR} 정부안 합계는 <b>${sum >= 10000 ? jo(sum) : won(sum) + "억"}</b>입니다.` : ""}</div>
   ${Object.keys(fields).length > 1 ? chipRow("bField", [["", "분야 전체"], ...Object.entries(fields).sort((a, b) => b[1] - a[1]).map(([f, n]) => [f, `${f} <small>${n}</small>`])], k => k === BS.field) : ""}
   <div class="card"><h2 class="bh">${ic("clock")}지금 받을 수 있는 것 <b class="bcnt">${nowF.length.toLocaleString()}<small>건</small></b><span class="sub">조회 많은 순</span></h2>
-    ${now.length ? `<div class="borg"><select id="bOrg" aria-label="부처·기관 선택"><option value="">부처·기관 전체 (${Object.keys(orgCnt).length}곳)</option>${Object.entries(orgCnt).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([o, c]) => `<option value="${esc(o)}" ${o === BS.org ? "selected" : ""}>${esc(o)} (${c})</option>`).join("")}</select></div>` : ""}
+    ${now.length ? `<div class="borg"><select id="bOrg" aria-label="부처·기관 선택"><option value="">부처·기관 전체 (${now.length.toLocaleString()}건 · ${Object.keys(orgCnt).length}곳)</option>${Object.entries(orgCnt).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([o, c]) => `<option value="${esc(o)}" ${o === BS.org ? "selected" : ""}>${esc(o)} (${c})</option>`).join("")}</select></div>` : ""}
     ${nowF.length ? `<div class="bgrid2">${nowF.slice(0, BS.n).map(r => bnRow(r)).join("")}</div>` : "<div class='sub'>조건에 맞는 지원이 없습니다. 상황이나 가구 선택을 줄여 보세요.</div>"}
     ${nowF.length > BS.n ? `<button class="go" id="bMore" style="margin-top:12px">더 보기</button>` : ""}
   </div>
