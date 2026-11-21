@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=20"+location.hash);return;}if(!location.hash)location.replace("map.html?v=20");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=20를 붙이고 예산 지도로 보낸다 -->
+<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=21"+location.hash);return;}if(!location.hash)location.replace("map.html?v=21");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=21를 붙이고 예산 지도로 보낸다 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 예산 프리즘</title>
 <link rel="icon" type="image/png" href="assets/icon-192.png">
@@ -151,6 +151,10 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .bbud{display:flex;gap:6px;align-items:flex-start;font-size:13px;margin-top:6px;color:var(--sub)}.bbud .bic{stroke:var(--gold);width:16px;height:16px;margin-top:2px}.bbud a{color:var(--ink)}
 .bnote{margin:4px 4px 0;line-height:1.7}
 .agrid{margin-bottom:16px}
+.bcnt{font-size:30px;font-weight:800;color:#ffd84d;letter-spacing:-.02em;line-height:1;margin-left:4px}.bcnt small{font-size:15px;margin-left:2px}
+.borg{margin:-2px 0 14px}.borg select{width:100%;max-width:360px;height:40px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:14px}
+.borg select:focus{outline:none;border-color:var(--gold)}
+@media (max-width:640px){.bcnt{font-size:26px}}
 .acard{display:flex;flex-direction:column;gap:6px;padding:16px;background:var(--card)}
 .ahd{display:flex;align-items:center;gap:8px;font-size:14px}.ahd b{font-weight:700}
 .abig{font-size:19px;font-weight:800;letter-spacing:-.03em;line-height:1.35;color:var(--gold);word-break:keep-all}
@@ -693,7 +697,7 @@ function showProject(id) {
 // 예산 연결은 data/benefit_map.json (자동 매칭 0.9 이상 + 사람 검수 확정분).
 let BN = null, BLX = null;
 const BL = {};   // 시도 파일 캐시
-const BS = { mode: "P", age: 30, sex: "", inc: "", hh: new Set(), sit: new Set(), field: "", n: 30,
+const BS = { mode: "P", age: 30, sex: "", inc: "", hh: new Set(), sit: new Set(), field: "", org: "", n: 30,
              biz: "1102", ind: "", sido: "", sgg: "" };
 const getJ = u => fetch(u).then(r => r.ok ? r.json() : Promise.reject()).catch(() => null);
 async function loadBenefits() {
@@ -810,6 +814,10 @@ function drawBenefit() {
   const fields = {}; now.forEach(r => { if (r.f) fields[r.f] = (fields[r.f] || 0) + 1; });
   const person = BS.mode === "P";
   const pctAge = Math.min(100, BS.age);
+  // 부처(기관) 필터: 지금 조건에 맞는 지원의 기관 목록 (건수 많은 순)
+  const orgCnt = {}; now.forEach(r => { orgCnt[r.o] = (orgCnt[r.o] || 0) + 1; });
+  if (BS.org && !orgCnt[BS.org]) BS.org = "";
+  const nowF = BS.org ? now.filter(r => r.o === BS.org) : now, soonF = BS.org ? soon.filter(r => r.o === BS.org) : soon;
   view(`
   <div class="bn">
   <div class="card">
@@ -838,12 +846,13 @@ function drawBenefit() {
   <div class="blead">지금 해당하는 지원은 <b class="g">${now.length.toLocaleString()}건</b>${nLoc ? `(지역 ${nLoc.toLocaleString()}건 포함)` : ""}, 관련 기관은 <b>${orgs}곳</b>입니다.
     ${pids.size ? `이 가운데 예산 사업과 연결된 ${pids.size}개 사업의 ${CUR} 정부안 합계는 <b>${sum >= 10000 ? jo(sum) : won(sum) + "억"}</b>입니다.` : ""}</div>
   ${Object.keys(fields).length > 1 ? chipRow("bField", [["", "분야 전체"], ...Object.entries(fields).sort((a, b) => b[1] - a[1]).map(([f, n]) => [f, `${f} <small>${n}</small>`])], k => k === BS.field) : ""}
-  <div class="card"><h2 class="bh">${ic("clock")}지금 받을 수 있는 것 <span class="sub">${now.length.toLocaleString()}건 · 조회 많은 순</span></h2>
-    ${now.length ? `<div class="bgrid2">${now.slice(0, BS.n).map(r => bnRow(r)).join("")}</div>` : "<div class='sub'>조건에 맞는 지원이 없습니다. 상황이나 가구 선택을 줄여 보세요.</div>"}
-    ${now.length > BS.n ? `<button class="go" id="bMore" style="margin-top:12px">더 보기</button>` : ""}
+  <div class="card"><h2 class="bh">${ic("clock")}지금 받을 수 있는 것 <b class="bcnt">${nowF.length.toLocaleString()}<small>건</small></b><span class="sub">조회 많은 순</span></h2>
+    ${now.length ? `<div class="borg"><select id="bOrg" aria-label="부처·기관 선택"><option value="">부처·기관 전체 (${Object.keys(orgCnt).length}곳)</option>${Object.entries(orgCnt).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([o, c]) => `<option value="${esc(o)}" ${o === BS.org ? "selected" : ""}>${esc(o)} (${c})</option>`).join("")}</select></div>` : ""}
+    ${nowF.length ? `<div class="bgrid2">${nowF.slice(0, BS.n).map(r => bnRow(r)).join("")}</div>` : "<div class='sub'>조건에 맞는 지원이 없습니다. 상황이나 가구 선택을 줄여 보세요.</div>"}
+    ${nowF.length > BS.n ? `<button class="go" id="bMore" style="margin-top:12px">더 보기</button>` : ""}
   </div>
-  ${person && soon.length ? `<div class="card"><h2 class="bh">${ic("soon")}곧 열리는 것 <span class="sub">15년 안에 나이 조건이 열리는 ${soon.length}건 · 현 제도 기준</span></h2>
-    <div class="bgrid2">${soon.slice(0, 20).map(r => bnRow(r, true)).join("")}</div></div>` : ""}
+  ${person && soonF.length ? `<div class="card"><h2 class="bh">${ic("soon")}곧 열리는 것 <span class="sub">15년 안에 나이 조건이 열리는 ${soonF.length}건${BS.org ? " · " + esc(BS.org) : ""} · 현 제도 기준</span></h2>
+    <div class="bgrid2">${soonF.slice(0, 20).map(r => bnRow(r, true)).join("")}</div></div>` : ""}
   <div class="sub bnote">출처: 행정안전부 공공서비스(혜택) 정보(정부24, ${esc(BN.fetched_at || "")}) · 예산: 열린재정 ${CUR} 정부안.
     전국 공통(중앙부처·공공기관) ${BN.items.length.toLocaleString()}건과 지역(시도·시군구·교육청·지방 출연기관) ${BLX.sido.reduce((a, x) => a + x.n, 0).toLocaleString()}건을 담았습니다. 지방 출연기관의 지역은 기관명으로 추정했습니다. 예산은 사업 전체 규모이며 개인이 받는 금액이 아닙니다.
     예산 연결은 자동 매칭과 검수를 거쳤지만 틀릴 수 있습니다. 자격은 정부24 원문에서 확인하세요.</div>
@@ -859,6 +868,8 @@ function drawBenefit() {
   const saveReg = () => { try { localStorage.setItem("bnRegion", JSON.stringify({ sido: BS.sido, sgg: BS.sgg })); } catch (e) {} };
   if (sido) sido.onchange = async () => { BS.sido = sido.value; BS.sgg = ""; BS.n = 30; BS.field = ""; saveReg(); await loadLocal(); drawBenefit(); };
   if (sgg) sgg.onchange = () => { BS.sgg = sgg.value; BS.n = 30; BS.field = ""; saveReg(); drawBenefit(); };
+  const orgSel = document.getElementById("bOrg");
+  if (orgSel) orgSel.onchange = () => { BS.org = orgSel.value; BS.n = 30; drawBenefit(); };
   one("bSex", "sex"); one("bInc", "inc"); one("bInd", "ind"); one("bField", "field");
   many("bHh", BS.hh); many("bSit", BS.sit);
   q("#bBiz button").forEach(b => b.onclick = () => { BS.biz = b.dataset.k; BS.n = 30; drawBenefit(); });
