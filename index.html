@@ -233,6 +233,27 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 @keyframes thinkPulse{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
 @keyframes thinkBlink{0%,80%,100%{opacity:.15}40%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.think-dot,.think-dots i{animation:none}}
+/* 재정통계 구조도 */
+.tband{margin:0 0 18px}
+.tband h3{font-size:15px;margin:0 0 10px}
+.tflow{display:flex;align-items:stretch;gap:6px}
+.tflow>.tnode,.tpair{flex:1 1 0;min-width:0}
+.tpair{display:flex;flex-direction:column;gap:6px}
+.tpair .tnode{flex:1}
+.tarrow{flex:none;align-self:center;color:var(--accent);font-weight:800;font-size:18px}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.tnode{display:grid;grid-template-columns:1fr auto;align-content:start;gap:4px 8px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--ink);font:inherit;cursor:pointer}
+.tnode:hover{border-color:var(--accent)}
+.tnode:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.tn-t{font-weight:800;font-size:15px;letter-spacing:-.02em}
+.tn-n{font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+.tn-d{grid-column:1/-1;font-size:12.5px;color:var(--sub);line-height:1.45}
+.tn-s{grid-column:1/-1;font-size:11.5px;color:var(--sub);opacity:.8;line-height:1.45}
+.tcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:4px 0 4px;font-size:15px}
+.tcrumb button{border:0;background:none;color:var(--accent);font:inherit;font-weight:700;cursor:pointer;padding:0}
+.tchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+@media (max-width:900px){.tflow{flex-direction:column}.tarrow{transform:rotate(90deg)}.tpair{flex-direction:row}.tpair .tnode{flex:1 1 0;min-width:0}}
+@media (max-width:640px){.tpair{flex-direction:column}.tgrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -540,16 +561,46 @@ const FISC_CARDS = [
         <h4 style="margin:16px 0 6px">재정지출 계획</h4>${t(x.plan_exp)}<h4 style="margin:16px 0 6px">재정수지·국가채무 전망</h4>${t(x.plan_bal)}${srcLine(x)}`; } },
 ];
 /* ---------- 열린재정 OPEN API 목록 (주요분석 하단 카드 198건) ---------- */
-let OA_DATA = null;
+let OA_DATA = null, OA_TREE = null, OA_POS = {}, OA_CAT = null;
+/* 재정통계 구조도: 198개 통계를 예산의 흐름·재정의 상태·다른 관점 11개 분류로 묶어 찾아 들어간다 (data/openfiscal_tree.json) */
 async function loadOpenApi() {
   const el = document.getElementById("oaWrap"); if (!el) return;
-  try { if (!OA_DATA) OA_DATA = await fetch("data/openfiscal_api.json").then(r => r.json()); }
-  catch (e) { el.innerHTML = `<div class="sub">OPEN API 목록을 불러오지 못했습니다.</div>`; return; }
-  el.innerHTML = `<div class="oa-head"><h2>열린재정 OPEN API 목록 <span class="sub">${OA_DATA.count}건 · 누르면 상세가 펼쳐집니다</span></h2></div>` +
-    OA_DATA.groups.map((g, gi) => `<div class="oa-g"><h3>${esc(g.title)} <span class="sub">${g.items.length}건</span></h3>
-      <div class="bgrid2 agrid">${g.items.map((it, ii) => `<div class="brow acard oa-card" role="button" tabindex="0" data-g="${gi}" data-i="${ii}"
-        onclick="oaOpen(${gi},${ii},this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();oaOpen(${gi},${ii},this)}">
-        <div class="ahd">${ic("list")}<b>${esc(it.name)}</b></div><div class="sub">No.${it.no} · ${esc(g.title)}</div></div>`).join("")}</div></div>`).join("");
+  try {
+    if (!OA_DATA) OA_DATA = await fetch("data/openfiscal_api.json").then(r => r.json());
+    if (!OA_TREE) OA_TREE = await fetch("data/openfiscal_tree.json").then(r => r.json());
+    if (!CAT_IDX) CAT_IDX = await fetch("data/fiscal/catalog/index.json").then(r => r.json()).catch(() => ({ items: {} }));
+  } catch (e) { el.innerHTML = `<div class="sub">재정통계 목록을 불러오지 못했습니다.</div>`; return; }
+  OA_POS = {}; OA_DATA.groups.forEach((g, gi) => g.items.forEach((it, ii) => { OA_POS[it.no] = [gi, ii]; }));
+  oaShow(OA_CAT);
+}
+const oaCount = c => c.subs.reduce((a, s) => a + s[1].length, 0);
+function oaNode(c) {
+  return `<button class="tnode" onclick="oaShow('${c.id}')"><span class="tn-t">${esc(c.title)}</span><span class="tn-n">${oaCount(c)}</span>
+    <span class="tn-d">${esc(c.desc)}</span><span class="tn-s">${c.subs.map(s => esc(s[0])).join(" · ")}</span></button>`;
+}
+function oaShow(id) {
+  const el = document.getElementById("oaWrap"); if (!el || !OA_TREE) return;
+  OA_CAT = id || null;
+  const cats = OA_TREE.cats, C = k => cats.find(c => c.id === k);
+  const total = cats.reduce((a, c) => a + oaCount(c), 0);
+  if (!OA_CAT) {
+    const arrow = `<span class="tarrow" aria-hidden="true">→</span>`;
+    el.innerHTML = `<div class="oa-head"><h2>재정통계 구조도 <span class="sub">열린재정 통계 ${total}건 · 분류를 눌러 찾아 들어가세요</span></h2></div>
+      <section class="tband"><h3>${esc(OA_TREE.bands.flow)} <span class="sub">계획에서 결산까지</span></h3>
+        <div class="tflow">${oaNode(C("plan"))}${arrow}${oaNode(C("form"))}${arrow}<div class="tpair">${oaNode(C("rev"))}${oaNode(C("exp"))}</div>${arrow}${oaNode(C("exec"))}${arrow}${oaNode(C("close"))}</div></section>
+      <section class="tband"><h3>${esc(OA_TREE.bands.state)}</h3><div class="tgrid">${cats.filter(c => c.band === "state").map(oaNode).join("")}</div></section>
+      <section class="tband"><h3>${esc(OA_TREE.bands.etc)}</h3><div class="tgrid">${cats.filter(c => c.band === "etc").map(oaNode).join("")}</div></section>`;
+    return;
+  }
+  const c = C(OA_CAT); if (!c) return oaShow(null);
+  const item = no => { const p = OA_POS[no]; if (!p) return ""; const it = OA_DATA.groups[p[0]].items[p[1]], has = CAT_IDX && CAT_IDX.items[no];
+    return `<div class="brow acard oa-card" role="button" tabindex="0" onclick="oaOpen(${p[0]},${p[1]},this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();oaOpen(${p[0]},${p[1]},this)}">
+      <div class="ahd">${ic("list")}<b>${esc(it.name)}</b></div><div class="sub">No.${no}${has ? "" : " · 그래프 자료 없음"}</div></div>`; };
+  el.innerHTML = `<div class="tcrumb" role="navigation" aria-label="위치"><button onclick="oaShow(null)">재정통계 구조도</button><span aria-hidden="true">›</span><b>${esc(c.title)}</b> <span class="sub">${oaCount(c)}건</span></div>
+    <div class="sub" style="margin:2px 0 12px">${esc(OA_TREE.bands[c.band])} · ${esc(c.desc)}</div>
+    <div class="chips tchips">${cats.map(x => `<button class="${x.id === c.id ? "on" : ""}" onclick="oaShow('${x.id}')">${esc(x.title)}</button>`).join("")}</div>
+    ${c.subs.map(([t, nos]) => `<div class="oa-g"><h3>${esc(t)} <span class="sub">${nos.length}건</span></h3><div class="bgrid2 agrid">${nos.map(item).join("")}</div></div>`).join("")}`;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 /* OPEN API 목록 카드: 같은 이름의 재정상세통계를 요약한 자료(data/fiscal/catalog/번호.json)로 그래프를 그린다 */
 const OA_PAL = ["#ffd84d", "#7fb8e6", "#f0527f", "#5ad1a4", "#b56cf0", "#ff9f43", "#4c8dff", "#9aa4b2"];
