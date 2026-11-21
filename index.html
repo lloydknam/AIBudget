@@ -187,6 +187,9 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .bhd>span{display:flex;gap:4px;flex:none}
 @media (max-width:640px){.bgrid{grid-template-columns:repeat(2,1fr)}}
 .bbiz{grid-template-columns:repeat(6,minmax(0,1fr))}
+.fhd{display:inline-block;margin:16px 0 8px;padding:4px 12px;border-radius:999px;background:#e07a5f;color:#fff;font-size:14px;font-weight:700;line-height:1.3}
+.bsub{margin:-4px 0 6px;font-size:12px}
+@media (max-width:640px){.fhd{font-size:13px;padding:3px 10px;margin-top:14px}}
 @media (max-width:640px){.bdesc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;line-height:1.5}}
 @media (max-width:640px){.bbiz{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.bbiz button{gap:3px;padding:6px 4px;font-size:12px;line-height:1.25}.bbiz .bic{width:16px;height:16px}}
 .sheet-body .dbody{font-size:12.5px;line-height:1.6;margin-top:4px}
@@ -1052,6 +1055,9 @@ function drawBenefit() {
   const orgCnt = {}; now.forEach(r => { orgCnt[r.o] = (orgCnt[r.o] || 0) + 1; });
   if (BS.org && !orgCnt[BS.org]) BS.org = "";
   const nowF = BS.org ? now.filter(r => r.o === BS.org) : now, soonF = BS.org ? soon.filter(r => r.o === BS.org) : soon;
+  // 필터 목차용 조각: 국민 모드는 필터 카드 안(5·6번), 사업주 모드는 기존 위치
+  const fieldHTML = Object.keys(fields).length > 1 ? chipRow("bField", [["", "분야 전체"], ...Object.entries(fields).sort((a, b) => b[1] - a[1]).map(([f, n]) => [f, `${f} <small>${n}</small>`])], k => k === BS.field) : "";
+  const orgHTML = now.length ? `<div class="borg"><select id="bOrg" aria-label="부처·기관 선택"><option value="">부처·기관 전체 (${now.length.toLocaleString()}건 · ${Object.keys(orgCnt).length}곳)</option>${Object.entries(orgCnt).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([o, c]) => `<option value="${esc(o)}" ${o === BS.org ? "selected" : ""}>${esc(o)} (${c})</option>`).join("")}</select></div>` : "";
   view(`
   <div class="bn">
   <div class="card">
@@ -1061,17 +1067,19 @@ function drawBenefit() {
       <button class="${person ? "on" : ""}" data-m="P">${ic("user")}국민 개인·가구</button>
       <button class="${person ? "" : "on"}" data-m="B">${ic("case")}사업주·창업·기업</button>
     </div>
-    <div class="breg"><span class="blab">${person ? "사는 곳" : "사업장 소재지"}</span>
+    ${person ? `<div class="fhd">1. 사는 곳</div>` : ""}<div class="breg">${person ? "" : `<span class="blab">사업장 소재지</span>`}
       <select id="bSido" aria-label="시도"><option value="">전국 공통만</option>${BLX.sido.map(x => `<option ${x.sido === BS.sido ? "selected" : ""}>${x.sido}</option>`).join("")}</select>
       ${BS.sido ? `<select id="bSgg" aria-label="시군구"><option value="">${(BLX.sido.find(x => x.sido === BS.sido) || {}).sgg && Object.keys(BLX.sido.find(x => x.sido === BS.sido).sgg).length ? "시군구 선택" : "시도 전체"}</option>${Object.keys((BLX.sido.find(x => x.sido === BS.sido) || {}).sgg || {}).map(g => `<option ${g === BS.sgg ? "selected" : ""}>${g}</option>`).join("")}</select>` : ""}
     </div>
     ${person ? `
+    <div class="fhd">2. 성별</div>${chipRow("bSex", [["", "전체"], ["0102", "여성"], ["0101", "남성"]], k => k === BS.sex)}
     <div class="bage"><span class="sub">나이</span><b>${BS.age}<small> 세</small></b></div>
     <input type="range" id="bAge" min="0" max="100" value="${BS.age}" aria-label="나이" style="--v:${pctAge}%">
-    <div class="blab">성별</div>${chipRow("bSex", [["", "전체"], ["0102", "여성"], ["0101", "남성"]], k => k === BS.sex)}
-    <div class="blab">가구 소득 <span class="sub">기준중위소득 대비</span></div>${chipRow("bInc", B_INC, k => k === BS.inc)}
+    <div class="fhd">3. 가구소득</div><div class="sub bsub">기준중위소득 대비</div>${chipRow("bInc", B_INC, k => k === BS.inc)}
     <div class="blab">가구 <span class="sub">해당하는 것만</span></div>${chipRow("bHh", B_HH, k => BS.hh.has(k))}
-    <div class="blab">상황 <span class="sub">해당하는 것만 · 복수 선택</span></div>${chipRow("bSit", B_SIT, k => BS.sit.has(k))}
+    <div class="fhd">4. 상황</div><div class="sub bsub">해당하는 것만 · 복수 선택</div>${chipRow("bSit", B_SIT, k => BS.sit.has(k))}
+    <div class="fhd">5. 분야</div>${fieldHTML}
+    <div class="fhd">6. 부처/기관</div>${orgHTML}
     ` : `
     <div class="bgrid bbiz" id="bBiz">${B_BIZ.map(([k, t, i]) => `<button class="${BS.biz === k ? "on" : ""}" data-k="${k}">${ic(i)}<span>${t}</span></button>`).join("")}</div>
     <div class="blab">업종</div>${chipRow("bInd", B_IND, k => k === BS.ind)}
@@ -1079,9 +1087,9 @@ function drawBenefit() {
   </div>
   <div class="blead">지금 해당하는 지원은 <b class="g">${now.length.toLocaleString()}건</b>${nLoc ? `(지역 ${nLoc.toLocaleString()}건 포함)` : ""}, 관련 기관은 <b>${orgs}곳</b>입니다.
     ${pids.size ? `이 가운데 예산 사업과 연결된 ${pids.size}개 사업의 ${CUR} 정부안 합계는 <b>${sum >= 10000 ? jo(sum) : won(sum) + "억"}</b>입니다.` : ""}</div>
-  ${Object.keys(fields).length > 1 ? chipRow("bField", [["", "분야 전체"], ...Object.entries(fields).sort((a, b) => b[1] - a[1]).map(([f, n]) => [f, `${f} <small>${n}</small>`])], k => k === BS.field) : ""}
+  ${person ? "" : fieldHTML}
   <div class="card"><h2 class="bh">${ic("clock")}지금 받을 수 있는 것 <b class="bcnt">${nowF.length.toLocaleString()}<small>건</small></b><span class="sub">조회 많은 순</span></h2>
-    ${now.length ? `<div class="borg"><select id="bOrg" aria-label="부처·기관 선택"><option value="">부처·기관 전체 (${now.length.toLocaleString()}건 · ${Object.keys(orgCnt).length}곳)</option>${Object.entries(orgCnt).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([o, c]) => `<option value="${esc(o)}" ${o === BS.org ? "selected" : ""}>${esc(o)} (${c})</option>`).join("")}</select></div>` : ""}
+    ${person ? "" : orgHTML}
     ${nowF.length ? `<div class="bgrid2">${nowF.slice(0, BS.n).map(r => bnRow(r)).join("")}</div>` : "<div class='sub'>조건에 맞는 지원이 없습니다. 상황이나 가구 선택을 줄여 보세요.</div>"}
     ${nowF.length > BS.n ? `<button class="go" id="bMore" style="margin-top:12px">더 보기</button>` : ""}
   </div>
