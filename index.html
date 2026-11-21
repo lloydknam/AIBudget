@@ -514,9 +514,6 @@ VIEWS.analysis = () => {
       <div class="kpi"><span>증감액</span><b>${jo(g - n)}원</b></div>
       <div class="kpi"><span>세부사업</span><b>${P.filter(p => curGov(p) > 0).length.toLocaleString()}개</b></div>
     </div></div>
-  <div class="card"><h2>사업 검색</h2>
-    <input id="q" aria-label="사업 검색" placeholder="사업명·부처·내역사업 (예: 기초연금, 교육부 늘봄)" oninput="onSearchInput(this, document.getElementById('qr'), document.getElementById('qd'), 30)">
-    <div id="qr" style="margin-top:6px"></div><div id="qd" style="margin-top:10px"></div></div>
   <div class="bn"><div class="bgrid2 agrid">${AN_SECTIONS.map(x => `<div class="brow acard" role="button" tabindex="0" data-a="${x.id}"
       onclick="anOpen(this.dataset.a,this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();anOpen(this.dataset.a,this)}">
       <div class="ahd">${ic(x.icon)}<b>${x.title}</b></div><div class="abig" id="abig-${x.id}">${x.big}</div><div class="sub">${x.small}</div></div>`).join("")}</div></div>
