@@ -57,6 +57,7 @@ header.ghead{padding:6px 0 2px;max-width:952px;margin:0 auto}  /* 예산 지도 
 @media (max-width:640px){header.ghead{padding:0 5px;max-width:none}}
 #gres{position:absolute;top:calc(100% + 6px);left:0;width:min(520px,calc(100vw - 32px));max-height:60vh;overflow:auto;z-index:50;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 14px;box-shadow:0 12px 32px rgba(0,0,0,.35)}
 #gres:empty{display:none}
+@media (max-width:640px){#gres{position:fixed;left:8px;right:8px;width:auto;max-width:none;max-height:60vh}.hsearch .clr{width:18px;height:18px;font-size:11px;right:4px}}
 .notice{margin:0 auto 16px;max-width:640px;color:var(--note-ink);font-size:12.5px;line-height:1.6;word-break:keep-all}
 nav{flex:none;display:flex;gap:22px;align-items:center;overflow-x:auto;padding:7.6px 0 6px;border-bottom:1px solid var(--line);max-width:952px;margin:0 auto 2px;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
@@ -839,6 +840,7 @@ gq.addEventListener("input", async () => {
   const v = gq.value; gclr.hidden = !v;
   await naeyeokData();
   gres.innerHTML = v.trim() ? (search(v, 8).map(resultRow).join("") || "<div class='sub'>결과 없음</div>") : "";
+  if (matchMedia("(max-width:640px)").matches) gres.style.top = (gq.getBoundingClientRect().bottom + 6) + "px";
 });
 gq.addEventListener("keydown", e => { if (e.key === "Escape") gClear(); });
 gclr.onclick = () => { gClear(); gq.focus(); };
