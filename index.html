@@ -789,9 +789,6 @@ function execUnused() {
 /* ---------- 3. 예산 탐색 ---------- */
 VIEWS.explore = () => {
   view(`
-  <div class="card"><h2>사업 찾기</h2>
-    <input id="eq" aria-label="사업 찾기" placeholder="사업명·부처·내역사업" oninput="onSearchInput(this, document.getElementById('er'), document.getElementById('ed'), 20)">
-    <div id="er" style="margin-top:6px"></div><div id="ed" style="margin-top:10px"></div></div>
   <div id="detail"></div>`);
 };
 /* 내역사업: 사업설명자료에서 뽑은 자료 (data/naeyeok.json, 억원). 같은 사업은 소관|사업명 키로 찾는다 */
