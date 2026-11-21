@@ -1,0 +1,28 @@
+name: 열린재정 추경·집행·국가채무 갱신
+
+on:
+  schedule:
+    - cron: "43 19 * * 1"   # 매주 화요일 04:43 KST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 수집
+        run: python scripts/fetch_fiscal.py
+      - name: 커밋
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add data/fiscal
+          git diff --cached --quiet && echo "변경 없음" && exit 0
+          git commit -m "열린재정 추경·집행·국가채무 자료 갱신"
+          git push
