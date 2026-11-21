@@ -297,7 +297,7 @@ document.getElementById("notice").innerHTML = SAMPLE
   : `출처: 열린재정 Open API · 예산 ${YEARS[0]}~${CUR} (총지출 기준, 세부사업 ${P.length.toLocaleString()}개)${HAS_EXEC ? ` · 결산 ${(D.exec_years || [])[0]}~${EXEC_LAST} (단위사업 ${U.length.toLocaleString()}개)` : ""} · 단위 ${D.unit} · 수집 ${esc((D.fetched_at || "").slice(0, 10))}<br>
      국회 검토문서는 아직 연결 전입니다. 공식 시스템과 무관한 개인 프로젝트입니다.`;
 
-const TABS = [["analysis", "주요분석"], ["benefit", "국민혜택"],
+const TABS = [["analysis", "재정통계"], ["benefit", "국민혜택"],
   ["ask", "AI분석"]];
 let cur = "analysis";
 const ALIAS = { home: "analysis", overview: "analysis", review: "analysis", filter: "analysis" };   // 예전 주소 호환
@@ -671,7 +671,7 @@ function oaDraw() {
 }
 async function anOpen(id, card) {
   const x = AN_SECTIONS.find(s => s.id === id); if (!x) return;
-  await sheetOpen(card, `<div class="sub">주요분석</div><h3 id="bsTitle">${x.title} <span class="sub" style="font-size:13px;font-weight:600">${x.sub}</span></h3><div class="abody">${x.body()}</div>`);
+  await sheetOpen(card, `<div class="sub">재정통계</div><h3 id="bsTitle">${x.title} <span class="sub" style="font-size:13px;font-weight:600">${x.sub}</span></h3><div class="abody">${x.body()}</div>`);
   if (x.after) x.after();
 }
 
