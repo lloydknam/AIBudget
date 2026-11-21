@@ -310,6 +310,9 @@ body.tree-mode .crumb{display:none}
 /* 지도 칸의 금액: 노란색 글자 + 글자 그림자 (회색 상자 없음), 이름과 같은 줄이면 간격을 둔다 */
 .tile span{display:inline-block;max-width:100%;vertical-align:top;color:#fde047;font-weight:600;background:none;padding:0;margin-left:0;text-shadow:0 1px 2px #000,0 0 3px #000,0 0 7px rgba(0,0,0,.9)}
 .tile b + span{display:block;margin-left:0;margin-top:1px}
+/* 메뉴 정렬: 첫 메뉴가 제목의 '클' 글자 아래에 오고, 메뉴 사이는 띄어쓰기 3칸 */
+@media (min-width:641px){.gnav{padding-left:57px!important;gap:0.9em!important}}
+@media (max-width:640px){.gnav{justify-content:flex-start!important;gap:0.9em!important;padding-left:36px!important;padding-right:0!important}}
 </style>
 </head>
 <body>

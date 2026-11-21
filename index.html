@@ -207,6 +207,9 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 @media (max-width:640px){main{padding:0 5px 24px}header,footer{padding-left:5px;padding-right:5px}.card{padding:16px 12px}.card h2{font-size:19px}table{font-size:13px}th,td{padding:9px 3px}th:not(:first-child),td:not(:first-child){white-space:nowrap}td:first-child{word-break:keep-all}}
 /* 실험 중 표시(위첨자 플라스크) */
 .flask{display:inline-block;vertical-align:super;line-height:0;margin-left:1px;font-size:0}.flask svg{display:inline-block;vertical-align:baseline}
+/* 메뉴 정렬: 첫 메뉴(예산지도·재정통계 등)가 제목의 '클' 글자 아래에 오고, 메뉴 사이는 띄어쓰기 3칸 */
+@media (min-width:641px){nav{padding-left:57px!important;gap:0.9em!important}}
+@media (max-width:640px){nav{justify-content:flex-start!important;gap:0.9em!important;padding-left:41px!important;padding-right:5px!important}}
 </style>
 </head>
 <body>
