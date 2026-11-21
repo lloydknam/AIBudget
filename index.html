@@ -195,6 +195,14 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .fsec .bage{margin-top:0}
 .fsec .bage b{font-size:13px;font-weight:600}.fsec .bage small{font-size:12px}
 @media (max-width:640px){.fsec .bage b{font-size:12px}}
+.fsec-c{align-items:center}
+.fsec .chips{margin-top:0}
+.fsec .breg{margin-top:0}
+.fsec .breg select,.fsec .borg select{max-width:none;height:30px;padding:0 12px;font-size:12px;border-radius:999px;margin:0}
+.fsec .borg{margin:0;max-width:none}
+.fsec .bage{margin:0 0 4px}
+.fsec .bage b{font-size:16px;font-weight:700}
+.bn .fsec input[type=range]{margin:0;height:20px;background:linear-gradient(to right,var(--gold) var(--v),var(--line) var(--v)) center / 100% 6px no-repeat}
 @media (max-width:640px){.fhd{font-size:13px;padding:3px 10px;margin-top:14px}}
 @media (max-width:640px){.bdesc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;line-height:1.5}}
 @media (max-width:640px){.bbiz{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.bbiz button{gap:3px;padding:6px 4px;font-size:12px;line-height:1.25}.bbiz .bic{width:16px;height:16px}}
@@ -1074,7 +1082,7 @@ function drawBenefit() {
       <button class="${person ? "on" : ""}" data-m="P">${ic("user")}국민 개인·가구</button>
       <button class="${person ? "" : "on"}" data-m="B">${ic("case")}사업주·창업·기업</button>
     </div>
-    ${person ? `<div class="fsec"><div class="fhd">1. 사는 곳</div><div class="fbody">` : ""}<div class="breg">${person ? "" : `<span class="blab">사업장 소재지</span>`}
+    ${person ? `<div class="fsec fsec-c"><div class="fhd">1. 사는 곳</div><div class="fbody">` : ""}<div class="breg">${person ? "" : `<span class="blab">사업장 소재지</span>`}
       <select id="bSido" aria-label="시도"><option value="">전국 공통만</option>${BLX.sido.map(x => `<option ${x.sido === BS.sido ? "selected" : ""}>${x.sido}</option>`).join("")}</select>
       ${BS.sido ? `<select id="bSgg" aria-label="시군구"><option value="">${(BLX.sido.find(x => x.sido === BS.sido) || {}).sgg && Object.keys(BLX.sido.find(x => x.sido === BS.sido).sgg).length ? "시군구 선택" : "시도 전체"}</option>${Object.keys((BLX.sido.find(x => x.sido === BS.sido) || {}).sgg || {}).map(g => `<option ${g === BS.sgg ? "selected" : ""}>${g}</option>`).join("")}</select>` : ""}
     </div>${person ? `</div></div>` : ""}
