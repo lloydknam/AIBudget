@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=11"+location.hash);return;}if(!location.hash)location.replace("map.html?v=11");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=11를 붙이고 예산 지도로 보낸다 -->
+<script>(function(){var p=new URLSearchParams(location.search);if(!p.get("v")){location.replace(location.pathname+"?v=12"+location.hash);return;}if(!location.hash)location.replace("map.html?v=12");})();</script>   <!-- 처음 주소로 들어오면 캐시를 피하는 ?v=12를 붙이고 예산 지도로 보낸다 -->
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>클사무관의 예산 프리즘</title>
 <link rel="icon" type="image/png" href="assets/icon-192.png">
@@ -137,6 +137,17 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .bsum{font-size:13.5px;margin-top:4px;color:#c9ced6}
 .bbud{display:flex;gap:6px;align-items:flex-start;font-size:13px;margin-top:6px;color:var(--sub)}.bbud .bic{stroke:var(--gold);width:16px;height:16px;margin-top:2px}.bbud a{color:var(--ink)}
 .bnote{margin:4px 4px 0;line-height:1.7}
+.bsheet{position:fixed;inset:0;z-index:50;display:none}.bsheet.on{display:block}
+.bsbg{position:absolute;inset:0;background:rgba(0,0,0,.6)}
+.bsbox{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(720px,calc(100% - 32px));max-height:86vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 22px 18px;--gold:#d8c28e;--ico:#7fb8e6}
+.bsx{position:sticky;top:0;float:right;margin:-8px -8px 0 0;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:22px;line-height:1;cursor:pointer}
+.bsin h3{font-size:21px;font-weight:800;letter-spacing:-.03em;margin:6px 0 4px;padding-right:36px}
+.bsin section{margin-top:18px}.bsin h4{font-size:13px;color:var(--gold);margin:0 0 6px;font-weight:700}
+.bstx{white-space:pre-line;font-size:14.5px;line-height:1.75;color:#d7dbe2;word-break:keep-all;overflow-wrap:anywhere}
+.bsft{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
+.bsbtn{display:inline-block;padding:9px 16px;border-radius:999px;background:var(--gold);color:#14110a;font-weight:700;font-size:14px;text-decoration:none;margin-left:6px}
+.bsbtn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+@media (max-width:640px){.bsbox{left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:88vh;border-radius:20px 20px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom,0px))}}
 .breg{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}.breg .blab{margin:0 4px 0 0}
 .breg select{flex:1 1 140px;min-width:0;max-width:240px;height:38px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:14px}
 .breg select:focus{outline:none;border-color:var(--gold)}
@@ -720,7 +731,7 @@ function bnRow(r, soon) {
   const bud = p && curGov(p) > 0
     ? `<div class="bbud">${ic("coin")}<span>예산 <a href="#" onclick="openProject('${p.id}');return false">${esc(p.name)}</a> · ${CUR} 정부안 <b>${won(curGov(p))}억</b> ${isNew(p) ? '<span class="warn">신규</span>' : pct(chg(p) * 100)}</span></div>` : "";
   const tag = (soon ? `<span class="btag soon">${r.a[0]}세부터</span>` : "") + (r.r != null ? `<span class="btag loc">${esc(r.r || BS.sido.replace(/(특별자치|특별|광역|통합특별)?(시|도)$/, ""))}</span>` : "");
-  const name = r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.n)}</a>` : esc(r.n);
+  const name = `<a href="#" onclick="bnOpen('${esc(r.i)}');return false">${esc(r.n)}</a>`;
   return `<div class="brow"><div class="bhd"><b>${name}</b>${tag}</div>
     <div class="sub">${esc(r.o)}${r.t ? " · " + esc(r.t.replace(/\|\|/g, ", ")) : ""}${r.f ? " · " + esc(r.f) : ""}</div>
     ${r.s ? `<div class="bsum">${esc(r.s)}</div>` : ""}${bud}</div>`;
@@ -791,6 +802,42 @@ function drawBenefit() {
   q("#bBiz button").forEach(b => b.onclick = () => { BS.biz = b.dataset.k; BS.n = 30; drawBenefit(); });
   const more = document.getElementById("bMore"); if (more) more.onclick = () => { BS.n += 30; drawBenefit(); };
 }
+/* 설명 창: 정부24 서비스 상세 (data/gov24_detail/<n>.json, n = 서비스ID 글자 코드 합 % 128) */
+const BD = {};
+const bnShard = id => [...id].reduce((a, c) => a + c.charCodeAt(0), 0) % 128;
+const bnFind = id => bnPool().find(r => r.i === id) || Object.values(BL).flatMap(x => x.items).find(r => r.i === id);
+const bnText = t => esc(t).replace(/\n{3,}/g, "\n\n");
+async function bnOpen(id) {
+  const r = bnFind(id); if (!r) return;
+  let el = document.getElementById("bSheet");
+  if (!el) {
+    el = document.createElement("div"); el.id = "bSheet"; el.className = "bsheet";
+    el.innerHTML = `<div class="bsbg"></div><div class="bsbox" role="dialog" aria-modal="true" aria-labelledby="bsTitle"><button class="bsx" aria-label="닫기">×</button><div class="bsin"></div></div>`;
+    document.body.appendChild(el);
+    el.querySelector(".bsbg").onclick = el.querySelector(".bsx").onclick = bnClose;
+    document.addEventListener("keydown", e => { if (e.key === "Escape" && el.classList.contains("on")) bnClose(); });
+  }
+  const p = r.p && projById(r.p);
+  const head = `<div class="sub">${esc(r.o)}${r.t ? " · " + esc(r.t.replace(/\|\|/g, ", ")) : ""}${r.f ? " · " + esc(r.f) : ""}</div>
+    <h3 id="bsTitle">${esc(r.n)}</h3>
+    ${p && curGov(p) > 0 ? `<div class="bbud">${ic("coin")}<span>예산 <a href="#" onclick="bnClose();openProject('${p.id}');return false">${esc(p.name)}</a> · ${CUR} 정부안 <b>${won(curGov(p))}억</b> ${isNew(p) ? '<span class="warn">신규</span>' : pct(chg(p) * 100)}</span></div>` : ""}`;
+  const box = el.querySelector(".bsin");
+  box.innerHTML = head + `<div class="sub" style="margin-top:16px">설명을 불러오는 중…</div>`;
+  el.classList.add("on"); document.body.style.overflow = "hidden";
+  el.querySelector(".bsbox").scrollTop = 0;
+  const n = bnShard(id);
+  if (!BD[n]) BD[n] = (await getJ(`data/gov24_detail/${n}.json`)) || {};
+  const d = BD[n][id] || { purpose: r.s, target: r.g, content: r.c, deadline: r.d };
+  const sec = (t, v) => v ? `<section><h4>${t}</h4><div class="bstx">${bnText(v)}</div></section>` : "";
+  const docs = [d.docs, d.docs_official && "공무원이 확인: " + d.docs_official, d.docs_self && "본인 확인 필요: " + d.docs_self].filter(Boolean).join("\n\n");
+  const law = [d.law, d.rule, d.ordinance].filter(Boolean).join("\n");
+  box.innerHTML = head + sec("서비스 목적", d.purpose) + sec("지원 대상", d.target) + sec("선정 기준", d.criteria) + sec("지원 내용", d.content)
+    + sec("신청 방법", d.apply) + sec("신청 기한", d.deadline) + sec("구비 서류", docs) + sec("접수 기관", d.office) + sec("문의처", d.contact) + sec("근거 법령", law)
+    + `<div class="bsft"><span class="sub">출처: 정부24 공공서비스${d.updated ? " · 수정 " + esc(String(d.updated).slice(0, 10)) : ""}</span>
+       <span>${d.online ? `<a class="bsbtn" href="${esc(d.online)}" target="_blank" rel="noopener">온라인 신청</a>` : ""}${r.url ? `<a class="bsbtn ghost" href="${esc(r.url)}" target="_blank" rel="noopener">정부24 원문</a>` : ""}</span></div>`;
+}
+function bnClose() { const el = document.getElementById("bSheet"); if (el) el.classList.remove("on"); document.body.style.overflow = ""; }
+
 VIEWS.benefit = async () => { view(`<div class="card sub">혜택 자료를 불러오는 중…</div>`); await loadBenefits(); drawBenefit(); };
 
 /* ---------- 5. 조건으로 찾기 ---------- */
