@@ -241,6 +241,7 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .tpair{display:flex;flex-direction:column;gap:6px}
 .tpair .tnode{flex:1}
 .tarrow{flex:none;align-self:center;color:var(--accent);font-weight:800;font-size:18px}
+.tm-in{display:none}
 .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
 .tnode{display:grid;grid-template-columns:1fr auto;align-content:start;gap:4px 8px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--ink);font:inherit;cursor:pointer}
 .tnode:hover{border-color:var(--accent)}
@@ -255,15 +256,17 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 @media (max-width:900px){.tflow{flex-direction:column}.tarrow{transform:rotate(90deg)}.tpair{flex-direction:row}.tpair .tnode{flex:1 1 0;min-width:0}}
 @media (max-width:640px){
   .tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;align-items:start}
-  /* 흐름: 1줄 왼쪽→오른쪽, 아래로 꺾여 3줄 오른쪽→왼쪽 (중기계획→편성→세입·세출 ↓ 집행→결산) */
-  .tflow{display:grid;grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr) 14px minmax(0,1fr);gap:4px 3px;align-items:start}
+  /* 흐름 2줄: 1줄 중기→편성→세입→세출 / ↓ / 3줄 결산←집행 (세입→세출은 가로 화살표) */
+  .tflow{display:grid;grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr) 12px minmax(0,1fr) 12px minmax(0,1fr);grid-template-rows:auto 12px auto;gap:0 2px;align-items:start}
+  .tpair{display:contents}
   .tpair .tnode{flex:none}
+  .tm-in{display:block}
   .tflow>:nth-child(1){grid-area:1/1}.tflow>:nth-child(2){grid-area:1/2}.tflow>:nth-child(3){grid-area:1/3}.tflow>:nth-child(4){grid-area:1/4}
-  .tflow>:nth-child(5){grid-area:1/5}.tflow>:nth-child(6){grid-area:2/5}.tflow>:nth-child(7){grid-area:3/5}.tflow>:nth-child(8){grid-area:3/4}.tflow>:nth-child(9){grid-area:3/3}
+  .tpair>:nth-child(1){grid-area:1/5}.tpair>:nth-child(2){grid-area:1/6}.tpair>:nth-child(3){grid-area:1/7}
+  .tflow>:nth-child(6){grid-area:2/7}.tflow>:nth-child(7){grid-area:3/7}.tflow>:nth-child(8){grid-area:3/6}.tflow>:nth-child(9){grid-area:3/5}
   .tflow .tarrow{font-size:15px;text-align:center;align-self:center;justify-self:center;transform:none}
   .tflow>.tarrow:nth-child(6){transform:rotate(90deg);line-height:1}
   .tflow>.tarrow:nth-child(8){transform:rotate(180deg)}
-  .tpair{display:flex;flex-direction:column;gap:6px}
   .tnode{grid-template-columns:1fr;gap:0;padding:4px 6px;border-radius:8px}
   .tn-t{font-size:12px;line-height:1.25;word-break:keep-all}.tn-n{font-size:12px;line-height:1.25}
   .tn-d,.tn-s{display:none}
@@ -609,7 +612,7 @@ function oaShow(id) {
     const arrow = `<span class="tarrow" aria-hidden="true">→</span>`;
     el.innerHTML = `<div class="oa-head"><h2>재정통계 구조도 <span class="sub">열린재정 통계 ${total}건 · 분류를 눌러 찾아 들어가세요</span></h2></div>
       <section class="tband"><h3>${esc(OA_TREE.bands.flow)} <span class="sub">계획에서 결산까지</span></h3>
-        <div class="tflow">${oaNode(C("plan"))}${arrow}${oaNode(C("form"))}${arrow}<div class="tpair">${oaNode(C("rev"))}${oaNode(C("exp"))}</div>${arrow}${oaNode(C("exec"))}${arrow}${oaNode(C("close"))}</div></section>
+        <div class="tflow">${oaNode(C("plan"))}${arrow}${oaNode(C("form"))}${arrow}<div class="tpair">${oaNode(C("rev"))}<span class="tarrow tm-in" aria-hidden="true">→</span>${oaNode(C("exp"))}</div>${arrow}${oaNode(C("exec"))}${arrow}${oaNode(C("close"))}</div></section>
       <section class="tband"><h3>${esc(OA_TREE.bands.state)}</h3><div class="tgrid">${cats.filter(c => c.band === "state").map(oaNode).join("")}</div></section>
       <section class="tband"><h3>${esc(OA_TREE.bands.etc)}</h3><div class="tgrid">${cats.filter(c => c.band === "etc").map(oaNode).join("")}</div></section>`;
     return;
