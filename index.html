@@ -200,6 +200,11 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .fsec .breg{margin-top:0}
 .fsec .breg select,.fsec .borg select{max-width:none;height:30px;padding:0 12px;font-size:12px;border-radius:999px;margin:0}
 .fsec .borg{margin:0;max-width:none}
+.odd-btn{display:block;width:100%;height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:12px;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.odd-list{list-style:none;margin:4px 0 0;padding:4px 0;max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.odd-list li{padding:4px 12px;font-size:12px;line-height:1.25;color:var(--ink);cursor:pointer}
+.odd-list li:hover{background:rgba(216,194,142,.1)}
+.odd-list li.on{color:var(--gold)}
 .fsec .bage{margin:0 0 4px}
 .fsec .bage b{font-size:16px;font-weight:700}
 .bn .fsec input[type=range]{margin:0;height:20px;background:linear-gradient(to right,var(--gold) var(--v),var(--line) var(--v)) center / 100% 6px no-repeat}
@@ -1072,7 +1077,9 @@ function drawBenefit() {
   const nowF = BS.org ? now.filter(r => r.o === BS.org) : now, soonF = BS.org ? soon.filter(r => r.o === BS.org) : soon;
   // 필터 목차용 조각: 국민 모드는 필터 카드 안(5·6번), 사업주 모드는 기존 위치
   const fieldHTML = Object.keys(fields).length > 1 ? chipRow("bField", [["", "분야 전체"], ...Object.entries(fields).sort((a, b) => b[1] - a[1]).map(([f, n]) => [f, `${f} <small>${n}</small>`])], k => k === BS.field) : "";
-  const orgHTML = now.length ? `<div class="borg"><select id="bOrg" aria-label="부처·기관 선택"><option value="">부처·기관 전체 (${now.length.toLocaleString()}건 · ${Object.keys(orgCnt).length}곳)</option>${Object.entries(orgCnt).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([o, c]) => `<option value="${esc(o)}" ${o === BS.org ? "selected" : ""}>${esc(o)} (${c})</option>`).join("")}</select></div>` : "";
+  const orgItems = [["", `부처·기관 전체 (${now.length.toLocaleString()}건 · ${Object.keys(orgCnt).length}곳)`], ...Object.entries(orgCnt).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([o, c]) => [o, `${o} (${c})`])];
+  const orgCur = (orgItems.find(([v]) => v === (BS.org || "")) || orgItems[0])[1];
+  const orgHTML = now.length ? `<div class="borg"><select id="bOrg" aria-label="부처·기관 선택" style="display:none">${orgItems.map(([v, t]) => `<option value="${esc(v)}" ${v === (BS.org || "") ? "selected" : ""}>${esc(t)}</option>`).join("")}</select><button type="button" class="odd-btn" id="bOrgBtn" aria-haspopup="listbox">${esc(orgCur)}</button><ul class="odd-list" id="bOrgList" style="display:none">${orgItems.map(([v, t]) => `<li data-v="${esc(v)}" class="${v === (BS.org || "") ? "on" : ""}">${esc(t)}</li>`).join("")}</ul></div>` : "";
   view(`
   <div class="bn">
   <div class="card${person ? " pfilter" : ""}">
@@ -1129,6 +1136,11 @@ function drawBenefit() {
   if (sgg) sgg.onchange = () => { BS.sgg = sgg.value; BS.n = 30; BS.field = ""; saveReg(); drawBenefit(); };
   const orgSel = document.getElementById("bOrg");
   if (orgSel) orgSel.onchange = () => { BS.org = orgSel.value; BS.n = 30; drawBenefit(); };
+  const orgBtn = document.getElementById("bOrgBtn"), orgList = document.getElementById("bOrgList");
+  if (orgBtn && orgList) {
+    orgBtn.onclick = () => { orgList.style.display = orgList.style.display === "block" ? "none" : "block"; };
+    orgList.querySelectorAll("li").forEach(li => li.onclick = () => { BS.org = li.dataset.v; BS.n = 30; drawBenefit(); });
+  }
   one("bSex", "sex"); one("bInc", "inc"); one("bInd", "ind"); one("bField", "field");
   many("bHh", BS.hh); many("bSit", BS.sit);
   q("#bBiz button").forEach(b => b.onclick = () => { BS.biz = b.dataset.k; BS.n = 30; drawBenefit(); });
