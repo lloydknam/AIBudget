@@ -493,7 +493,9 @@ VIEWS.analysis = () => {
     <div id="qr" style="margin-top:6px"></div><div id="qd" style="margin-top:10px"></div></div>
   <div class="bn"><div class="bgrid2 agrid">${AN_SECTIONS.map(x => `<div class="brow acard" role="button" tabindex="0" data-a="${x.id}"
       onclick="anOpen(this.dataset.a,this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();anOpen(this.dataset.a,this)}">
-      <div class="ahd">${ic(x.icon)}<b>${x.title}</b></div><div class="abig" id="abig-${x.id}">${x.big}</div><div class="sub">${x.small}</div></div>`).join("")}</div></div>`);
+      <div class="ahd">${ic(x.icon)}<b>${x.title}</b></div><div class="abig" id="abig-${x.id}">${x.big}</div><div class="sub">${x.small}</div></div>`).join("")}</div></div>
+  <div class="bn" id="oaWrap"><div class="sub">열린재정 OPEN API 목록을 불러오는 중…</div></div>`);
+  loadOpenApi();
   naeyeokData().then(all => {
     const rows = [];
     for (const k in all) for (const it of all[k]) rows.push({ key: k, name: it.name, amt: it.amt });
@@ -506,6 +508,25 @@ VIEWS.analysis = () => {
   });
 };
 let AN_SECTIONS = [], AN_ITEMS = null;
+/* ---------- 열린재정 OPEN API 목록 (주요분석 하단 카드 198건) ---------- */
+let OA_DATA = null;
+async function loadOpenApi() {
+  const el = document.getElementById("oaWrap"); if (!el) return;
+  try { if (!OA_DATA) OA_DATA = await fetch("data/openfiscal_api.json").then(r => r.json()); }
+  catch (e) { el.innerHTML = `<div class="sub">OPEN API 목록을 불러오지 못했습니다.</div>`; return; }
+  el.innerHTML = `<div class="oa-head"><h2>열린재정 OPEN API 목록 <span class="sub">${OA_DATA.count}건 · 누르면 상세가 펼쳐집니다</span></h2></div>` +
+    OA_DATA.groups.map((g, gi) => `<div class="oa-g"><h3>${esc(g.title)} <span class="sub">${g.items.length}건</span></h3>
+      <div class="bgrid2 agrid">${g.items.map((it, ii) => `<div class="brow acard oa-card" role="button" tabindex="0" data-g="${gi}" data-i="${ii}"
+        onclick="oaOpen(${gi},${ii},this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();oaOpen(${gi},${ii},this)}">
+        <div class="ahd">${ic("list")}<b>${esc(it.name)}</b></div><div class="sub">No.${it.no} · ${esc(g.title)}</div></div>`).join("")}</div></div>`).join("");
+}
+async function oaOpen(gi, ii, card) {
+  const g = OA_DATA.groups[gi], it = g.items[ii];
+  await sheetOpen(card, `<div class="sub">열린재정 OPEN API · ${esc(g.title)}</div><h3 id="bsTitle">${esc(it.name)}</h3>
+    <div class="abody"><table><tr><th>목록 번호</th><td>${it.no}번</td></tr><tr><th>분류</th><td>${esc(g.title)}</td></tr>
+    <tr><th>제공</th><td>열린재정 재정정보 공개(OPEN API)</td></tr></table>
+    <p class="sub" style="margin-top:10px">데이터명 전체와 설명은 목록 원문을 확인하세요. 원문: <a href="https://www.openfiscaldata.go.kr/op/ko/ds/UOPKODSA06" target="_blank" rel="noopener">열린재정 OPEN API 목록</a></p></div>`);
+}
 async function anOpen(id, card) {
   const x = AN_SECTIONS.find(s => s.id === id); if (!x) return;
   await sheetOpen(card, `<div class="sub">주요분석</div><h3 id="bsTitle">${x.title} <span class="sub" style="font-size:13px;font-weight:600">${x.sub}</span></h3><div class="abody">${x.body()}</div>`);
