@@ -1291,7 +1291,7 @@ VIEWS.ask = () => {
         <button class="plane" type="submit" aria-label="질문 보내기">${PLANE}</button>
       </form>
       <div class="llm" role="radiogroup" aria-label="LLM 선택">
-        <span class="llm-lab">LLM 선택:</span>${LLMS.map(([k, l]) => `<label><input type="radio" name="llm" value="${k}"${k === pick ? " checked" : ""} onchange="setLlm(this.value)"> ${l}</label>`).join("")}
+        <span class="llm-lab">LLM 선택:</span>${LLMS.map(([k, l]) => `<label><input type="radio" name="llm" value="${k}"${k === pick ? " checked" : ""} onchange="setLlm(this.value)"> ${({ groq: "GROQ", exaone: "EXAONE", gemini: "GEMINI" })[k]} (${l})</label>`).join("")}
       </div>
     </div>
     <div id="ans"></div>
