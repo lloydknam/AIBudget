@@ -37,6 +37,15 @@ export default {
     try { body = await req.json(); } catch (e) { return json({ error: "요청 형식이 잘못됐습니다" }, 400, cors); }
     const q = String(body.q || "").slice(0, 300).trim();
     if (!q) return json({ error: "질문이 비어 있습니다" }, 400, cors);
+    if (body.web_only === true) {
+      // 검색 결과에 붙는 외부 검색결과 (LLM 선택과 무관, Gemini 검색 도구 사용)
+      try {
+        const { web } = await gemini(env, `다음 질문과 관련된 공개 자료(정부 발표, 공공기관 자료, 언론 보도)를 웹에서 찾아 주세요. 질문: ${q}`, true);
+        return json({ web }, 200, cors);
+      } catch (e) {
+        return json({ web: [], error: String(e.message || e).slice(0, 200) }, 200, cors);
+      }
+    }
     const sources = (Array.isArray(body.sources) ? body.sources : []).slice(0, 10);
     const ctx = sources.map((s, i) =>
       `[${i + 1}] [${s.kind === "재정통계" ? "재정통계" : "사업"}] ${s.title} (${s.source})\n- 수치: ${String(s.facts || "").slice(0, 1500)}${s.text ? `\n- 사업설명: ${String(s.text).slice(0, 1500)}` : ""}`
