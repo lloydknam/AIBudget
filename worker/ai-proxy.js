@@ -114,14 +114,15 @@ async function groqSearch(env, q) {
       tool_choice: "required",
       tools: [{ type: "browser_search" }],
       messages: [
-        { role: "system", content: "너는 공개 자료를 웹에서 찾아 요약하는 도우미다. 정부 발표, 공공기관 자료, 언론 보도를 찾아 한국어로 간결히 요약하고, 근거가 된 출처의 제목과 URL을 함께 적는다." },
+        { role: "system", content: "너는 공개 자료를 웹에서 찾아 요약하는 도우미다. 지금은 2026년 11월이다. 가장 최신 자료(2026년 발표)를 우선하고, 연도가 오래된 자료는 그렇다고 밝힌다. 정부 발표, 공공기관 자료, 언론 보도를 찾아 한국어로 간결히 요약하고, 근거가 된 출처의 제목과 URL을 함께 적는다. 인용 표식(【…】)은 쓰지 않는다." },
         { role: "user", content: `다음 질문과 관련된 공개 자료를 찾아 주세요. 질문: ${q}` },
       ],
     }),
   });
   const j = await r.json();
   if (!r.ok) { const err = new Error(j.error?.message || "Groq 검색 호출 실패"); err.status = r.status; throw err; }
-  return { text: String(j.choices?.[0]?.message?.content || "").trim(), model: j.model || model };
+  const text = String(j.choices?.[0]?.message?.content || "").replace(/【[^】]*】/g, "").replace(/[ \t]+\n/g, "\n").trim();
+  return { text, model: j.model || model };
 }
 
 async function groq(env, user) {
