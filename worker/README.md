@@ -9,6 +9,13 @@
 4. Worker 설정 > Variables and Secrets에 `GEMINI_API_KEY`, `GROQ_API_KEY`를 **Secret**으로 추가.
 5. 배포 주소 `https://<이름>.<계정>.workers.dev/ask` 를 `index.html`의 `AI_API` 상수에 넣고 커밋.
 
+## 버튼 배포 (GitHub Actions)
+`worker/ai-proxy.js`가 main에 바뀌면 자동 배포되고, Actions 탭 > "Worker 배포" > Run workflow 버튼으로도 배포할 수 있습니다. 처음 한 번만 준비:
+1. Cloudflare 대시보드 > 오른쪽 위 프로필 > API Tokens > Create Token > **Edit Cloudflare Workers** 템플릿 > Continue > Create Token → 토큰 복사.
+2. GitHub 레포 Settings > Secrets and variables > Actions > New repository secret → 이름 `CLOUDFLARE_API_TOKEN`, 값에 토큰 붙여넣기.
+3. (계정이 여러 개일 때만) Workers 화면 오른쪽의 Account ID를 `CLOUDFLARE_ACCOUNT_ID` Secret으로 추가.
+- 배포 설정은 `worker/wrangler.toml`: 서울 배치(`gcp:asia-northeast3`) 유지, 대시보드 환경변수·Secret 유지(`keep_vars`).
+
 ## 참고
 - 허용 사이트는 `ALLOW` 목록(lloydknam.github.io)만. 다른 사이트에서 호출하면 403.
 - 호출 제한은 Worker 인스턴스 메모리 기준이라 대략적입니다. 정확한 제한이 필요하면 Cloudflare Rate Limiting 규칙을 추가하세요.
