@@ -1275,7 +1275,7 @@ function startAiExamples() {
   }, 3000);
 }
 const AI_API = "https://aibudget-ai.lloydnam.workers.dev/ask"; // Cloudflare Worker 배포 후 주소를 넣는다 (예: "https://aibudget-ai.<계정>.workers.dev/ask"). 비워 두면 자료 검색만 한다.
-const LLMS = [["exaone", "k-exaone_v2.5"], ["gemini", "gemini-3.5-flash-lite"], ["groq", "openai/gpt-oss-120b"]];  // Worker가 실제 호출하는 모델명 그대로
+const LLMS = [["groq", "openai/gpt-oss-120b"], ["exaone", "k-exaone_v2.5"], ["gemini", "gemini-3.5-flash-lite"]];  // Worker가 실제 호출하는 모델명 그대로
 const PLANE = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M21 3 3 10.5l7 2.5 2.5 7L21 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
 function llmPick() { try { const v = localStorage.getItem("llmPick"); return LLMS.some(([k]) => k === v) ? v : "gemini"; } catch (e) { return "gemini"; } }
 function setLlm(v) { try { localStorage.setItem("llmPick", v); } catch (e) {} }
