@@ -43,7 +43,11 @@ export default {
         const { web } = await gemini(env, `다음 질문과 관련된 공개 자료(정부 발표, 공공기관 자료, 언론 보도)를 웹에서 찾아 주세요. 질문: ${q}`, true);
         return json({ web }, 200, cors);
       } catch (e) {
-        return json({ web: [], error: String(e.message || e).slice(0, 200) }, 200, cors);
+        // 할당량 초과(429 또는 quota 문구)일 때만 사이트에 한 줄로 알린다
+        const msg = String(e.message || e);
+        const quota = e.status === 429 || /quota|rate limit/i.test(msg);
+        const kst = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 16).replace("T", " ");
+        return json({ web: [], error: msg.slice(0, 200), quota, model: env.GEMINI_MODEL || "gemini-3.5-flash-lite", tool: "Google 검색 도구", checkedAt: kst + " KST" }, 200, cors);
       }
     }
     const sources = (Array.isArray(body.sources) ? body.sources : []).slice(0, 10);
@@ -77,7 +81,7 @@ async function gemini(env, user, webOn = false) {
     }),
   });
   const j = await r.json();
-  if (!r.ok) throw new Error(j.error?.message || "Gemini 호출 실패");
+  if (!r.ok) { const err = new Error(j.error?.message || "Gemini 호출 실패"); err.status = r.status; throw err; }
   const cand = j.candidates?.[0] || {};
   const web = (cand.groundingMetadata?.groundingChunks || []).map(c => c.web).filter(Boolean)
     .map(w => ({ title: w.title || w.domain || "출처", url: w.uri, domain: w.domain || "" })).filter(w => w.url).slice(0, 6);

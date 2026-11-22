@@ -1393,7 +1393,8 @@ async function ask() {
 
   // 외부 검색결과: 검색과 함께 조회 (LLM 선택과 무관하게 항상)
   const webP = AI_API ? fetch(AI_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q, web_only: true }) })
-    .then(r => (r.ok ? r.json() : { web: [] })).then(j => (Array.isArray(j.web) ? j.web : [])).catch(() => []) : Promise.resolve([]);
+    .then(r => (r.ok ? r.json() : { web: [] })).then(j => ({ web: Array.isArray(j.web) ? j.web : [], quota: j.quota ? j : null })).catch(() => ({ web: [], quota: null }))
+    : Promise.resolve({ web: [], quota: null });
   let answer = "", note = "", usedModel = "", elapsed = 0;
   if (!AI_API) {
     note = "AI 답변 서버가 아직 연결되지 않아 관련 사업 자료만 보여 드립니다.";
@@ -1415,11 +1416,15 @@ async function ask() {
       note = `AI 답변을 받지 못했습니다(${esc(e.message)}). 아래 자료로 직접 확인해 주세요.`;
     }
   }
-  const webList = await webP;
+  const webRes = await webP;
+  const webList = webRes.web;
+  const quotaLine = webRes.quota
+    ? `<div class="doc sub">⚠ ${esc(webRes.quota.model)} · ${esc(webRes.quota.tool)}: 할당량 초과 · ${esc(webRes.quota.checkedAt)} 확인</div>`
+    : "";
   box.innerHTML = (answer ? `<div class="card"><div class="ansbody">${esc(answer).replace(/\n/g, "<br>")}</div><div class="sub" style="margin-top:8px">${usedModel ? `답변 모델: ${esc(usedModel)}${elapsed ? ` (${elapsed.toFixed(1)}초)` : ""} · ` : ""}AI 답변은 아래 자료를 근거로 만들었습니다. 원자료와 함께 확인해 주세요.</div></div>` : "")
     + (note ? `<div class="doc">${note}</div>` : "")
     + list + statList
-    + (webList.length ? `<div class="card"><div class="sub">외부 검색결과</div>${webList.map((w, i) => `<div class="doc"><a href="${esc(w.url)}" target="_blank" rel="noopener">[웹${i + 1}] ${esc(w.title)}</a><br><span class="sub">${esc(w.domain || "")}</span></div>`).join("")}</div>` : "");
+    + (webList.length ? `<div class="card"><div class="sub">외부 검색결과</div>${webList.map((w, i) => `<div class="doc"><a href="${esc(w.url)}" target="_blank" rel="noopener">[웹${i + 1}] ${esc(w.title)}</a><br><span class="sub">${esc(w.domain || "")}</span></div>`).join("")}</div>` : quotaLine);
 }
 
 /* ---------- 7. 삶의 질 지표 ---------- */
