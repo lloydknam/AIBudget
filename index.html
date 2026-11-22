@@ -1444,7 +1444,7 @@ async function ask() {
       .then(j => ({ web: Array.isArray(j.web) ? j.web : [], text: String(j.text || ""), model: String(j.model || ""), quota: j.quota ? j : null, error: String(j.error || "") }))
       .catch(e => ({ web: [], text: "", model: "", quota: null, error: String(e.message || e) }))
     : Promise.resolve({ web: [], text: "", model: "", quota: null, error: "", unsupported: true });
-  let answer = "", note = "", usedModel = "", elapsed = 0;
+  let answer = "", note = "", usedModel = "", elapsed = 0, switched = "";
   if (!AI_API) {
     note = "AI 답변 서버가 아직 연결되지 않아 관련 사업 자료만 보여 드립니다.";
   } else {
@@ -1459,6 +1459,11 @@ async function ask() {
       if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
       answer = String(j.answer || "");
       usedModel = String(j.model || "");
+      const fb = Array.isArray(j.fallback) ? j.fallback : [];
+      if (fb.length && answer) {
+        const used = j.name || j.llm || "다른 모델";
+        switched = `⚠ ${fb.map(f => `${esc(f.name || f.llm)} 실패(${esc(f.error || "")})`).join(", ")} → ${esc(used)}로 자동 전환해 답했습니다.`;
+      }
       elapsed = stop();
     } catch (e) {
       stop();
@@ -1475,7 +1480,7 @@ async function ask() {
     : webRes.text
       ? `<div class="card"><div class="rhd">3. 외부 검색결과</div><div class="sub">Groq 웹검색${webRes.model ? ` · ${esc(webRes.model)}` : ""}</div><div class="ansbody ext-md">${mdLite(webRes.text)}</div></div>`
       : (webRes.error && !webRes.quota) ? `<div class="doc sub">외부 검색을 가져오지 못했습니다(${esc(webRes.error)})</div>` : "";
-  box.innerHTML = (answer ? `<div class="card"><div class="rhd">1. 예산 프리즘 검색결과</div><div class="ansbody">${esc(answer).replace(/\n/g, "<br>")}</div><div class="sub" style="margin-top:8px">${usedModel ? `답변 모델: ${esc(usedModel)}${elapsed ? ` (${elapsed.toFixed(1)}초)` : ""} · ` : ""}AI 답변은 아래 자료를 근거로 만들었습니다. 원자료와 함께 확인해 주세요.</div></div>` : "")
+  box.innerHTML = (answer ? `<div class="card"><div class="rhd">1. 예산 프리즘 검색결과</div><div class="ansbody">${esc(answer).replace(/\n/g, "<br>")}</div>${switched ? `<div class="sub" style="margin-top:8px">${switched}</div>` : ""}<div class="sub" style="margin-top:8px">${usedModel ? `답변 모델: ${esc(usedModel)}${elapsed ? ` (${elapsed.toFixed(1)}초)` : ""} · ` : ""}AI 답변은 아래 자료를 근거로 만들었습니다. 원자료와 함께 확인해 주세요.</div></div>` : "")
     + (note ? `<div class="doc">${note}</div>` : "")
     + list + statList
     + (webList.length ? `<div class="card"><div class="rhd">3. 외부 검색결과</div>${webList.map((w, i) => `<div class="doc"><a href="${esc(w.url)}" target="_blank" rel="noopener">[웹${i + 1}] ${esc(w.title)}</a><br><span class="sub">${esc(w.domain || "")}</span></div>`).join("")}</div>` : (quotaLine || webNote));
