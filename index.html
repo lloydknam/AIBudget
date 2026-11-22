@@ -263,6 +263,7 @@ footer .lab img{display:block;height:34px;width:auto;max-width:100%}
 .llm input[type=radio]{width:18px;height:18px;margin:0;accent-color:var(--accent);cursor:pointer;flex:none}
 @media (max-width:640px){.llm{gap:8px}.llm-opts{gap:4px}.llm-lab{font-size:13px}.llm label{font-size:13px}.askcard{border:0;background:none;box-shadow:none}.asknote{font-size:12px;line-height:1.5}}
 .ansbody{line-height:1.75;word-break:keep-all}
+.rhd{display:inline-block;margin:0 0 10px;padding:4px 12px;border-radius:999px;background:#d4775f;color:#fff;font-size:14px;font-weight:700;line-height:1.3}
 .ext-md p{margin:6px 0}.ext-md ul{margin:6px 0;padding-left:20px}.ext-md li{margin:3px 0}.ext-md a{color:var(--accent);word-break:break-all}
 .mdtable{overflow-x:auto;margin:8px 0}.mdtable table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.6}.mdtable th,.mdtable td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}.mdtable th{font-weight:700;color:var(--ink)}
 .lab{display:inline-flex;flex-direction:column;align-items:center}
@@ -1421,7 +1422,7 @@ async function ask() {
     try { return descRecText(await gunzipJSON(`desc/${id}.json.gz`)).slice(0, 1500); } catch (e) { return ""; }
   }));
   const cite = hits.map(({ p }, i) => `<div class="doc"><b class="pname">${label(p)}</b>${DI[p.ministry + "|" + p.name] ? ` <button class="desc-btn" data-min="${esc(p.ministry)}" data-name="${esc(p.name)}" onclick="openDescBtn(this)">사업 설명 보기 ›</button>` : ""}<br><span class="sub">출처: 열린재정 총지출 세부사업 · ${YEARS.map(y => `${y} ${won(amt(p, y))}`).join(" → ")}억</span></div>`).join("");
-  const list = hits.length ? `<div class="card"><div class="sub">관련 사업</div>${cite}</div>` : "";
+  const list = hits.length ? `<div class="card"><div class="rhd">2. 관련 세부사업</div>${cite}</div>` : "";
   const statFx = (await Promise.all(stats.map(statFacts)));
   const statList = stats.length ? `<div class="card"><div class="sub">관련 재정통계</div>${stats.map((h, i) => `<div class="doc"><b>${esc(h.name)}</b><br><span class="sub">출처: ${h.kind === "oa" ? "열린재정 재정상세통계" : "열린재정 (재정통계 탭)"}</span><br><button class="desc-btn" onclick="statOpen(${i},this)">그래프 보기 ›</button></div>`).join("")}</div>` : "";
 
@@ -1463,12 +1464,12 @@ async function ask() {
   const webNote = webRes.unsupported
     ? `<div class="doc sub">외부 검색은 Groq 모델을 선택했을 때만 함께 보여 드립니다.</div>`
     : webRes.text
-      ? `<div class="card"><div class="sub">외부 검색 (Groq 웹검색${webRes.model ? ` · ${esc(webRes.model)}` : ""})</div><div class="ansbody ext-md">${mdLite(webRes.text)}</div></div>`
+      ? `<div class="card"><div class="rhd">3. 외부 검색결과</div><div class="sub">Groq 웹검색${webRes.model ? ` · ${esc(webRes.model)}` : ""}</div><div class="ansbody ext-md">${mdLite(webRes.text)}</div></div>`
       : (webRes.error && !webRes.quota) ? `<div class="doc sub">외부 검색을 가져오지 못했습니다(${esc(webRes.error)})</div>` : "";
-  box.innerHTML = (answer ? `<div class="card"><div class="ansbody">${esc(answer).replace(/\n/g, "<br>")}</div><div class="sub" style="margin-top:8px">${usedModel ? `답변 모델: ${esc(usedModel)}${elapsed ? ` (${elapsed.toFixed(1)}초)` : ""} · ` : ""}AI 답변은 아래 자료를 근거로 만들었습니다. 원자료와 함께 확인해 주세요.</div></div>` : "")
+  box.innerHTML = (answer ? `<div class="card"><div class="rhd">1. 예산 프리즘 검색결과</div><div class="ansbody">${esc(answer).replace(/\n/g, "<br>")}</div><div class="sub" style="margin-top:8px">${usedModel ? `답변 모델: ${esc(usedModel)}${elapsed ? ` (${elapsed.toFixed(1)}초)` : ""} · ` : ""}AI 답변은 아래 자료를 근거로 만들었습니다. 원자료와 함께 확인해 주세요.</div></div>` : "")
     + (note ? `<div class="doc">${note}</div>` : "")
     + list + statList
-    + (webList.length ? `<div class="card"><div class="sub">외부 검색결과</div>${webList.map((w, i) => `<div class="doc"><a href="${esc(w.url)}" target="_blank" rel="noopener">[웹${i + 1}] ${esc(w.title)}</a><br><span class="sub">${esc(w.domain || "")}</span></div>`).join("")}</div>` : (quotaLine || webNote));
+    + (webList.length ? `<div class="card"><div class="rhd">3. 외부 검색결과</div>${webList.map((w, i) => `<div class="doc"><a href="${esc(w.url)}" target="_blank" rel="noopener">[웹${i + 1}] ${esc(w.title)}</a><br><span class="sub">${esc(w.domain || "")}</span></div>`).join("")}</div>` : (quotaLine || webNote));
 }
 
 /* ---------- 7. 삶의 질 지표 ---------- */
