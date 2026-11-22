@@ -4,6 +4,7 @@
 //   GEMINI_API_KEY (필수, 기본 LLM 1번), GROQ_API_KEY (2번), EXAONE_API_KEY (3번, LG K-EXAONE)
 //   GEMINI_MODEL (선택, 기본 gemini-3.5-flash-lite), GROQ_MODEL (선택, 기본 openai/gpt-oss-120b)
 //   EXAONE_MODEL (선택, 기본 k-exaone_v2.5), EXAONE_URL (선택, 기본 https://api.exaone.ai/v1/chat/completions)
+// 자동 전환: 고른 LLM이 실패하면 키가 등록된 다른 LLM으로 넘겨 답한다(응답의 llm·fallback 필드로 표시).
 
 const ALLOW = ["https://lloydknam.github.io"];
 const PER_HOUR = 30;               // IP당 시간당 질문 수 (인스턴스 메모리 기준, 대략적 제한)
@@ -70,20 +71,42 @@ export default {
     const llm = body.llm || "gemini";
     const webOn = body.web === true && llm === "gemini";
 
-    try {
-      const { text, model, web } = llm === "groq" ? await groq(env, user) : llm === "exaone" ? await exaone(env, user) : await gemini(env, user, webOn);
-      return json({ answer: text, model, web: web || [] }, 200, cors);
-    } catch (e) {
-      return json({ error: String(e.message || e).slice(0, 200) }, 502, cors);
+    // 자동 전환(failover): 고른 LLM이 실패(시간초과·할당량·오류·빈 답변)하면 다음 LLM으로 넘긴다.
+    // 순서: 고른 LLM → 나머지(Gemini→Groq→EXAONE 순), 키가 없는 LLM은 건너뛴다.
+    // 전체 시간 예산(TOTAL_MS)을 넘지 않게 각 시도의 시간초과를 줄여 Cloudflare 524(100초)를 피한다.
+    const order = [llm, ...ORDER.filter(k => k !== llm)].filter(k => ORDER.includes(k) && env[KEYS[k]]);
+    const deadline = Date.now() + TOTAL_MS;
+    const tried = [];
+    for (const k of order) {
+      const left = deadline - Date.now();
+      if (left < MIN_TRY_MS) break;
+      const ms = Math.min(LIMIT_MS[k], left);
+      try {
+        const out = k === "groq" ? await groq(env, user, ms) : k === "exaone" ? await exaone(env, user, ms) : await gemini(env, user, webOn && k === llm, ms);
+        if (!String(out.text || "").trim()) throw new Error("빈 답변");
+        return json({ answer: out.text, model: out.model, llm: k, name: NAMES[k], web: out.web || [], fallback: tried }, 200, cors);
+      } catch (e) {
+        const msg = e.name === "TimeoutError" || e.name === "AbortError" ? `시간초과(${Math.round(ms / 1000)}초)` : String(e.message || e);
+        tried.push({ llm: k, name: NAMES[k], error: msg.slice(0, 120) });
+      }
     }
+    const why = tried.map(t => `${t.name}: ${t.error}`).join(" / ") || "사용 가능한 LLM 키가 없습니다";
+    return json({ error: `모든 LLM이 실패했습니다 (${why})`.slice(0, 400), fallback: tried }, 502, cors);
   },
 };
 
-async function gemini(env, user, webOn = false) {
+const ORDER = ["gemini", "groq", "exaone"];
+const KEYS = { gemini: "GEMINI_API_KEY", groq: "GROQ_API_KEY", exaone: "EXAONE_API_KEY" };
+const NAMES = { gemini: "Gemini", groq: "Groq", exaone: "EXAONE" };
+const LIMIT_MS = { gemini: 30000, groq: 30000, exaone: 45000 }; // LLM별 1회 시도 시간초과
+const TOTAL_MS = 85000;   // 전체 예산 (Cloudflare 100초 제한보다 여유 있게)
+const MIN_TRY_MS = 8000;  // 남은 시간이 이보다 짧으면 다음 LLM을 시도하지 않는다
+
+async function gemini(env, user, webOn = false, ms = 30000) {
   const model = env.GEMINI_MODEL || "gemini-3.5-flash-lite";
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(ms),
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: webOn ? SYSTEM_WEB : SYSTEM }] },
@@ -125,10 +148,10 @@ async function groqSearch(env, q) {
   return { text, model: j.model || model };
 }
 
-async function groq(env, user) {
+async function groq(env, user, ms = 30000) {
   const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(ms),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.GROQ_API_KEY}` },
     body: JSON.stringify({
       model: env.GROQ_MODEL || "openai/gpt-oss-120b",
@@ -142,10 +165,10 @@ async function groq(env, user) {
   return { text: j.choices?.[0]?.message?.content || "", model: j.model || env.GROQ_MODEL || "openai/gpt-oss-120b" };
 }
 
-async function exaone(env, user) {
+async function exaone(env, user, ms = 45000) {
   const r = await fetch(env.EXAONE_URL || "https://api.exaone.ai/v1/chat/completions", {
     method: "POST",
-    signal: AbortSignal.timeout(45000),
+    signal: AbortSignal.timeout(ms),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.EXAONE_API_KEY}` },
     body: JSON.stringify({
       model: env.EXAONE_MODEL || "k-exaone_v2.5",
