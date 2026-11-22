@@ -37,6 +37,18 @@ export default {
     try { body = await req.json(); } catch (e) { return json({ error: "요청 형식이 잘못됐습니다" }, 400, cors); }
     const q = String(body.q || "").slice(0, 300).trim();
     if (!q) return json({ error: "질문이 비어 있습니다" }, 400, cors);
+    if (body.web_only === true && body.llm === "groq") {
+      // Groq(gpt-oss-120b) 내장 browser_search 도구로 외부 검색
+      try {
+        const out = await groqSearch(env, q);
+        return json({ web: [], text: out.text, model: out.model }, 200, cors);
+      } catch (e) {
+        const msg = String(e.message || e);
+        const quota = e.status === 429 || /quota|rate limit/i.test(msg);
+        const kst = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 16).replace("T", " ");
+        return json({ web: [], text: "", error: msg.slice(0, 200), quota, model: "openai/gpt-oss-120b", tool: "Groq 웹검색", checkedAt: kst + " KST" }, 200, cors);
+      }
+    }
     if (body.web_only === true) {
       // 검색 결과에 붙는 외부 검색결과 (LLM 선택과 무관, Gemini 검색 도구 사용)
       try {
@@ -86,6 +98,30 @@ async function gemini(env, user, webOn = false) {
   const web = (cand.groundingMetadata?.groundingChunks || []).map(c => c.web).filter(Boolean)
     .map(w => ({ title: w.title || w.domain || "출처", url: w.uri, domain: w.domain || "" })).filter(w => w.url).slice(0, 6);
   return { text: (cand.content?.parts || []).map(p => p.text || "").join(""), model: j.modelVersion || model, web };
+}
+
+async function groqSearch(env, q) {
+  const model = "openai/gpt-oss-120b";
+  const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    signal: AbortSignal.timeout(45000),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.GROQ_API_KEY}` },
+    body: JSON.stringify({
+      model,
+      temperature: 0.2,
+      max_completion_tokens: 1200,
+      reasoning_effort: "low",
+      tool_choice: "required",
+      tools: [{ type: "browser_search" }],
+      messages: [
+        { role: "system", content: "너는 공개 자료를 웹에서 찾아 요약하는 도우미다. 정부 발표, 공공기관 자료, 언론 보도를 찾아 한국어로 간결히 요약하고, 근거가 된 출처의 제목과 URL을 함께 적는다." },
+        { role: "user", content: `다음 질문과 관련된 공개 자료를 찾아 주세요. 질문: ${q}` },
+      ],
+    }),
+  });
+  const j = await r.json();
+  if (!r.ok) { const err = new Error(j.error?.message || "Groq 검색 호출 실패"); err.status = r.status; throw err; }
+  return { text: String(j.choices?.[0]?.message?.content || "").trim(), model: j.model || model };
 }
 
 async function groq(env, user) {
