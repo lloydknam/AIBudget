@@ -13,6 +13,8 @@ const SYSTEM = "너는 한국 국가예산 자료를 설명하는 도우미다. 
   "자료에 없는 내용은 '자료에서 확인되지 않음'이라고 말하고 추측하지 않는다. 금액은 자료의 단위를 그대로 쓴다. 한국어로 간결하게 답한다. " +
   "자료는 [사업]과 [재정통계] 두 종류다. 두 종류가 모두 있으면 답을 '■ 사업 자료'와 '■ 재정통계' 두 부분으로 나눠 쓰고, 한 종류만 있으면 그 부분만 쓴다.";
 
+const SYSTEM_WEB = SYSTEM + " [외부자료]는 웹 검색 결과다. 외부자료에서 얻은 내용은 '■ 외부자료' 부분으로 나눠 쓰고, 출처를 [웹번호]로 표시한다. 예산 자료와 외부자료의 내용이 다르면 둘 다 밝힌다.";
+
 export default {
   async fetch(req, env) {
     const origin = req.headers.get("Origin") || "";
@@ -40,31 +42,37 @@ export default {
       `[${i + 1}] [${s.kind === "재정통계" ? "재정통계" : "사업"}] ${s.title} (${s.source})\n- 수치: ${String(s.facts || "").slice(0, 1500)}${s.text ? `\n- 사업설명: ${String(s.text).slice(0, 1500)}` : ""}`
     ).join("\n\n");
     const user = `[자료]\n${ctx || "(관련 자료 없음)"}\n\n[질문] ${q}`;
+    const llm = body.llm || "gemini";
+    const webOn = body.web === true && llm === "gemini";
 
     try {
-      const { text, model } = body.llm === "groq" ? await groq(env, user) : body.llm === "exaone" ? await exaone(env, user) : await gemini(env, user);
-      return json({ answer: text, model }, 200, cors);
+      const { text, model, web } = llm === "groq" ? await groq(env, user) : llm === "exaone" ? await exaone(env, user) : await gemini(env, user, webOn);
+      return json({ answer: text, model, web: web || [] }, 200, cors);
     } catch (e) {
       return json({ error: String(e.message || e).slice(0, 200) }, 502, cors);
     }
   },
 };
 
-async function gemini(env, user) {
+async function gemini(env, user, webOn = false) {
   const model = env.GEMINI_MODEL || "gemini-3.5-flash-lite";
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     signal: AbortSignal.timeout(30000),
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM }] },
+      systemInstruction: { parts: [{ text: webOn ? SYSTEM_WEB : SYSTEM }] },
       contents: [{ role: "user", parts: [{ text: user }] }],
       generationConfig: { temperature: 0.2, maxOutputTokens: 900 },
+      ...(webOn ? { tools: [{ google_search: {} }] } : {}),
     }),
   });
   const j = await r.json();
   if (!r.ok) throw new Error(j.error?.message || "Gemini 호출 실패");
-  return { text: (j.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join(""), model: j.modelVersion || model };
+  const cand = j.candidates?.[0] || {};
+  const web = (cand.groundingMetadata?.groundingChunks || []).map(c => c.web).filter(Boolean)
+    .map(w => ({ title: w.title || w.domain || "출처", url: w.uri, domain: w.domain || "" })).filter(w => w.url).slice(0, 6);
+  return { text: (cand.content?.parts || []).map(p => p.text || "").join(""), model: j.modelVersion || model, web };
 }
 
 async function groq(env, user) {
