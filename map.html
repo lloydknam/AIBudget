@@ -475,6 +475,9 @@ function drawSearchDrop() {
 /* 드롭다운에서 고른 사업으로 이동 */
 function goHit(r) {
   q = ""; $("q").value = ""; $("qclr").hidden = true; $("qrecent").hidden = true;
+  // 세부사업(또는 그 내역사업)이면 메인 AI분석 검색과 같이 사업 설명자료 시트를 연다
+  const leaf = r.path[r.path.length - 1];
+  if (leaf && leaf.raw && leaf.raw.ministry) { openDesc(leaf.raw.ministry, r.na ? r.parent : r.name); return; }
   if (mode === "tree" && r.path.length) {   // 트리에서는 트리를 그대로 두고, 찾은 사업이 화면 가운데에 오도록 펼친다
     treeFocus = r.path[r.path.length - 1];   // 그릴 때 이 사업을 화면 가운데에 둔다
     for (const a of r.path.slice(0, -1)) treeOpen.set(a, true);   // 찾은 사업까지 가지를 연다
