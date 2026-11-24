@@ -57,6 +57,10 @@ header.ghead{padding:6px 0 2px;max-width:952px;margin:0 auto}  /* 예산 지도 
 @media (max-width:640px){header.ghead{padding:0 5px;max-width:none}}
 #gres{position:absolute;top:calc(100% + 6px);left:0;width:min(520px,calc(100vw - 32px));max-height:60vh;overflow:auto;z-index:50;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 14px;box-shadow:0 12px 32px rgba(0,0,0,.35)}
 #gres:empty{display:none}
+.rq-head{display:flex;justify-content:space-between;align-items:center;padding:6px 4px}
+.rq{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:9px 4px;font:inherit;font-size:14px;cursor:pointer}
+.rq:last-child{border-bottom:0}
+.rq-clr{border:0;background:none;color:var(--accent);font:inherit;font-size:12px;cursor:pointer}
 .doc .pname{color:var(--ink);font-weight:800}
 .doc .desc-btn{margin-top:0;margin-left:6px;vertical-align:middle;padding:4px 10px;font-size:12px}
 @media (max-width:640px){#gres{position:fixed;left:8px;right:8px;width:auto;max-width:none;max-height:60vh}.hsearch .clr{width:18px;height:18px;font-size:11px;right:4px}}
@@ -939,13 +943,29 @@ const gq = document.getElementById("gq"), gclr = document.getElementById("gclr")
 function gClear() { gq.value = ""; gclr.hidden = true; gres.innerHTML = ""; }
 gq.addEventListener("input", async () => {
   const v = gq.value; gclr.hidden = !v;
+  if (!v.trim()) { showRecent(); return; }
   await naeyeokData();
   gres.innerHTML = v.trim() ? (search(v, 8).map(resultRow).join("") || "<div class='sub'>결과 없음</div>") : "";
   if (matchMedia("(max-width:640px)").matches) gres.style.top = (gq.getBoundingClientRect().bottom + 6) + "px";
 });
-gq.addEventListener("keydown", e => { if (e.key === "Escape") gClear(); });
+/* 최근 검색어 (이 기기 브라우저에만 저장, 최대 8개) */
+const RECENT_KEY = "gqRecent";
+const recentGet = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); return Array.isArray(a) ? a.filter(x => typeof x === "string").slice(0, 8) : []; } catch (e) { return []; } };
+const recentAdd = v => { const t = String(v || "").trim(); if (!t) return; try { localStorage.setItem(RECENT_KEY, JSON.stringify([t, ...recentGet().filter(x => x !== t)].slice(0, 8))); } catch (e) {} };
+function showRecent() {
+  const list = recentGet();
+  if (!list.length || gq.value.trim()) return;
+  gres.innerHTML = `<div class="rq-head"><span class="sub">최근 검색어</span><button class="rq-clr" type="button">지우기</button></div>` + list.map(t => `<button class="rq" type="button" data-q="${esc(t)}">${esc(t)}</button>`).join("");
+}
+gq.addEventListener("focus", showRecent);
+gq.addEventListener("keydown", e => { if (e.key === "Enter") recentAdd(gq.value); if (e.key === "Escape") gClear(); });
 gclr.onclick = () => { gClear(); gq.focus(); };
-gres.addEventListener("click", e => { if (e.target.closest("a")) setTimeout(gClear, 0); });
+gres.addEventListener("click", e => {
+  const rq = e.target.closest(".rq");
+  if (rq) { gq.value = rq.dataset.q; gclr.hidden = false; gq.dispatchEvent(new Event("input")); gq.focus(); return; }
+  if (e.target.closest(".rq-clr")) { try { localStorage.removeItem(RECENT_KEY); } catch (err) {} gres.innerHTML = ""; return; }
+  if (e.target.closest("a")) { recentAdd(gq.value); setTimeout(gClear, 0); }
+});
 document.addEventListener("click", e => { if (!e.target.closest(".hsearch")) gres.innerHTML = ""; });
 function showProject(id) {
   if (cur !== "explore") { cur = "explore"; drawTabs(); VIEWS.explore(); }
