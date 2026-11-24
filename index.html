@@ -1336,12 +1336,15 @@ VIEWS.ask = () => {
   startAiExamples();
 };
 const STOP = /(은|는|이|가|을|를|의|에|와|과|도|로|으로|얼마나|얼마|어떻게|무엇|있나요|늘었나|줄었나|예산|사업|\?)$/;
+/* 질문에서 모든 사업에 걸리는 일반 단어는 검색어로 쓰지 않는다 (예: '국비', '유사한') */
+const GENERIC_TERMS = new Set(["국비", "유사", "유사한", "관련", "지원", "국가", "정부", "예산", "사업", "재정", "추진", "확대", "현황", "비교", "알려", "알려줘", "무엇", "어떤", "있는", "대한", "위한", "분야", "정책", "방안", "내용", "정리"]);
 function retrieve(q) {
-  const terms = q.split(/[\s,?.!]+/).map(t => t.replace(STOP, "")).filter(t => t.length >= 2);
+  const terms = q.split(/[\s,?.!]+/).map(t => t.replace(STOP, "")).filter(t => t.length >= 2 && !GENERIC_TERMS.has(t));
+  if (!terms.length) return [];
   return P.map(p => {
     const hay = `${p.name} ${p.program || ""} ${p.activity || ""} ${p.ministry} ${(p.docs || []).map(d => d.text).join(" ")} ${itemsOf(p).map(i => i.name).join(" ")}`;
     return { p, score: terms.reduce((a, t) => a + (hay.includes(t) ? (p.name.includes(t) ? 2 : 1) : 0), 0) };
-  }).filter(x => x.score > 0).sort((a, b) => b.score - a.score || (curGov(b.p) || 0) - (curGov(a.p) || 0)).slice(0, 5);
+  }).filter(x => x.score >= 2).sort((a, b) => b.score - a.score || (curGov(b.p) || 0) - (curGov(a.p) || 0)).slice(0, 5);
 }
 const fact = p => `${p.ministry} ${p.program || ""} > ${p.name}: ` + YEARS.map(y => { const v = Y(p, y); return `${y} 정부안 ${won(v.gov)}억, 확정 ${won(v.na)}억`; }).join("; ")
   + ((D.exec_years || []).some(y => E(p, y)) ? ` / 소속 단위사업 '${unitOf(p) ? unitOf(p).activity : ""}' 결산: ` + D.exec_years.map(y => { const e = E(p, y); return e ? `${y} 집행률 ${e.rate == null ? "-" : e.rate.toFixed(1) + "%"}, 불용 ${won(e.unused)}억` : ""; }).filter(Boolean).join("; ") : "");
