@@ -52,7 +52,8 @@ button{font:inherit;color:inherit}
 .qrecent .rq{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:8px 2px;font:inherit;font-size:14px;cursor:pointer}
 .qrecent .rq:last-child{border-bottom:0}
 .qrecent .rq-clr{border:0;background:none;color:var(--accent);font:inherit;font-size:12px;cursor:pointer}
-.qrecent.qdrop{width:min(560px,calc(100vw - 24px));max-height:60vh;overflow:auto;padding:6px 14px}
+.qrecent.qdrop{width:min(520px,calc(100vw - 32px));max-height:60vh;overflow:auto;padding:6px 14px}
+@media (max-width:640px){.qrecent.qdrop{position:fixed;left:8px;right:8px;width:auto;max-width:none}}
 .qrow{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:9px 2px;font:inherit;cursor:pointer}
 .qrow:last-child{border-bottom:0}
 .qrow .nm{display:block;font-size:14px;font-weight:700;line-height:1.35}
@@ -468,6 +469,7 @@ function drawSearchDrop() {
         return `<button class="qrow" type="button" data-idx="${i}"><span class="nm">${r.na ? `<span class="sub">${esc(r.parent)} — </span>` : ""}${esc(r.name)}</span><span class="sub">${where ? where + " · " : ""}${money(r.v[year])}${p != null && !r.na ? " · " + pctTxt(p) : ""}</span></button>`;
       }).join("") + (total > shown.length ? `<div class="qnone">${total}건 중 ${shown.length}건만 표시합니다. 검색어를 더 자세히 적어 주세요.</div>` : "");
   box.hidden = false;
+  if (matchMedia("(max-width:640px)").matches) box.style.top = ($("q").getBoundingClientRect().bottom + 6) + "px";   // 휴대폰: 검색창 아래 고정 (메인과 같은 방식)
   box.querySelectorAll(".qrow").forEach(b => b.onclick = () => { recentAdd(q); goHit(shown[+b.dataset.idx]); });
 }
 /* 드롭다운에서 고른 사업으로 이동 */
