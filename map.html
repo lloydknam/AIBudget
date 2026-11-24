@@ -46,6 +46,12 @@ button{font:inherit;color:inherit}
 .hsearch::after{content:"";position:absolute;left:25px;top:calc(50% + 4px);width:6px;height:2px;background:var(--accent);transform:rotate(45deg);transform-origin:left center;pointer-events:none;z-index:1}
 .hsearch input{width:100%;box-sizing:border-box;height:40px;border:2px solid var(--accent);background:var(--card);color:var(--ink);border-radius:8px;padding:0 38px;font-size:15px;font-family:inherit;outline:none}
 .hsearch input::placeholder{color:var(--sub)}
+.qrecent{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:60;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 10px;box-shadow:0 12px 32px rgba(0,0,0,.35)}
+.qrecent .rq-head{display:flex;justify-content:space-between;align-items:center;padding:4px 2px}
+.qrecent .rq-head .sub{color:var(--sub);font-size:12px}
+.qrecent .rq{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:8px 2px;font:inherit;font-size:14px;cursor:pointer}
+.qrecent .rq:last-child{border-bottom:0}
+.qrecent .rq-clr{border:0;background:none;color:var(--accent);font:inherit;font-size:12px;cursor:pointer}
 .hsearch input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .hsearch input::-webkit-search-cancel-button{display:none}
 .hsearch .clr{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:0;background:var(--line);color:var(--ink);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1}
@@ -323,6 +329,7 @@ body.tree-mode .crumb{display:none}
 <div class="hsearch" role="search">
   <input id="q" type="search" placeholder="사업 검색" autocomplete="off" aria-label="예산 검색" enterkeyhint="search">
   <button class="clr" id="qclr" aria-label="검색어 지우기" hidden>×</button>
+  <div id="qrecent" class="qrecent" hidden></div>
 </div>
 </header>
 <nav class="gnav" aria-label="사이트 메뉴">
@@ -459,6 +466,7 @@ function drawSearch() {
     }).join("") + (total > shown.length ? `<div class="empty" style="margin:8px 12px">${total}건 중 ${shown.length}건만 표시합니다. 검색어를 더 자세히 적어 주세요.</div>` : "");
     box.querySelectorAll(".rowbtn").forEach(b => b.onclick = () => {
       const r = shown[+b.dataset.idx];
+      recentAdd(q);
       q = ""; $("q").value = ""; $("qclr").hidden = true;
       if (mode === "tree" && r.path.length) {   // 트리에서는 트리를 그대로 두고, 찾은 사업이 화면 가운데에 오도록 펼친다
         treeFocus = r.path[r.path.length - 1];   // 그릴 때 이 사업을 화면 가운데에 둔다
@@ -1224,6 +1232,25 @@ async function openDesc(ministry, name) {
 $("q").oninput = e => { q = e.target.value.trim(); $("qclr").hidden = !e.target.value; render(); };
 $("q").onkeydown = e => { if (e.key === "Escape") { e.target.value = ""; q = ""; $("qclr").hidden = true; render(); } };
 $("qclr").onclick = () => { $("q").value = ""; q = ""; $("qclr").hidden = true; render(); $("q").focus(); };
+/* 최근 검색어 (이 기기 브라우저에만 저장, 최대 8개) */
+const RECENT_KEY = "gqRecent";
+const recentGet = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); return Array.isArray(a) ? a.filter(x => typeof x === "string").slice(0, 8) : []; } catch (e) { return []; } };
+const recentAdd = v => { const t = String(v || "").trim(); if (!t) return; try { localStorage.setItem(RECENT_KEY, JSON.stringify([t, ...recentGet().filter(x => x !== t)].slice(0, 8))); } catch (e) {} };
+function showQRecent() {
+  const box = $("qrecent"), list = recentGet();
+  if (!list.length || $("q").value.trim()) { box.hidden = true; return; }
+  box.innerHTML = `<div class="rq-head"><span class="sub">최근 검색어</span><button class="rq-clr" type="button">지우기</button></div>` + list.map(t => `<button class="rq" type="button" data-q="${esc(t)}">${esc(t)}</button>`).join("");
+  box.hidden = false;
+}
+$("q").addEventListener("focus", showQRecent);
+$("q").addEventListener("input", () => { if ($("q").value.trim()) $("qrecent").hidden = true; });
+$("q").addEventListener("keydown", e => { if (e.key === "Enter") recentAdd($("q").value); });
+$("qrecent").addEventListener("click", e => {
+  const rq = e.target.closest(".rq");
+  if (rq) { $("q").value = rq.dataset.q; $("q").dispatchEvent(new Event("input")); $("qrecent").hidden = true; return; }
+  if (e.target.closest(".rq-clr")) { try { localStorage.removeItem(RECENT_KEY); } catch (err) {} $("qrecent").hidden = true; }
+});
+document.addEventListener("click", e => { if (!e.target.closest(".hsearch")) $("qrecent").hidden = true; });
 $("years").onclick = e => { const b = e.target.closest("button"); if (b) setYear(+b.dataset.y); };
 $("back").onclick = () => { if (path.length) jump(path.length - 1); };
 $("trail").onclick = e => { const b = e.target.closest("button"); if (b && b.dataset.i != null) jump(+b.dataset.i); };
