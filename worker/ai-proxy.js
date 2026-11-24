@@ -38,6 +38,15 @@ export default {
     try { body = await req.json(); } catch (e) { return json({ error: "요청 형식이 잘못됐습니다" }, 400, cors); }
     const q = String(body.q || "").slice(0, 300).trim();
     if (!q) return json({ error: "질문이 비어 있습니다" }, 400, cors);
+    if (body.expand === true) {
+      // 질문을 예산 사업 검색 키워드로 풀어 쓴다 (실패해도 사이트는 원래 질문으로 계속)
+      try {
+        const keywords = await expandKeywords(env, q);
+        return json({ keywords }, 200, cors);
+      } catch (e) {
+        return json({ keywords: "", error: String(e.message || e).slice(0, 200) }, 200, cors);
+      }
+    }
     if (body.web_only === true && body.llm === "groq") {
       // Groq(gpt-oss-120b) 내장 browser_search 도구로 외부 검색
       try {
@@ -121,6 +130,27 @@ async function gemini(env, user, webOn = false, ms = 30000) {
   const web = (cand.groundingMetadata?.groundingChunks || []).map(c => c.web).filter(Boolean)
     .map(w => ({ title: w.title || w.domain || "출처", url: w.uri, domain: w.domain || "" })).filter(w => w.url).slice(0, 6);
   return { text: (cand.content?.parts || []).map(p => p.text || "").join(""), model: j.modelVersion || model, web };
+}
+
+async function expandKeywords(env, q) {
+  const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    signal: AbortSignal.timeout(8000),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.GROQ_API_KEY}` },
+    body: JSON.stringify({
+      model: "openai/gpt-oss-120b",
+      temperature: 0.1,
+      max_completion_tokens: 200,
+      reasoning_effort: "low",
+      messages: [
+        { role: "system", content: "너는 한국 국가예산 세부사업을 찾기 위한 검색어 도우미다. 사용자의 질문을 예산 사업명에 쓰일 법한 한국어 키워드로 바꿔라. 줄임말·외래어·신조어는 풀어 쓴다(예: 케어테크 → 노인 돌봄 요양 복지 기술). 키워드 5~8개를 쉼표로 구분해 한 줄로만 출력한다. 설명은 쓰지 않는다." },
+        { role: "user", content: q },
+      ],
+    }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error?.message || "키워드 확장 실패");
+  return String(j.choices?.[0]?.message?.content || "").replace(/[\r\n]+/g, " ").replace(/[^가-힣A-Za-z0-9,\s]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
 }
 
 async function groqSearch(env, q) {

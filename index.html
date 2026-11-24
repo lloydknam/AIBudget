@@ -1417,13 +1417,26 @@ function thinking(box, label) {
   }, 100);
   return () => { clearInterval(THINK_T); bar.style.width = "100%"; return (performance.now() - t0) / 1000; };
 }
+/* 질문을 검색 키워드로 풀어 쓴다 (예: 케어테크 → 노인 돌봄 요양 복지 기술). 4초 안에 못 받으면 원래 질문만 쓴다 */
+async function expandQuery(q) {
+  if (!AI_API) return "";
+  try {
+    const j = await Promise.race([
+      fetch(AI_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q, expand: true }) }).then(r => r.json()),
+      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 4000)),
+    ]);
+    return String(j.keywords || "").slice(0, 120);
+  } catch (e) { return ""; }
+}
 async function ask() {
   const q = (document.getElementById("aq").value || "").trim(); if (!q) return;
   const box = document.getElementById("ans");
   thinking(box, "자료를 찾는 중");
   await naeyeokData();
-  const got = retrieve(q);
-  const extra = (await termHits(q)).filter(p => !got.some(h => h.p === p)).slice(0, 3).map(p => ({ p, score: 0 }));
+  const kw = await expandQuery(q);   // 질문을 예산 사업 검색어로 풀어 쓴 키워드 (실패하면 빈 값)
+  const qx = kw ? `${q} ${kw}` : q;
+  const got = retrieve(qx);
+  const extra = (await termHits(qx)).filter(p => !got.some(h => h.p === p)).slice(0, 3).map(p => ({ p, score: 0 }));
   const hits = [...got, ...extra].slice(0, 6);
   const stats = await statHits(q); STAT_HITS = stats;
   if (!hits.length && !stats.length) { box.innerHTML = "<div class='card sub'>관련 사업이나 재정통계를 찾지 못했습니다.</div>"; return; }
@@ -1442,7 +1455,7 @@ async function ask() {
   // 외부 검색은 Groq 모델을 골랐을 때만 (Groq 내장 검색). 다른 모델은 외부 검색을 하지 않는다.
   const pickNow = (document.querySelector('input[name="llm"]:checked') || {}).value || "gemini";
   const webP = (AI_API && pickNow === "groq")
-    ? fetch(AI_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q, web_only: true, llm: "groq" }) })
+    ? fetch(AI_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q: qx, web_only: true, llm: "groq" }) })
       .then(r => (r.ok ? r.json() : { error: `HTTP ${r.status}` }))
       .then(j => ({ web: Array.isArray(j.web) ? j.web : [], text: String(j.text || ""), model: String(j.model || ""), quota: j.quota ? j : null, error: String(j.error || "") }))
       .catch(e => ({ web: [], text: "", model: "", quota: null, error: String(e.message || e) }))
