@@ -52,6 +52,12 @@ button{font:inherit;color:inherit}
 .qrecent .rq{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:8px 2px;font:inherit;font-size:14px;cursor:pointer}
 .qrecent .rq:last-child{border-bottom:0}
 .qrecent .rq-clr{border:0;background:none;color:var(--accent);font:inherit;font-size:12px;cursor:pointer}
+.qrecent.qdrop{width:min(560px,calc(100vw - 24px));max-height:60vh;overflow:auto;padding:6px 14px}
+.qrow{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);padding:9px 2px;font:inherit;cursor:pointer}
+.qrow:last-child{border-bottom:0}
+.qrow .nm{display:block;font-size:14px;font-weight:700;line-height:1.35}
+.qrow .sub{display:block;font-size:12px;color:var(--sub);margin-top:2px;line-height:1.4}
+.qnone{padding:10px 2px;font-size:13px;color:var(--sub)}
 .hsearch input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .hsearch input::-webkit-search-cancel-button{display:none}
 .hsearch .clr{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:0;background:var(--line);color:var(--ink);width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1}
@@ -449,36 +455,32 @@ function searchHits(text) {
     .filter(r => r.v[year] > 0 && r.hay.includes(key))
     .sort((a, b) => (a.na ? 1 : 0) - (b.na ? 1 : 0) || b.v[year] - a.v[year]);   // 세부사업을 먼저, 내역사업은 아래에
 }
-function drawSearch() {
-  const hits = searchHits(q), total = hits.length, shown = hits.slice(0, 60);
-  const box = document.createElement("div");
-  box.className = "list";
-  if (!shown.length) {
-    box.innerHTML = `<div class="detail" style="position:static;inset:auto;margin:0"><div class="empty">"${esc(q)}" 와 맞는 사업이 없습니다. 다른 말로 찾아보세요.</div></div>`;
-  } else {
-    box.innerHTML = shown.map((r, i) => {
-      const p = change(r, year), where = r.path.slice(0, -1).map(x => esc(x.name)).join(" › ");
-      return `<button class="rowbtn" data-idx="${i}">
-        <i class="sw" style="background:${colorOfPath(r.path)}"></i>
-        <span class="nm">${r.na ? `<span style="color:var(--sub);font-weight:400">${esc(r.parent)} — </span><b style="font-weight:800">${esc(r.name)}</b>` : `${esc(r.name)}${r.sub ? ` <span style="color:var(--sub);font-weight:400;font-size:11.5px">${esc(r.sub)}</span>` : ""}`}
-          ${where ? `<span class="path">${where}</span>` : ""}</span>
-        <span class="am">${money(r.v[year])}<small>${p != null && !r.na ? pctTxt(p) : ""}</small></span></button>`;
-    }).join("") + (total > shown.length ? `<div class="empty" style="margin:8px 12px">${total}건 중 ${shown.length}건만 표시합니다. 검색어를 더 자세히 적어 주세요.</div>` : "");
-    box.querySelectorAll(".rowbtn").forEach(b => b.onclick = () => {
-      const r = shown[+b.dataset.idx];
-      recentAdd(q);
-      q = ""; $("q").value = ""; $("qclr").hidden = true;
-      if (mode === "tree" && r.path.length) {   // 트리에서는 트리를 그대로 두고, 찾은 사업이 화면 가운데에 오도록 펼친다
-        treeFocus = r.path[r.path.length - 1];   // 그릴 때 이 사업을 화면 가운데에 둔다
-        for (const a of r.path.slice(0, -1)) treeOpen.set(a, true);   // 찾은 사업까지 가지를 연다
-        treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null; treeKeep = null;
-        path = r.path.slice(0, -1); enterAnim = false; syncUrl(true); render(); return;
-      }
-      if (r.na) HL_ITEM = r.name;   // 내역사업이면 소속 세부사업을 열고 그 내역을 강조한다
-      path = r.path; enterAnim = true; syncUrl(true); render();
-    });
+/* 검색 결과: 본문은 그대로 두고 검색창 아래 드롭다운으로 보여 준다 (메인 페이지와 같은 방식) */
+function drawSearchDrop() {
+  const box = $("qrecent");
+  if (!q) { showQRecent(); return; }
+  const hits = searchHits(q), total = hits.length, shown = hits.slice(0, 20);
+  box.classList.add("qdrop");
+  box.innerHTML = !shown.length
+    ? `<div class="qnone">"${esc(q)}" 와 맞는 사업이 없습니다. 다른 말로 찾아보세요.</div>`
+    : shown.map((r, i) => {
+        const p = change(r, year), where = r.path.slice(0, -1).map(x => esc(x.name)).join(" › ");
+        return `<button class="qrow" type="button" data-idx="${i}"><span class="nm">${r.na ? `<span class="sub">${esc(r.parent)} — </span>` : ""}${esc(r.name)}</span><span class="sub">${where ? where + " · " : ""}${money(r.v[year])}${p != null && !r.na ? " · " + pctTxt(p) : ""}</span></button>`;
+      }).join("") + (total > shown.length ? `<div class="qnone">${total}건 중 ${shown.length}건만 표시합니다. 검색어를 더 자세히 적어 주세요.</div>` : "");
+  box.hidden = false;
+  box.querySelectorAll(".qrow").forEach(b => b.onclick = () => { recentAdd(q); goHit(shown[+b.dataset.idx]); });
+}
+/* 드롭다운에서 고른 사업으로 이동 */
+function goHit(r) {
+  q = ""; $("q").value = ""; $("qclr").hidden = true; $("qrecent").hidden = true;
+  if (mode === "tree" && r.path.length) {   // 트리에서는 트리를 그대로 두고, 찾은 사업이 화면 가운데에 오도록 펼친다
+    treeFocus = r.path[r.path.length - 1];   // 그릴 때 이 사업을 화면 가운데에 둔다
+    for (const a of r.path.slice(0, -1)) treeOpen.set(a, true);   // 찾은 사업까지 가지를 연다
+    treeAll.clear(); treeBase = null; treeGhost = null; treeFollow = null; treeKeep = null;
+    path = r.path.slice(0, -1); enterAnim = false; syncUrl(true); render(); return;
   }
-  stage.appendChild(box);
+  if (r.na) HL_ITEM = r.name;   // 내역사업이면 소속 세부사업을 열고 그 내역을 강조한다
+  path = r.path; enterAnim = true; syncUrl(true); render();
 }
 
 /* ---------- 내역사업 (선택 자료: data/naeyeok.json) ---------- */
@@ -678,8 +680,7 @@ function render() {
 
   // 본문
   [...stage.children].forEach(c => { if (!c.classList.contains("zoom")) c.remove(); });   // 확대 중인 칸은 남겨 둔다
-  if (q) drawSearch();
-  else if (node.leaf) drawDetail(node); else if (mode === "tree") drawTree(ROOT); else drawChildren(node);   // 트리는 항상 최상위에서 그리고, 현재 경로를 펼쳐 둔다 (상위 노드가 사라지지 않게)
+  if (node.leaf) drawDetail(node); else if (mode === "tree") drawTree(ROOT); else drawChildren(node);   // 트리는 항상 최상위에서 그리고, 현재 경로를 펼쳐 둔다 (상위 노드가 사라지지 않게)
   enterAnim = false;
 
   // 출처
@@ -1229,21 +1230,22 @@ async function openDesc(ministry, name) {
 }
 
 /* ---------- 이벤트 ---------- */
-$("q").oninput = e => { q = e.target.value.trim(); $("qclr").hidden = !e.target.value; render(); };
-$("q").onkeydown = e => { if (e.key === "Escape") { e.target.value = ""; q = ""; $("qclr").hidden = true; render(); } };
-$("qclr").onclick = () => { $("q").value = ""; q = ""; $("qclr").hidden = true; render(); $("q").focus(); };
+$("q").oninput = e => { q = e.target.value.trim(); $("qclr").hidden = !e.target.value; render(); drawSearchDrop(); };
+$("q").onkeydown = e => { if (e.key === "Escape") { e.target.value = ""; q = ""; $("qclr").hidden = true; $("qrecent").hidden = true; render(); } };
+$("qclr").onclick = () => { $("q").value = ""; q = ""; $("qclr").hidden = true; $("qrecent").hidden = true; render(); $("q").focus(); };
 /* 최근 검색어 (이 기기 브라우저에만 저장, 최대 8개) */
 const RECENT_KEY = "gqRecent";
 const recentGet = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); return Array.isArray(a) ? a.filter(x => typeof x === "string").slice(0, 8) : []; } catch (e) { return []; } };
 const recentAdd = v => { const t = String(v || "").trim(); if (!t) return; try { localStorage.setItem(RECENT_KEY, JSON.stringify([t, ...recentGet().filter(x => x !== t)].slice(0, 8))); } catch (e) {} };
 function showQRecent() {
   const box = $("qrecent"), list = recentGet();
-  if (!list.length || $("q").value.trim()) { box.hidden = true; return; }
+  if ($("q").value.trim()) { q = $("q").value.trim(); drawSearchDrop(); return; }
+  box.classList.remove("qdrop");
+  if (!list.length) { box.hidden = true; return; }
   box.innerHTML = `<div class="rq-head"><span class="sub">최근 검색어</span><button class="rq-clr" type="button">지우기</button></div>` + list.map(t => `<button class="rq" type="button" data-q="${esc(t)}">${esc(t)}</button>`).join("");
   box.hidden = false;
 }
 $("q").addEventListener("focus", showQRecent);
-$("q").addEventListener("input", () => { if ($("q").value.trim()) $("qrecent").hidden = true; });
 $("q").addEventListener("keydown", e => { if (e.key === "Enter") recentAdd($("q").value); });
 $("qrecent").addEventListener("click", e => {
   const rq = e.target.closest(".rq");
