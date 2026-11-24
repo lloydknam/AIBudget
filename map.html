@@ -171,8 +171,8 @@ body.tree-mode .crumb{display:none}
 .bubble b{display:block;font-size:12.5px}
 /* 사업 설명 */
 .desc-btn{margin-top:4px;align-self:flex-start;border:1px solid var(--line);background:var(--card);color:var(--accent);font-weight:700;font-size:13px;border-radius:999px;padding:7px 14px;cursor:pointer}
-.sheet{position:fixed;left:50%;width:min(960px,100vw);bottom:0;height:82dvh;background:var(--bg);border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.4);transform:translate(-50%,105%);transition:transform .35s cubic-bezier(.16,1,.3,1);z-index:30;display:flex;flex-direction:column}
-.sheet.on{transform:translate(-50%,0)}
+.sheet{position:fixed;left:0;right:0;width:100%;bottom:0;height:82dvh;background:var(--bg);border-top:1px solid var(--line);border-radius:16px 16px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.4);transform:translateY(105%);transition:transform .35s cubic-bezier(.16,1,.3,1);z-index:30;display:flex;flex-direction:column}
+.sheet.on{transform:translateY(0)}
 .sheet-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
 .sheet-bar b{font-size:16px;line-height:1.3;word-break:keep-all}
 .sheet-bar button{flex:none;border:0;background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px}
@@ -597,7 +597,11 @@ function drill(n, el) {
   if (busy) return;
   // 단위사업 → 세부사업(또는 세부사업 상세)으로 갈 때는 애니메이션 없이 바로 이동
   const toDetail = n.leaf || [...n.kids.values()].some(c => c.leaf);
-  if (mode !== "map" || !el || reduced() || toDetail) { path = [...path, n]; enterAnim = true; syncUrl(true); render(); return; }
+  if (mode !== "map" || !el || reduced() || toDetail) {
+    path = [...path, n]; enterAnim = true; syncUrl(true); render();
+    if (n.leaf && n.raw && n.raw.ministry) openDesc(n.raw.ministry, n.name);   // 세부사업으로 들어가면 사업 설명자료 창을 연다
+    return;
+  }
   // 누른 칸이 화면 전체로 커지고, 나머지 칸은 흐려진 뒤 다음 단계로 바뀐다
   busy = true;
   const box = el.parentElement, W = stage.clientWidth, H = stage.clientHeight;
@@ -1123,13 +1127,10 @@ function drawDetail(n) {
       <dt>위치</dt><dd>${path.slice(0, -1).map(p => esc(p.name)).join(" › ")}</dd></dl>
     <table><thead><tr><th>연도</th><th>정부안(억)</th><th>국회 확정(억)</th><th></th></tr></thead><tbody>${rows}</tbody></table>
     ${inner}
-    <section class="dcard" id="descCard"><div class="sub-h">사업설명자료</div><div class="dbody"><p class="sub">불러오는 중…</p></div></section>
+    <section class="dcard" id="descCard"><button id="descOpen" type="button" style="margin-top:10px;border:1px solid var(--line);background:var(--card);color:var(--accent);font-weight:700;font-size:13px;border-radius:999px;padding:7px 14px;cursor:pointer;font-family:inherit">사업 설명자료 보기 ›</button></section>
 `;
-  const card = box.querySelector("#descCard");
-  const goDesc = async hl => {
-    const first = await fillDesc(card, r.ministry, n.name, hl);
-    box.scrollTo({ top: first ? first.offsetTop - 12 : card.offsetTop - 6, behavior: reduced() ? "auto" : "smooth" });
-  };
+  const goDesc = () => openDesc(r.ministry, n.name);   // 사업 설명자료는 창(시트)으로 연다 (메인 AI분석과 같은 방식)
+  box.querySelector("#descOpen").onclick = goDesc;
   box.querySelector(".go-title").onclick = () => goDesc(null);
   box.querySelector(".dclose").onclick = () => {
     if (treeSnap && mode === "tree") { restoreTree = treeSnap; treeSnap = null; }   // 트리에서 열었던 세부사업이면 트리를 열기 전 모습으로
@@ -1141,7 +1142,6 @@ function drawDetail(n) {
   });
   stage.appendChild(box);
   const hlEl = box.querySelector(".rowbtn.hl"); if (hlEl) hlEl.scrollIntoView({ block: "nearest" });   // 검색에서 고른 내역이 보이게
-  fillDesc(card, r.ministry, n.name, hlName);   // 세부사업에 들어오면 설명자료를 바로 펼친다 (내역을 골랐으면 그 항목을 강조)
 }
 
 /* ---------- 사업 설명 (아래에서 올라오는 시트) ---------- */
